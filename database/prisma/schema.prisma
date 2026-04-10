@@ -1,0 +1,372 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum AccountType {
+  founder
+  investor
+  partner
+  buyer
+}
+
+enum StartupStage {
+  idea
+  seed
+  series_a
+  series_b
+  growth
+  exit
+}
+
+enum StartupFormat {
+  online
+  offline
+  hybrid
+}
+
+enum InvestorRequestStatus {
+  active
+  paused
+  closed
+}
+
+enum PartnerRequestRole {
+  supplier
+  reseller
+  integration
+  cofounder
+}
+
+enum AuctionStatus {
+  planned
+  live
+  finished
+}
+
+model User {
+  id           String       @id @default(uuid())
+  role         Role         @default(user)
+  accountType  AccountType @default(founder)
+
+  name         String
+  email        String?      @unique
+  phone        String?      @unique
+  passwordHash String
+
+  avatarUrl    String?
+  bio          String?
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  startups           Startup[]          @relation("StartupOwner")
+  ideas              Idea[]             @relation("IdeaOwner")
+  investorRequests  InvestorRequest[] @relation("InvestorRequestAuthor")
+  partnerRequests   PartnerRequest[]  @relation("PartnerRequestAuthor")
+
+  bids              Bid[]
+  auctionWins       Auction[] @relation("AuctionWinner")
+  auctionParticipants AuctionParticipant[]
+  favorites         Favorite[]
+  reviewsAuth      Review[] @relation("ReviewAuthor")
+  reviewsTarget    Review[] @relation("ReviewTarget")
+
+  notifications    Notification[]
+  analyses         StartupAnalysis[]
+
+  chatConversationsA DirectConversation[] @relation("ChatUserA")
+  chatConversationsB DirectConversation[] @relation("ChatUserB")
+  chatMessages       ChatMessage[]
+
+  attachments       Attachment[]
+
+  @@index([role])
+}
+
+/// Личный диалог: userAId лексикографически меньше userBId — пара пользователей уникальна.
+model DirectConversation {
+  id        String   @id @default(uuid())
+  userAId   String
+  userBId   String
+  userA     User     @relation("ChatUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User     @relation("ChatUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  conversation   DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model Startup {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  category    String
+  price       Decimal   @db.Decimal(12, 2)
+
+  stage       StartupStage
+  format      StartupFormat
+  isOnline    Boolean   @default(true)
+
+  ownerId     String
+  owner       User      @relation("StartupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  auction     Auction?
+  favorites   Favorite[]
+
+  analysisId  String?
+  analysis    StartupAnalysis? @relation("StartupAnalysisToStartup", fields: [analysisId], references: [id], onDelete: SetNull)
+
+  attachments Attachment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+model Idea {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  category    String
+  price       Decimal   @db.Decimal(12, 2)
+
+  stage       StartupStage
+  format      StartupFormat
+
+  ownerId     String
+  owner       User      @relation("IdeaOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  analysisId  String?
+  analysis    StartupAnalysis? @relation("StartupAnalysisToIdea", fields: [analysisId], references: [id], onDelete: SetNull)
+
+  attachments Attachment[]
+
+  favorites   Favorite[]
+
+  problem     String?
+  solution    String?
+  market      String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+model InvestorRequest {
+  id          String    @id @default(uuid())
+  industry    String
+  description String
+  amount      Decimal   @db.Decimal(12, 2)
+  status      InvestorRequestStatus @default(active)
+
+  authorId    String
+  author      User      @relation("InvestorRequestAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  attachments Attachment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([industry])
+}
+
+model PartnerRequest {
+  id          String    @id @default(uuid())
+  role        PartnerRequestRole
+  industry    String
+  description String
+
+  authorId    String
+  author      User      @relation("PartnerRequestAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  attachments Attachment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([industry])
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  url       String
+  filename  String
+  mimeType  String?
+  size      Int?
+
+  startupId String?
+  startup   Startup? @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  ideaId    String?
+  idea      Idea?    @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  investorRequestId String?
+  investorRequest   InvestorRequest? @relation(fields: [investorRequestId], references: [id], onDelete: Cascade)
+
+  partnerRequestId String?
+  partnerRequest   PartnerRequest? @relation(fields: [partnerRequestId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([ownerId, createdAt])
+  @@index([startupId])
+  @@index([ideaId])
+  @@index([investorRequestId])
+  @@index([partnerRequestId])
+}
+
+model Auction {
+  id           String     @id @default(uuid())
+  startupId    String     @unique
+  startup      Startup    @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  status       AuctionStatus @default(planned)
+  currentPrice Decimal    @db.Decimal(12, 2)
+  startsAt     DateTime
+  registrationEndsAt DateTime
+  endsAt       DateTime?
+  isActive     Boolean    @default(true)
+
+  winnerUserId String?
+  winner       User?      @relation("AuctionWinner", fields: [winnerUserId], references: [id], onDelete: SetNull)
+
+  bids         Bid[]
+  participants AuctionParticipant[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, startsAt])
+}
+
+model AuctionParticipant {
+  id        String   @id @default(uuid())
+  auctionId String
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  active    Boolean  @default(true)
+  joinedAt  DateTime @default(now())
+  leftAt    DateTime?
+
+  @@unique([auctionId, userId])
+  @@index([auctionId, active])
+}
+
+model Bid {
+  id        String    @id @default(uuid())
+  auctionId String
+  auction   Auction   @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount    Decimal   @db.Decimal(12, 2)
+  createdAt DateTime  @default(now())
+
+  @@index([auctionId])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  startupId String?
+  startup   Startup? @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  ideaId    String?
+  idea      Idea?    @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, startupId])
+  @@index([userId, ideaId])
+}
+
+model Review {
+  id           String   @id @default(uuid())
+
+  authorId     String
+  author       User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  targetUserId String
+  target       User     @relation("ReviewTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  rating       Int
+  comment      String?
+
+  createdAt    DateTime @default(now())
+
+  @@index([targetUserId])
+  @@unique([authorId, targetUserId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String
+  payload   Json
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model StartupAnalysis {
+  id         String   @id @default(uuid())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  data       Json
+  result     Json
+
+  shareToken String? @unique
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  startups   Startup[] @relation("StartupAnalysisToStartup")
+  ideas      Idea[]    @relation("StartupAnalysisToIdea")
+}
