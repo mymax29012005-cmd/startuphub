@@ -28,6 +28,7 @@ export function Header() {
   useEffect(() => {
     let cancelled = false;
     async function loadMe() {
+      if (!cancelled) setLoading(true);
       try {
         const r = await fetch("/api/v1/auth/me", { credentials: "include" });
         if (!r.ok) {
@@ -46,7 +47,7 @@ export function Header() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pathname]);
 
   const nav = [
     { href: "/", label: t("nav.home") },
