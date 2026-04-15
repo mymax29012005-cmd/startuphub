@@ -58,10 +58,10 @@ export function Footer() {
           <div>
             <div className="text-[rgba(234,240,255,0.90)] font-semibold mb-3">{t("footer.helpTitle")}</div>
             <div className="flex flex-col gap-2">
-              <a className="hover:text-white" href="#">
+              <a className="hover:text-white" href="/terms">
                 {t("footer.help.rules")}
               </a>
-              <a className="hover:text-white" href="#">
+              <a className="hover:text-white" href="/privacy">
                 {t("footer.help.privacy")}
               </a>
               <a className="hover:text-white" href="/faq">
