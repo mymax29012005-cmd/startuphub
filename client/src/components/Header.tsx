@@ -4,62 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
+import { SITE_MAIN_NAV, isMainNavActive } from "@/config/siteMainNav";
+import { useSiteSession } from "@/contexts/SessionContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import { LanguageSwitcher } from "./LanguageSwitcher";
+
 import { Button } from "./ui/Button";
 
-type AuthUser = {
-  id: string;
-  role: "user" | "admin";
-  accountType: "founder" | "investor" | "partner" | "buyer";
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  avatarUrl?: string | null;
-};
-
 export function Header() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const { t } = useI18n();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading, unreadChats } = useSiteSession();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadMe() {
-      if (!cancelled) setLoading(true);
-      try {
-        const r = await fetch("/api/v1/auth/me", { credentials: "include" });
-        if (!r.ok) {
-          if (!cancelled) setUser(null);
-          return;
-        }
-        const data = (await r.json()) as AuthUser;
-        if (!cancelled) setUser(data);
-      } catch {
-        if (!cancelled) setUser(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    loadMe();
-    return () => {
-      cancelled = true;
-    };
-  }, [pathname]);
-
-  const nav = [
-    { href: "/", label: t("nav.home") },
-    { href: "/startups", label: t("nav.startups") },
-    { href: "/ideas", label: t("nav.ideas") },
-    { href: "/auction", label: t("nav.auction") },
-    { href: "/investors", label: t("nav.investors") },
-    { href: "/partners", label: t("nav.partners") },
-    { href: "/favorites", label: t("nav.favorites") },
-    { href: "/startup-analyzer", label: t("nav.analyzer") },
-    { href: "/chats", label: t("nav.chats") },
-  ];
 
   useEffect(() => {
     setMobileOpen(false);
@@ -67,68 +22,80 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50">
-      <div className="bg-[rgba(0,0,0,0.35)] backdrop-blur-md border-b border-[rgba(255,255,255,0.10)]">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+      <div className="bg-[rgba(6,6,10,0.72)] backdrop-blur-md border-b border-[rgba(255,255,255,0.08)]">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             <Link href="/" className="font-semibold tracking-tight text-white">
               <span className="inline-flex items-center gap-2">
-                <span className="logo-dot inline-block h-3.5 w-3.5 rounded-full" />
-                <span className="text-base">StartupHub</span>
+                <span className="logo-dot inline-block h-4 w-4 rounded-full" />
+                <span className="text-lg">StartupHub</span>
               </span>
             </Link>
-            <nav className="hidden md:flex items-center gap-1">
-              {nav.map((item) => {
-                const active =
-                  item.href === "/chats"
-                    ? pathname === "/chats" || pathname.startsWith("/chat/")
-                    : pathname === item.href || pathname.startsWith(item.href + "/");
+          </div>
+
+          <nav className="hidden md:flex flex-1 items-center justify-center">
+            <div className="w-full max-w-xl flex items-center justify-between">
+              {SITE_MAIN_NAV.map((item) => {
+                const active = isMainNavActive(pathname, item.href);
+                const label =
+                  "chatsUnread" in item && item.chatsUnread ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span>{t(item.labelKey)}</span>
+                      {unreadChats > 0 ? (
+                        <span
+                          className="inline-block h-2 w-2 rounded-full bg-[#00f5d4] shadow-[0_0_18px_rgba(0,245,212,0.7)]"
+                          aria-label="Есть непрочитанные сообщения"
+                          title="Есть непрочитанные сообщения"
+                        />
+                      ) : null}
+                    </span>
+                  ) : (
+                    t(item.labelKey)
+                  );
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={[
-                      "px-3 py-2 rounded-full text-xs transition border",
-                      active
-                        ? "border-[rgba(110,168,255,0.35)] text-white bg-[rgba(110,168,255,0.12)]"
-                        : "border-transparent text-[rgba(234,240,255,0.72)] hover:border-[rgba(255,255,255,0.12)] hover:text-[rgba(234,240,255,0.95)]",
+                      "text-sm font-medium transition-colors",
+                      active ? "text-white" : "text-white/70 hover:text-white",
                     ].join(" ")}
                   >
-                    {item.label}
+                    {label}
                   </Link>
                 );
               })}
-            </nav>
-          </div>
+            </div>
+          </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0 ml-auto">
             <div className="md:hidden">
               <Button
                 variant="ghost"
-                className="h-10 rounded-full px-4"
+                className="h-10 rounded-full px-4 border border-white/10 bg-white/5 hover:bg-white/10"
                 onClick={() => setMobileOpen((v) => !v)}
               >
                 Меню
               </Button>
             </div>
-            <LanguageSwitcher />
             <div className="block">
               {loading ? null : user ? (
                 <Link href="/profile">
-                  <Button variant="secondary" className="h-10 rounded-full px-4">
+                  <Button className="h-10 rounded-full px-5 bg-gradient-to-r from-[#7c3aed] to-[#e11d48] text-white hover:opacity-90">
                     {t("nav.profile")}
                   </Button>
                 </Link>
               ) : (
                 <div className="flex items-center gap-2">
                   <Link href="/login">
-                    <Button variant="ghost" className="h-10 rounded-full">
+                    <span className="inline-flex items-center justify-center h-10 px-6 rounded-full border border-white/10 bg-white/5 text-white/90 hover:bg-white/10 transition">
                       {t("nav.login")}
-                    </Button>
+                    </span>
                   </Link>
                   <Link href="/register">
-                    <Button variant="secondary" className="h-10 rounded-full">
+                    <span className="inline-flex items-center justify-center h-10 px-6 rounded-full font-semibold text-white bg-gradient-to-r from-[#7c3aed] to-[#e11d48] hover:opacity-90 transition">
                       {t("nav.register")}
-                    </Button>
+                    </span>
                   </Link>
                 </div>
               )}
@@ -139,11 +106,23 @@ export function Header() {
         {mobileOpen ? (
           <div className="md:hidden border-t border-[rgba(255,255,255,0.10)]">
             <div className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap gap-2">
-              {nav.map((item) => {
-                const active =
-                  item.href === "/chats"
-                    ? pathname === "/chats" || pathname.startsWith("/chat/")
-                    : pathname === item.href || pathname.startsWith(item.href + "/");
+              {SITE_MAIN_NAV.map((item) => {
+                const active = isMainNavActive(pathname, item.href);
+                const label =
+                  "chatsUnread" in item && item.chatsUnread ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span>{t(item.labelKey)}</span>
+                      {unreadChats > 0 ? (
+                        <span
+                          className="inline-block h-2 w-2 rounded-full bg-[#00f5d4] shadow-[0_0_18px_rgba(0,245,212,0.7)]"
+                          aria-label="Есть непрочитанные сообщения"
+                          title="Есть непрочитанные сообщения"
+                        />
+                      ) : null}
+                    </span>
+                  ) : (
+                    t(item.labelKey)
+                  );
                 return (
                   <Link
                     key={item.href}
@@ -151,11 +130,11 @@ export function Header() {
                     className={[
                       "px-3 py-2 rounded-full text-xs transition border",
                       active
-                        ? "border-[rgba(110,168,255,0.35)] text-white bg-[rgba(110,168,255,0.12)]"
-                        : "border-[rgba(255,255,255,0.12)] text-[rgba(234,240,255,0.85)] hover:text-white hover:border-[rgba(110,168,255,0.35)]",
+                        ? "border-[#7c3aed]/35 text-white bg-[#7c3aed]/10"
+                        : "border-white/10 text-white/85 bg-white/5 hover:text-white hover:bg-white/10",
                     ].join(" ")}
                   >
-                    {item.label}
+                    {label}
                   </Link>
                 );
               })}
@@ -166,4 +145,3 @@ export function Header() {
     </header>
   );
 }
-

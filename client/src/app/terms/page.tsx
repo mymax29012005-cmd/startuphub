@@ -68,7 +68,15 @@ export default function TermsPage() {
           </div>
 
           <div className="glass rounded-3xl p-5 border border-[rgba(255,255,255,0.12)]">
-            <div className="text-sm font-semibold text-white">5. Ответственность</div>
+            <div className="text-sm font-semibold text-white">5. Рейтинг и отзывы</div>
+            <div className="mt-2">
+              На Платформе может отображаться рейтинг пользователя. Рейтинг считается как среднее значение оценок (1–5)
+              по отзывам, оставленным другими пользователями. Если отзывов нет — рейтинг может отображаться как 0.0.
+            </div>
+          </div>
+
+          <div className="glass rounded-3xl p-5 border border-[rgba(255,255,255,0.12)]">
+            <div className="text-sm font-semibold text-white">6. Ответственность</div>
             <div className="mt-2">
               Платформа предоставляется «как есть». Оператор стремится обеспечивать стабильность, но не гарантирует
               бесперебойную работу и отсутствие ошибок. Оператор не отвечает за действия пользователей и последствия их
@@ -77,16 +85,16 @@ export default function TermsPage() {
           </div>
 
           <div className="glass rounded-3xl p-5 border border-[rgba(255,255,255,0.12)]">
-            <div className="text-sm font-semibold text-white">6. Изменения Правил</div>
+            <div className="text-sm font-semibold text-white">7. Изменения Правил</div>
             <div className="mt-2">
               Оператор может изменять Правила. Новая версия действует с момента публикации на Платформе.
             </div>
           </div>
 
           <div className="glass rounded-3xl p-5 border border-[rgba(255,255,255,0.12)]">
-            <div className="text-sm font-semibold text-white">7. Контакты</div>
+            <div className="text-sm font-semibold text-white">8. Контакты</div>
             <div className="mt-2">
-              По вопросам работы Платформы: <span className="text-white/90">support@startup-hub.ru</span>
+              По вопросам работы Платформы: <span className="text-white/90">genstartup@yandex.ru</span>
             </div>
           </div>
         </div>

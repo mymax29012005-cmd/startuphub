@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Маркетплейс • StartupHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+
+    /* Тот же Siri-style логотип-кружочек */
+    .logo-dot {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+    .logo-dot::before,
+    .logo-dot::after {
+      content: '';
+      position: absolute;
+      border-radius: 9999px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .logo-dot::before {
+      width: 52px; height: 52px;
+      background: radial-gradient(circle, rgba(124,58,237,0.6) 10%, rgba(225,29,72,0.4) 40%, rgba(0,245,212,0.3) 70%, transparent 90%);
+      animation: siriGlow 6s ease-in-out infinite;
+      filter: blur(8px);
+      opacity: 0.85;
+    }
+    .logo-dot::after {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, #7C3AED, #C026D3, #E11D48, #00F5D4, #22D3EE, #A855F7, #7C3AED);
+      background-size: 300% 300%;
+      animation: colorFlow 7.5s ease infinite, siriBreath 4s ease-in-out infinite;
+      box-shadow: 0 0 25px rgba(124, 58, 237, 0.9), inset 0 0 20px rgba(255,255,255,0.4);
+    }
+    @keyframes colorFlow { 0%{background-position:0% 50%} 25%{background-position:100% 30%} 50%{background-position:80% 100%} 75%{background-position:20% 70%} 100%{background-position:0% 50%} }
+    @keyframes siriBreath { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.12)} }
+    @keyframes siriGlow { 0%,100%{opacity:0.75;transform:translate(-50%,-50%) scale(1)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.15)} }
+
+    .nav-glass { background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(16px); }
+    .card-hover { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-8px) scale(1.03); box-shadow: 0 25px 50px -12px rgb(124 58 237 / 0.4); }
+    
+    .tab-active {
+      border-bottom: 3px solid #7C3AED;
+      color: #fff;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="bg-[#0A0A0F] text-white">
+
+  <!-- Navbar (точно такой же как на главной) -->
+  <nav class="nav-glass fixed top-0 left-0 right-0 z-50 border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="logo-dot"></div>
+        <span class="heading text-2xl font-semibold tracking-tight">StartupHub</span>
+      </div>
+      
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href="index.html" class="hover:text-violet-400 transition">Главная</a>
+        <a href="#" class="text-violet-400 font-semibold">Маркетплейс</a>
+        <a href="#" class="hover:text-violet-400 transition">Аукционы</a>
+        <a href="#" class="hover:text-violet-400 transition">Идеи</a>
+        <a href="#" class="hover:text-violet-400 transition">Для инвесторов</a>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <button onclick="alert('Поиск по всему маркетплейсу')" class="px-4 py-2 text-sm font-medium rounded-2xl border border-white/30 hover:bg-white/10 flex items-center gap-2">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span class="hidden sm:inline">Поиск</span>
+        </button>
+        <button onclick="alert('Регистрация открыта! (демо)')" 
+                class="px-6 py-3 text-sm font-semibold rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition">
+          + Разместить
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="pt-20 max-w-7xl mx-auto px-6">
+    
+    <!-- Hero маркетплейса -->
+    <div class="py-12 border-b border-white/10">
+      <h1 class="heading text-5xl md:text-6xl font-bold tracking-tighter mb-3">
+        Маркетплейс
+      </h1>
+      <p class="text-xl text-gray-400 max-w-2xl">
+        Более 380 стартапов, идей, аукционов, инвесторов и партнёров в одном месте
+      </p>
+      
+      <!-- Большая строка поиска -->
+      <div class="mt-8 relative">
+        <div class="bg-[#12121A] border border-white/10 rounded-3xl px-6 py-5 flex items-center gap-4 shadow-xl">
+          <i class="fa-solid fa-magnifying-glass text-xl text-gray-400"></i>
+          <input 
+            id="searchInput"
+            type="text" 
+            placeholder="Поиск по названию, отрасли, ключевому слову..."
+            class="flex-1 bg-transparent outline-none text-lg placeholder-gray-500"
+            onkeyup="filterCards()">
+          <button onclick="filterCards()" 
+                  class="px-8 py-3 bg-violet-600 hover:bg-violet-500 rounded-2xl font-medium">
+            Найти
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Табы -->
+    <div class="flex items-center gap-8 border-b border-white/10 pb-4 mt-8 overflow-x-auto" id="tabs">
+      <button onclick="switchTab(0)" class="tab-active px-6 py-3 text-lg whitespace-nowrap" id="tab-0">Стартапы</button>
+      <button onclick="switchTab(1)" class="px-6 py-3 text-lg text-gray-400 hover:text-white whitespace-nowrap" id="tab-1">Идеи</button>
+      <button onclick="switchTab(2)" class="px-6 py-3 text-lg text-gray-400 hover:text-white whitespace-nowrap" id="tab-2">Аукционы</button>
+      <button onclick="switchTab(3)" class="px-6 py-3 text-lg text-gray-400 hover:text-white whitespace-nowrap" id="tab-3">Инвесторы</button>
+      <button onclick="switchTab(4)" class="px-6 py-3 text-lg text-gray-400 hover:text-white whitespace-nowrap" id="tab-4">Партнёры</button>
+    </div>
+
+    <!-- Фильтры + Контент -->
+    <div class="flex gap-8 pt-8">
+      
+      <!-- Боковые фильтры -->
+      <div class="w-72 hidden lg:block bg-[#12121A] border border-white/10 rounded-3xl p-6 h-fit sticky top-28">
+        <h3 class="font-semibold mb-6 flex items-center gap-2"><i class="fa-solid fa-sliders"></i> Фильтры</h3>
+        
+        <!-- Отрасль -->
+        <div class="mb-6">
+          <p class="text-sm text-gray-400 mb-3">Отрасль</p>
+          <div class="flex flex-wrap gap-2" id="industryFilters">
+            <span onclick="this.classList.toggle('bg-violet-600');filterCards()" class="cursor-pointer text-xs px-4 py-2 bg-white/10 rounded-2xl hover:bg-violet-600">AI &amp; ML</span>
+            <span onclick="this.classList.toggle('bg-violet-600');filterCards()" class="cursor-pointer text-xs px-4 py-2 bg-white/10 rounded-2xl hover:bg-violet-600">Fintech</span>
+            <span onclick="this.classList.toggle('bg-violet-600');filterCards()" class="cursor-pointer text-xs px-4 py-2 bg-white/10 rounded-2xl hover:bg-violet-600">SaaS</span>
+            <span onclick="this.classList.toggle('bg-violet-600');filterCards()" class="cursor-pointer text-xs px-4 py-2 bg-white/10 rounded-2xl hover:bg-violet-600">E-commerce</span>
+            <span onclick="this.classList.toggle('bg-violet-600');filterCards()" class="cursor-pointer text-xs px-4 py-2 bg-white/10 rounded-2xl hover:bg-violet-600">Green Tech</span>
+            <span onclick="this.classList.toggle('bg-violet-600');filterCards()" class="cursor-pointer text-xs px-4 py-2 bg-white/10 rounded-2xl hover:bg-violet-600">HealthTech</span>
+          </div>
+        </div>
+        
+        <!-- Стадия -->
+        <div class="mb-6">
+          <p class="text-sm text-gray-400 mb-3">Стадия</p>
+          <select onchange="filterCards()" class="w-full bg-white/10 border border-white/10 rounded-2xl px-4 py-3 text-white">
+            <option value="">Любая стадия</option>
+            <option value="idea">Идея</option>
+            <option value="pre-seed">Pre-Seed</option>
+            <option value="seed">Seed</option>
+            <option value="series-a">Series A</option>
+          </select>
+        </div>
+        
+        <!-- Сумма -->
+        <div class="mb-6">
+          <p class="text-sm text-gray-400 mb-3">Сумма привлечения</p>
+          <div class="flex gap-3">
+            <input type="text" placeholder="от 500 тыс" class="flex-1 bg-white/10 border border-white/10 rounded-2xl px-4 py-3" onkeyup="filterCards()">
+            <input type="text" placeholder="до 50 млн" class="flex-1 bg-white/10 border border-white/10 rounded-2xl px-4 py-3" onkeyup="filterCards()">
+          </div>
+        </div>
+        
+        <!-- Гео -->
+        <div>
+          <p class="text-sm text-gray-400 mb-3">География</p>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="filterCards()" class="accent-violet-500"> Москва</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="filterCards()" class="accent-violet-500"> Санкт-Петербург</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" onchange="filterCards()" class="accent-violet-500"> Новосибирск</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" onchange="filterCards()" class="accent-violet-500"> Казахстан</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" onchange="filterCards()" class="accent-violet-500"> Беларусь</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" onchange="filterCards()" class="accent-violet-500"> Онлайн</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Основная сетка карточек -->
+      <div class="flex-1" id="cardsContainer">
+        <!-- JS будет заполнять сюда карточки в зависимости от таба -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Данные для каждого таба
+    const data = {
+      0: [ // Стартапы
+        {title:"AI-платформа для автоматизации продаж", desc:"Сокращает цикл продаж на 68%", stage:"Seed", amount:"12 млн ₽", location:"Москва", type:"startup"},
+        {title:"Платформа для управления складами IoT", desc:"Снижает потери на 42%", stage:"Series A", amount:"45 млн ₽", location:"Санкт-Петербург", type:"startup"},
+        {title:"Мобильное приложение для экологии", desc:"Gamification сбора мусора", stage:"Pre-Seed", amount:"4.8 млн ₽", location:"Казань", type:"startup"}
+      ],
+      1: [ // Идеи
+        {title:"Умный холодильник с ИИ-рецептами", desc:"Идея на стадии концепции", stage:"Идея", amount:"800 тыс ₽", location:"Онлайн", type:"idea"},
+        {title:"Сервис аренды электросамокатов по подписке", desc:"Экологичный транспорт", stage:"Идея", amount:"2.5 млн ₽", location:"Новосибирск", type:"idea"}
+      ],
+      2: [ // Аукционы
+        {title:"25% доли в SaaS для ритейла", desc:"Текущая ставка 4.8 млн ₽", stage:"Аукцион", amount:"8 млн ₽", time:"2 дня 14ч", type:"auction"},
+        {title:"15% в HealthTech-стартапе", desc:"Текущая ставка 2.1 млн ₽", stage:"Аукцион", amount:"15 млн ₽", time:"11ч", type:"auction"}
+      ],
+      3: [ // Инвесторы
+        {title:"Алексей Морозов", desc:"Angel-инвестор • 14 сделок • Fintech, AI", stage:"Активен", amount:"от 5 млн ₽", location:"Москва", type:"investor"},
+        {title:"Фонд «Северный ветер»", desc:"Venture fund • 42 млн ₽ под управление", stage:"Активен", amount:"от 20 млн ₽", location:"Санкт-Петербург", type:"investor"}
+      ],
+      4: [ // Партнёры
+        {title:"Яндекс.Облако", desc:"Технологический партнёр • 40% скидка для стартапов", stage:"Партнёр", amount:"", location:"", type:"partner"},
+        {title:"СберБизнес", desc:"Финансовый партнёр • Кредиты под 9%", stage:"Партнёр", amount:"", location:"", type:"partner"}
+      ]
+    };
+
+    function createCard(item) {
+      let html = `
+        <div class="card-hover bg-[#12121A] border border-white/10 rounded-3xl overflow-hidden p-6 mb-6">
+          <div class="flex justify-between items-start mb-4">
+            <h3 class="font-semibold text-xl">${item.title}</h3>`;
+      
+      if (item.type === "auction") {
+        html += `<span class="text-xs bg-rose-500/20 text-rose-400 px-4 py-1 rounded-2xl">${item.time}</span>`;
+      } else if (item.type === "startup" || item.type === "idea") {
+        html += `<span class="text-xs bg-emerald-500/20 text-emerald-400 px-4 py-1 rounded-2xl">${item.stage}</span>`;
+      }
+      
+      html += `</div>
+        <p class="text-gray-400 mb-6">${item.desc}</p>
+        <div class="flex justify-between text-sm">
+          <div><span class="text-gray-400">Нужно:</span> <span class="font-medium">${item.amount}</span></div>
+          <div class="text-violet-400">${item.location}</div>
+        </div>
+      </div>`;
+      return html;
+    }
+
+    function renderCards(tabIndex) {
+      const container = document.getElementById('cardsContainer');
+      container.innerHTML = `<div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6">`;
+      
+      data[tabIndex].forEach(item => {
+        container.innerHTML += createCard(item);
+      });
+      
+      if (data[tabIndex].length === 0) {
+        container.innerHTML += `<p class="text-gray-400 col-span-full text-center py-12">В этой категории пока ничего нет</p>`;
+      }
+      
+      container.innerHTML += `</div>`;
+    }
+
+    function switchTab(tabIndex) {
+      // Убираем активный класс у всех
+      document.querySelectorAll('#tabs button').forEach(btn => btn.classList.remove('tab-active'));
+      // Добавляем активному
+      document.getElementById('tab-' + tabIndex).classList.add('tab-active');
+      renderCards(tabIndex);
+    }
+
+    function filterCards() {
+      // Простая фильтрация по поиску (в демо)
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const activeTab = Array.from(document.querySelectorAll('#tabs button')).findIndex(btn => btn.classList.contains('tab-active'));
+      
+      const container = document.getElementById('cardsContainer');
+      const cards = container.querySelectorAll('.card-hover');
+      
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? 'block' : 'none';
+      });
+    }
+
+    // Инициализация
+    window.onload = () => {
+      renderCards(0); // По умолчанию показываем Стартапы
+    };
+  </script>
+
+  <footer class="bg-black py-16 border-t border-white/10 mt-24">
+    <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+      <p>© 2026 StartupHub.ru — Маркетплейс</p>
+      <p class="mt-2">Это демо-версия страницы Маркетплейс с фильтрами, табами и поиском</p>
+    </div>
+  </footer>
+</body>
+</html>

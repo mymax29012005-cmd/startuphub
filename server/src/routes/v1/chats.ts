@@ -22,6 +22,8 @@ chatsRouter.get("/", async (req, res) => {
       include: {
         userA: { select: { id: true, name: true, avatarUrl: true } },
         userB: { select: { id: true, name: true, avatarUrl: true } },
+        // Read markers needed for unread computation
+        // (selected implicitly below via `select` on convo itself isn't available with include).
         messages: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -30,12 +32,27 @@ chatsRouter.get("/", async (req, res) => {
       },
     });
 
-    const list = convos.map((c) => {
+    const unreadCounts = await Promise.all(
+      convos.map(async (c) => {
+        const lastReadAt = c.userAId === me ? c.lastReadAtA : c.lastReadAtB;
+        const count = await prisma.chatMessage.count({
+          where: {
+            conversationId: c.id,
+            createdAt: { gt: lastReadAt },
+            senderId: { not: me },
+          },
+        });
+        return count;
+      }),
+    );
+
+    const list = convos.map((c, idx) => {
       const other = c.userAId === me ? c.userB : c.userA;
       const last = c.messages[0];
       return {
         id: c.id,
         otherUser: other,
+        unreadCount: unreadCounts[idx] ?? 0,
         lastMessage: last
           ? {
               body: last.body,
@@ -48,6 +65,35 @@ chatsRouter.get("/", async (req, res) => {
     });
 
     return res.json(list);
+  } catch (_e) {
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
+});
+
+chatsRouter.get("/unread-count", async (req, res) => {
+  const me = req.user!.userId;
+  const prisma = getPrisma();
+  try {
+    const convos = await prisma.directConversation.findMany({
+      where: { OR: [{ userAId: me }, { userBId: me }] },
+      select: { id: true, userAId: true, userBId: true, lastReadAtA: true, lastReadAtB: true },
+    });
+
+    const counts = await Promise.all(
+      convos.map((c) => {
+        const lastReadAt = c.userAId === me ? c.lastReadAtA : c.lastReadAtB;
+        return prisma.chatMessage.count({
+          where: {
+            conversationId: c.id,
+            createdAt: { gt: lastReadAt },
+            senderId: { not: me },
+          },
+        });
+      }),
+    );
+
+    const total = counts.reduce((acc, v) => acc + v, 0);
+    return res.json({ total });
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
   }
@@ -111,6 +157,12 @@ chatsRouter.get("/:conversationId/messages", async (req, res) => {
       orderBy: { createdAt: "asc" },
       take: 200,
       include: { sender: { select: { id: true, name: true, avatarUrl: true } } },
+    });
+
+    // Mark as read for the viewer.
+    await prisma.directConversation.update({
+      where: { id: conversationId },
+      data: conv.userAId === me ? { lastReadAtA: new Date() } : { lastReadAtB: new Date() },
     });
 
     return res.json(

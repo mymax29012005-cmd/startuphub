@@ -1,77 +1,87 @@
 "use client";
 
+import Link from "next/link";
+
+import { SITE_MAIN_NAV } from "@/config/siteMainNav";
+import { useSiteSession } from "@/contexts/SessionContext";
 import { useI18n } from "@/i18n/I18nProvider";
+
+const footerLinkClass =
+  "text-zinc-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm";
 
 export function Footer() {
   const { t } = useI18n();
+  const { user, loading, unreadChats } = useSiteSession();
+  const year = new Date().getFullYear();
+
+  const helpLinks: { href: string; label: string }[] = [
+    { href: "/terms", label: t("footer.help.rules") },
+    { href: "/privacy", label: t("footer.help.privacy") },
+    { href: "/faq", label: t("footer.help.faq") },
+  ];
 
   return (
-    <footer className="mt-auto border-t border-[rgba(255,255,255,0.10)]">
-      <div className="mx-auto max-w-6xl px-4 py-10 text-xs text-[rgba(234,240,255,0.72)]">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <div className="font-semibold text-white/90">
-              StartupHub © {new Date().getFullYear()}
-            </div>
-            <div className="mt-2 leading-relaxed">
-              {t("footer.description")}
-            </div>
-            <div className="mt-4">{t("footer.contacts")}</div>
-          </div>
+    <footer className="mt-auto border-t border-white/10 bg-black">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12 md:py-16">
+        <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-x-5 text-sm" aria-label={t("footer.navTitle")}>
+          <Link href="/" className={footerLinkClass}>
+            {t("nav.home")}
+          </Link>
+          {SITE_MAIN_NAV.map((item) => {
+            const label =
+              "chatsUnread" in item && item.chatsUnread ? (
+                <span className="inline-flex items-center gap-2">
+                  <span>{t(item.labelKey)}</span>
+                  {unreadChats > 0 ? (
+                    <span
+                      className="inline-block h-2 w-2 rounded-full bg-[#00f5d4] shadow-[0_0_18px_rgba(0,245,212,0.7)]"
+                      aria-label="Есть непрочитанные сообщения"
+                      title="Есть непрочитанные сообщения"
+                    />
+                  ) : null}
+                </span>
+              ) : (
+                t(item.labelKey)
+              );
+            return (
+              <Link key={item.href} href={item.href} className={footerLinkClass}>
+                {label}
+              </Link>
+            );
+          })}
+          {!loading && user ? (
+            <Link href="/profile" className={footerLinkClass}>
+              {t("nav.profile")}
+            </Link>
+          ) : !loading && !user ? (
+            <>
+              <Link href="/login" className={footerLinkClass}>
+                {t("nav.login")}
+              </Link>
+              <Link href="/register" className={footerLinkClass}>
+                {t("nav.register")}
+              </Link>
+            </>
+          ) : null}
+        </nav>
 
-          <div>
-            <div className="text-[rgba(234,240,255,0.90)] font-semibold mb-3">{t("footer.navTitle")}</div>
-            <div className="flex flex-col gap-2">
-              <a className="hover:text-white" href="/">
-                {t("footer.links.home")}
-              </a>
-              <a className="hover:text-white" href="/startups">
-                {t("footer.links.startups")}
-              </a>
-              <a className="hover:text-white" href="/ideas">
-                {t("footer.links.ideas")}
-              </a>
-              <a className="hover:text-white" href="/auction">
-                {t("footer.links.auction")}
-              </a>
-              <a className="hover:text-white" href="/investors">
-                {t("footer.links.investors")}
-              </a>
-              <a className="hover:text-white" href="/partners">
-                {t("footer.links.partners")}
-              </a>
-              <a className="hover:text-white" href="/favorites">
-                {t("footer.links.favorites")}
-              </a>
-              <a className="hover:text-white" href="/startup-analyzer">
-                {t("footer.links.analyzer")}
-              </a>
-              <a className="hover:text-white" href="/chats">
-                {t("footer.links.chats")}
-              </a>
-              <a className="hover:text-white" href="/profile">
-                {t("footer.links.profile")}
-              </a>
-            </div>
-          </div>
+        <nav
+          className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-zinc-500"
+          aria-label={t("footer.helpTitle")}
+        >
+          {helpLinks.map(({ href, label }) => (
+            <Link key={href} href={href} className={`${footerLinkClass} text-zinc-500 hover:text-zinc-300`}>
+              {label}
+            </Link>
+          ))}
+        </nav>
 
-          <div>
-            <div className="text-[rgba(234,240,255,0.90)] font-semibold mb-3">{t("footer.helpTitle")}</div>
-            <div className="flex flex-col gap-2">
-              <a className="hover:text-white" href="/terms">
-                {t("footer.help.rules")}
-              </a>
-              <a className="hover:text-white" href="/privacy">
-                {t("footer.help.privacy")}
-              </a>
-              <a className="hover:text-white" href="/faq">
-                {t("footer.help.faq")}
-              </a>
-            </div>
-          </div>
+        <div className="mt-10 border-t border-white/5 pt-10 text-center text-xs text-zinc-500 space-y-3">
+          <p className="font-medium text-zinc-400">StartupHub © {year}</p>
+          <p className="mx-auto max-w-2xl leading-relaxed text-zinc-600">{t("footer.description")}</p>
+          <p className="text-zinc-600">{t("footer.contacts")}</p>
         </div>
       </div>
     </footer>
   );
 }
-

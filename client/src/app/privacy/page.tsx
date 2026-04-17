@@ -126,7 +126,7 @@ export default function PrivacyPolicyPage() {
           <div className="glass rounded-3xl p-5 border border-[rgba(255,255,255,0.12)]">
             <div className="text-sm font-semibold text-white">9. Контакты</div>
             <div className="mt-2">
-              По вопросам обработки персональных данных: <span className="text-white/90">support@startup-hub.ru</span>
+              По вопросам обработки персональных данных: <span className="text-white/90">genstartup@yandex.ru</span>
             </div>
           </div>
         </div>

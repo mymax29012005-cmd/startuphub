@@ -62,6 +62,21 @@ authRouter.post("/register", async (req, res) => {
       },
     });
 
+    const token = signJwt({
+      userId: user.id,
+      role: user.role,
+      accountType: user.accountType,
+    });
+
+    const isProd = env.NODE_ENV === "production";
+    res.cookie(env.COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 24 * 30,
+    });
+
     return res.status(201).json(user);
   } catch (e: any) {
     // Prisma unique constraint error.
@@ -161,6 +176,8 @@ authRouter.patch("/me", requireAuth, upload.single("avatar"), async (req, res) =
       name: z.string().min(2).max(64).optional(),
       bio: z.string().max(500).optional(),
       accountType: z.enum(["founder", "investor", "partner", "buyer"]).optional(),
+      phone: z
+        .preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().min(6).max(24).optional()),
     })
     .safeParse(req.body);
 
@@ -175,6 +192,7 @@ authRouter.patch("/me", requireAuth, upload.single("avatar"), async (req, res) =
       data: {
         name: parsed.data.name ?? undefined,
         bio: parsed.data.bio ?? undefined,
+        phone: parsed.data.phone ?? undefined,
         avatarUrl: avatarUrl ?? undefined,
         accountType: parsed.data.accountType ?? undefined,
       },
@@ -191,7 +209,12 @@ authRouter.patch("/me", requireAuth, upload.single("avatar"), async (req, res) =
       },
     });
 
-    return res.json(updated);
+    const [startupsCount, ideasCount] = await Promise.all([
+      prisma.startup.count({ where: { ownerId: updated.id } }),
+      prisma.idea.count({ where: { ownerId: updated.id } }),
+    ]);
+
+    return res.json({ ...updated, startupsCount, ideasCount });
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
   }

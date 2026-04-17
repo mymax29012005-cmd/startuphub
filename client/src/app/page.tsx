@@ -3,13 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
-import { useI18n } from "@/i18n/I18nProvider";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { StartupCard, type StartupCardModel } from "@/components/cards/StartupCard";
-import { IdeaCard, type IdeaCardModel } from "@/components/cards/IdeaCard";
-import { AuctionCard, type AuctionCardModel } from "@/components/cards/AuctionCard";
+import type { AuctionCardModel } from "@/components/cards/AuctionCard";
 
 type Stats = {
   startupsCount: number;
@@ -17,17 +11,15 @@ type Stats = {
   activeAuctions: number;
 };
 
-type Me = { id: string; role: "user" | "admin" };
-
 export default function Home() {
-  const { t } = useI18n();
-
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [me, setMe] = useState<Me | null>(null);
-  const [startups, setStartups] = useState<StartupCardModel[]>([]);
-  const [ideas, setIdeas] = useState<IdeaCardModel[]>([]);
   const [auctions, setAuctions] = useState<AuctionCardModel[]>([]);
+  const [counters, setCounters] = useState<{ projects: number; auctions: number; deals: number }>({
+    projects: 0,
+    auctions: 0,
+    deals: 0,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -53,19 +45,9 @@ export default function Home() {
     let cancelled = false;
     async function run() {
       try {
-        const meR = await fetch("/api/v1/auth/me", { credentials: "include" });
-        if (meR.ok && !cancelled) setMe((await meR.json()) as Me);
-        const [sR, iR, aR] = await Promise.all([
-          fetch("/api/v1/startups", { cache: "no-store" }),
-          fetch("/api/v1/ideas", { cache: "no-store" }),
-          fetch("/api/v1/auctions", { cache: "no-store" }),
-        ]);
-        const [s, i, a] = await Promise.all([sR.json(), iR.json(), aR.json()]);
-        if (!cancelled) {
-          setStartups((s ?? []).slice(0, 2));
-          setIdeas((i ?? []).slice(0, 2));
-          setAuctions((a ?? []).slice(0, 2));
-        }
+        const aR = await fetch("/api/v1/auctions", { cache: "no-store" });
+        const a = await aR.json();
+        if (!cancelled) setAuctions((a ?? []).slice(0, 3));
       } catch {
         // ignore
       }
@@ -76,187 +58,259 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const targetProjects = Math.max(0, (stats?.startupsCount ?? 0) + (stats?.ideasCount ?? 0));
+    const targetAuctions = Math.max(0, stats?.activeAuctions ?? 0);
+    const targetDeals = 0; // пока метрики нет в API — оставляем 0, но красиво анимируем
+
+    let raf = 0;
+    const start = performance.now();
+    const ms = 1200;
+    const from = { ...counters };
+    function tick(now: number) {
+      const t = Math.min(1, (now - start) / ms);
+      const ease = 1 - Math.pow(1 - t, 3);
+      const next = {
+        projects: Math.round(from.projects + (targetProjects - from.projects) * ease),
+        auctions: Math.round(from.auctions + (targetAuctions - from.auctions) * ease),
+        deals: Math.round(from.deals + (targetDeals - from.deals) * ease),
+      };
+      setCounters(next);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    }
+
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stats?.startupsCount, stats?.ideasCount, stats?.activeAuctions]);
+
+  function scrollToAuctions() {
+    const el = document.getElementById("active-auctions");
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function fmtMoney(v: number) {
+    return Number(v || 0).toLocaleString("ru-RU");
+  }
+
+  function fmtDateTime(iso?: string | null) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function fmtTimeLeft(a: AuctionCardModel) {
+    const endsIso = a.endsAt ?? null;
+    const startsIso = a.startsAt ?? null;
+    const now = Date.now();
+
+    const ends = endsIso ? new Date(endsIso).getTime() : NaN;
+    const starts = startsIso ? new Date(startsIso).getTime() : NaN;
+
+    if (!Number.isNaN(ends) && ends > now) {
+      const mins = Math.max(0, Math.floor((ends - now) / 60000));
+      const days = Math.floor(mins / (60 * 24));
+      const hours = Math.floor((mins % (60 * 24)) / 60);
+      const mm = mins % 60;
+      if (days >= 1) return `Осталось ${days} ${days === 1 ? "день" : days < 5 ? "дня" : "дней"}`;
+      if (hours >= 1) return `Осталось ${hours}ч ${mm}м`;
+      return `Осталось ${mm}м`;
+    }
+
+    if (!Number.isNaN(starts) && starts > now) {
+      const mins = Math.max(0, Math.floor((starts - now) / 60000));
+      const hours = Math.floor(mins / 60);
+      const mm = mins % 60;
+      if (hours >= 1) return `Старт через ${hours}ч ${mm}м`;
+      return `Старт через ${mm}м`;
+    }
+
+    return "";
+  }
+
+  function auctionGradientByCategory(category: string) {
+    const c = (category || "").toLowerCase();
+    if (c.includes("ai") || c.includes("ии") || c.includes("ml")) return "from-[#7c3aed] to-[#e11d48]";
+    if (c.includes("eco") || c.includes("эко") || c.includes("green")) return "from-[#f59e0b] to-[#fb7185]";
+    return "from-[#2563eb] to-[#06b6d4]";
+  }
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <section className="relative overflow-hidden rounded-3xl glass p-8 md:p-12">
-        <div className="absolute inset-0 pointer-events-none opacity-80">
-          <div className="absolute -top-24 -right-20 h-64 w-64 rounded-full bg-[rgba(110,168,255,0.18)] blur-2xl" />
-          <div className="absolute top-10 -left-24 h-64 w-64 rounded-full bg-[rgba(175,110,255,0.12)] blur-2xl" />
-        </div>
-
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-xl">
-            <Badge>StartupHub</Badge>
-            <h1 className="mt-4 text-3xl md:text-5xl font-semibold tracking-tight text-white">
-              {t("hero.title")}
-            </h1>
-            <p className="mt-3 text-[rgba(234,240,255,0.72)] leading-relaxed">
-              {t("hero.subtitle")}
-            </p>
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Link href="/add-startup">
-                <Button className="h-11 px-6">{t("hero.ctaSell")}</Button>
-              </Link>
-              <Link href="/add-idea">
-                <Button variant="secondary" className="h-11 px-6">
-                  {t("hero.ctaIdea")}
-                </Button>
-              </Link>
-              <Link href="/startups">
-                <Button variant="ghost" className="h-11 px-6">
-                  {t("hero.ctaExplore")}
-                </Button>
-              </Link>
+    <div className="min-h-screen">
+      <section className="hero-bg">
+        <div className="relative mx-auto max-w-6xl px-4 py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h1 className="text-5xl lg:text-6xl font-bold leading-tight text-white">
+                Запусти стартап.
+                <span className="gradient-text block">Найди инвестиции.</span>
+                Продай долю.
+              </h1>
+              <p className="mt-6 text-xl text-white/80 leading-relaxed">
+                Платформа для стартаперов, инвесторов и покупателей бизнеса. Находи идеи, финансирование и партнёров в одном
+                месте.
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/add-startup"
+                  className="inline-flex items-center justify-center px-8 py-4 rounded-full font-semibold text-white bg-gradient-to-r from-[#7c3aed] to-[#e11d48] hover:opacity-90 transition"
+                >
+                  Разместить проект
+                </Link>
+                <button
+                  type="button"
+                  onClick={scrollToAuctions}
+                  className="inline-flex items-center justify-center px-8 py-4 rounded-full font-semibold text-white border-2 border-[#7c3aed] hover:bg-[#7c3aed]/15 transition"
+                >
+                  Смотреть аукционы
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="relative w-full md:max-w-md">
-            <Card className="p-6">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs text-[rgba(234,240,255,0.72)]">{t("home.statsStartups")}</div>
-                  <div className="text-3xl font-semibold text-white">
-                    {stats ? stats.startupsCount : loading ? "—" : "—"}
+            <div className="glass border border-white/10 rounded-3xl p-8 relative card-hover">
+              <div className="text-2xl font-bold text-white mb-6">Статистика платформы</div>
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-white/60 text-sm">Активных проектов</div>
+                    <div className="counter text-3xl font-bold text-white">
+                      {loading && !stats ? "—" : counters.projects.toLocaleString("ru-RU")}
+                    </div>
                   </div>
+                  <div className="w-3 h-3 bg-[#00f5d4] rounded-full shadow-[0_0_20px_rgba(0,245,212,0.8)]" />
                 </div>
-                <div className="h-10 w-10 flex items-center justify-center">
-                  <span className="h-3.5 w-3.5 rounded-full bg-[#00ff7a] shadow-[0_0_24px_rgba(0,255,122,0.85)]" />
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-[rgba(234,240,255,0.72)]">{t("home.statsIdeas")}</div>
-                  <div className="text-2xl font-semibold text-white">
-                    {stats ? stats.ideasCount : loading ? "—" : "—"}
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-white/60 text-sm">Аукционов сейчас</div>
+                    <div className="counter text-3xl font-bold text-white">
+                      {loading && !stats ? "—" : counters.auctions.toLocaleString("ru-RU")}
+                    </div>
                   </div>
+                  <div className="w-3 h-3 bg-[#e11d48] rounded-full shadow-[0_0_20px_rgba(225,29,72,0.75)]" />
                 </div>
-                <div className="h-10 w-10 flex items-center justify-center">
-                  <span className="h-3.5 w-3.5 rounded-full bg-[#c000ff] shadow-[0_0_24px_rgba(192,0,255,0.8)]" />
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-[rgba(234,240,255,0.72)]">{t("home.statsAuctions")}</div>
-                  <div className="text-2xl font-semibold text-white">
-                    {stats ? stats.activeAuctions : loading ? "—" : "—"}
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-white/60 text-sm">Сделок на этой неделе</div>
+                    <div className="counter text-3xl font-bold text-white">
+                      {loading && !stats ? "—" : counters.deals.toLocaleString("ru-RU")}
+                    </div>
                   </div>
-                </div>
-                <div className="h-10 w-10 flex items-center justify-center">
-                  <span className="h-3.5 w-3.5 rounded-full bg-[#ff3df2] shadow-[0_0_24px_rgba(255,61,242,0.8)]" />
+                  <div className="w-3 h-3 bg-[#7c3aed] rounded-full shadow-[0_0_20px_rgba(124,58,237,0.75)]" />
                 </div>
               </div>
 
               {!loading && !stats ? (
-                <div className="mt-5 text-sm text-[rgba(234,240,255,0.72)]">
-                  {t("common.dbUnavailable")}
+                <div className="mt-6 text-sm text-white/70">
+                  Сейчас база данных недоступна — часть данных может не отображаться.
                 </div>
               ) : null}
-            </Card>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6">
-          <div className="text-white font-semibold">{t("home.howItWorksTitle")}</div>
-          <div className="mt-3 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">
-            {t("home.howItWorksText")}
+      <section className="section-dark">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">Как это работает</h2>
+            <p className="text-white/60 text-lg">Простой путь от идеи до сделки за 4 шага</p>
           </div>
-        </Card>
-        <Card className="p-6">
-          <div className="text-white font-semibold">{t("home.foundersTitle")}</div>
-          <div className="mt-3 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">
-            {t("home.foundersText")}
-          </div>
-        </Card>
-        <Card className="p-6">
-          <div className="text-white font-semibold">{t("home.investorsTitle")}</div>
-          <div className="mt-3 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">
-            {t("home.investorsText")}
-          </div>
-        </Card>
-      </section>
-
-      <section className="mt-6">
-        <Card className="p-6 md:p-10">
-          <div className="text-white font-semibold text-xl">{t("home.whyTitle")}</div>
-          <div className="mt-3 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">
-            {t("home.whyText")}
-          </div>
-          <div className="mt-4 flex flex-col sm:flex-row gap-3">
-            <Link href="/favorites">
-              <Button variant="secondary" className="h-11 px-6">
-                {t("home.favoritesBtn")}
-              </Button>
-            </Link>
-            <Link href="/auction">
-              <Button variant="ghost" className="h-11 px-6">
-                {t("home.auctionsBtn")}
-              </Button>
-            </Link>
-          </div>
-        </Card>
-      </section>
-
-      <section className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6">
-          <div className="text-white font-semibold">{t("home.lastStartups")}</div>
-          <div className="mt-4 grid grid-cols-1 gap-4">
-            {startups.map((s) => (
-              <StartupCard
-                key={s.id}
-                startup={s}
-                viewer={me}
-                onDeleted={() => setStartups((prev) => prev.filter((x) => x.id !== s.id))}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              {
+                n: 1,
+                nBg: "bg-[#7c3aed]/20 text-[#a78bfa]",
+                title: "Создай профиль",
+                text: "За 60 секунд расскажи о себе и своём проекте",
+              },
+              {
+                n: 2,
+                nBg: "bg-[#e11d48]/20 text-[#fb7185]",
+                title: "Размести проект",
+                text: "Или сразу выставь долю на аукцион",
+              },
+              {
+                n: 3,
+                nBg: "bg-[#00f5d4]/15 text-[#00f5d4]",
+                title: "Получай отклики",
+                text: "От инвесторов и партнёров в реальном времени",
+              },
+              {
+                n: 4,
+                nBg: "bg-[#f59e0b]/20 text-[#fbbf24]",
+                title: "Закрой сделку",
+                text: "Прозрачно и безопасно через платформу",
+              },
+            ].map((s) => (
+              <div key={s.n} className="glass border border-white/10 rounded-3xl p-8 card-hover">
+                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl font-bold ${s.nBg}`}>
+                  {s.n}
+                </div>
+                <div className="mt-6 text-2xl font-bold text-white">{s.title}</div>
+                <div className="mt-3 text-white/65 leading-relaxed">{s.text}</div>
+              </div>
             ))}
           </div>
-          <div className="mt-4">
-            <Link href="/startups" className="text-[var(--accent)] hover:text-white text-sm font-medium">
-              {t("home.seeAll")}
+        </div>
+      </section>
+
+      <section id="active-auctions" className="section-black">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <div className="flex items-end justify-between gap-6 mb-10">
+            <div>
+              <div className="text-4xl font-bold text-white">Активные аукционы</div>
+            </div>
+            <Link href="/auction" className="text-sm font-medium text-white/60 hover:text-white transition">
+              Все аукционы →
             </Link>
           </div>
-        </Card>
 
-        <Card className="p-6">
-          <div className="text-white font-semibold">{t("home.lastIdeas")}</div>
-          <div className="mt-4 grid grid-cols-1 gap-4">
-            {ideas.map((i) => (
-              <IdeaCard
-                key={i.id}
-                idea={i}
-                viewer={me}
-                onDeleted={() => setIdeas((prev) => prev.filter((x) => x.id !== i.id))}
-              />
-            ))}
-          </div>
-          <div className="mt-4">
-            <Link href="/ideas" className="text-[var(--accent)] hover:text-white text-sm font-medium">
-              {t("home.seeAll")}
-            </Link>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="text-white font-semibold">{t("home.lastAuctions")}</div>
-          <div className="mt-4 grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {auctions.map((a) => (
-              <AuctionCard
+              <Link
                 key={a.id}
-                auction={a}
-                viewer={me}
-                onDeleted={() => setAuctions((prev) => prev.filter((x) => x.id !== a.id))}
-              />
+                href={`/auction/${a.id}`}
+                className="glass border border-white/10 rounded-3xl overflow-hidden block card-hover"
+                aria-label={`Открыть аукцион: ${a.startup.title}`}
+              >
+                <div className={`h-44 bg-gradient-to-r ${auctionGradientByCategory(a.startup.category)} relative`}>
+                  {fmtTimeLeft(a) ? (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 text-xs px-3 py-1 rounded-full bg-black/55 text-white/85 border border-white/10">
+                      {fmtTimeLeft(a)}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="p-8">
+                  <div className="text-xl font-bold text-white leading-snug">{a.startup.title}</div>
+                  <div className="mt-2 text-white/50 text-sm">{a.startup.category}</div>
+
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <div className="text-white/75 text-sm">Текущая ставка:</div>
+                    <div className="text-[#00f5d4] font-bold">{fmtMoney(a.currentPrice)} ₽</div>
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
-          <div className="mt-4">
-            <Link href="/auction" className="text-[var(--accent)] hover:text-white text-sm font-medium">
-              {t("home.seeAll")}
-            </Link>
-          </div>
-        </Card>
+        </div>
+      </section>
+
+      <section className="hero-bg">
+        <div className="relative mx-auto max-w-6xl px-4 py-20 text-center">
+          <div className="text-4xl font-bold text-white mb-2">Готов запустить свой проект</div>
+          <div className="text-4xl font-bold text-white mb-6">или найти инвестицию?</div>
+          <div className="text-xl text-white/70 mb-10">Присоединяйся к тысячам основателей и инвесторов уже сегодня</div>
+          <Link
+            href="/register"
+            className="inline-flex items-center justify-center px-12 py-4 rounded-2xl font-semibold bg-white text-black hover:opacity-95 transition"
+          >
+            Начать бесплатно
+          </Link>
+        </div>
       </section>
     </div>
   );

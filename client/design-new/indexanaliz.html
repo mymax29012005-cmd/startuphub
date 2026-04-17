@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Анализатор проекта • StartupHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+
+    /* Siri-style логотип */
+    .logo-dot {
+      position: relative; width: 44px; height: 44px;
+    }
+    .logo-dot::before, .logo-dot::after {
+      content: ''; position: absolute; border-radius: 9999px;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    .logo-dot::before {
+      width: 52px; height: 52px;
+      background: radial-gradient(circle, rgba(124,58,237,0.6) 10%, rgba(225,29,72,0.4) 40%, rgba(0,245,212,0.3) 70%, transparent);
+      animation: siriGlow 6s ease-in-out infinite;
+      filter: blur(8px);
+    }
+    .logo-dot::after {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, #7C3AED, #C026D3, #E11D48, #00F5D4, #22D3EE, #A855F7);
+      background-size: 300% 300%;
+      animation: colorFlow 7.5s ease infinite, siriBreath 4s ease-in-out infinite;
+      box-shadow: 0 0 25px rgba(124,58,237,0.9), inset 0 0 20px rgba(255,255,255,0.4);
+    }
+    @keyframes colorFlow { 0%{background-position:0% 50%} 25%{background-position:100% 30%} 50%{background-position:80% 100%} 75%{background-position:20% 70%} 100%{background-position:0% 50%} }
+    @keyframes siriBreath { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.12)} }
+    @keyframes siriGlow { 0%,100%{opacity:0.75; transform:translate(-50%,-50%) scale(1)} 50%{opacity:1; transform:translate(-50%,-50%) scale(1.15)} }
+
+    .nav-glass { background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(16px); }
+    .card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -10px rgb(124 58 237 / 0.3); }
+    
+    .progress-bar {
+      height: 6px;
+      background: linear-gradient(to right, #7C3AED, #E11D48);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-[#0A0A0F] text-white">
+
+  <!-- Navbar -->
+  <nav class="nav-glass fixed top-0 left-0 right-0 z-50 border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="logo-dot"></div>
+        <span class="heading text-2xl font-semibold tracking-tight">StartupHub</span>
+      </div>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href="index.html" class="hover:text-violet-400">Главная</a>
+        <a href="marketplace.html" class="hover:text-violet-400">Маркетплейс</a>
+        <a href="#" class="text-violet-400 font-semibold">Анализатор</a>
+        <a href="profile.html" class="hover:text-violet-400">Профиль</a>
+      </div>
+      <button class="px-6 py-3 text-sm font-medium rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500">Новый анализ</button>
+    </div>
+  </nav>
+
+  <div class="pt-24 max-w-7xl mx-auto px-6 pb-20">
+    
+    <div class="flex justify-between items-end mb-10">
+      <div>
+        <h1 class="heading text-5xl font-bold tracking-tighter">Анализатор проекта</h1>
+        <p class="text-gray-400 mt-2 text-lg">Получи глубокий AI-анализ твоего стартапа за секунды</p>
+      </div>
+      <div class="text-right">
+        <div class="text-sm text-gray-400">Последний анализ</div>
+        <div class="text-emerald-400 font-medium">12 апреля 2026 • 14:35</div>
+      </div>
+    </div>
+
+    <!-- Основная панель ввода -->
+    <div class="bg-[#12121A] border border-white/10 rounded-3xl p-10 card">
+      <div class="grid md:grid-cols-2 gap-10">
+        
+        <!-- Левая колонка: ввод данных -->
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Название проекта</label>
+          <input type="text" value="SalesAI Pro — ИИ для автоматизации продаж" 
+                 class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:border-violet-500">
+
+          <div class="mt-8">
+            <label class="block text-sm text-gray-400 mb-3">Краткое описание</label>
+            <textarea rows="4" class="w-full bg-[#1A1A24] border border-white/10 rounded-3xl px-6 py-5 focus:outline-none focus:border-violet-500">Платформа на базе ИИ, которая помогает менеджерам по продажам автоматически квалифицировать лиды и готовить персонализированные предложения.</textarea>
+          </div>
+
+          <div class="mt-8 grid grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Отрасль</label>
+              <select class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-4">
+                <option>SaaS / Продажи</option>
+                <option>Fintech</option>
+                <option>AI & Machine Learning</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Стадия</label>
+              <select class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-4">
+                <option>Seed</option>
+                <option>Pre-Seed</option>
+                <option>Series A</option>
+              </select>
+            </div>
+          </div>
+
+          <button onclick="alert('Анализ запущен! (демо)')" 
+                  class="mt-10 w-full py-6 text-xl font-semibold rounded-3xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-rose-500 hover:brightness-110 transition flex items-center justify-center gap-3">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            Запустить глубокий анализ
+          </button>
+        </div>
+
+        <!-- Правая колонка: предпросмотр / результаты (демо) -->
+        <div class="space-y-8">
+          <div class="bg-[#1A1A24] rounded-3xl p-8 border border-white/10">
+            <div class="flex items-center justify-between mb-6">
+              <div class="font-semibold text-lg">Результат анализа</div>
+              <div class="px-5 py-2 bg-emerald-500/20 text-emerald-400 text-sm rounded-2xl">Готовность 92%</div>
+            </div>
+
+            <!-- Общий скоринг -->
+            <div class="mb-8">
+              <div class="flex justify-between text-sm mb-3">
+                <span>Общий потенциал проекта</span>
+                <span class="font-bold text-2xl text-emerald-400">8.7 / 10</span>
+              </div>
+              <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div class="progress-bar w-[87%]"></div>
+              </div>
+            </div>
+
+            <!-- Ключевые метрики -->
+            <div class="grid grid-cols-3 gap-4 text-center">
+              <div class="bg-[#0A0A0F] rounded-2xl p-4">
+                <div class="text-3xl font-bold text-violet-400">92</div>
+                <div class="text-xs text-gray-400 mt-1">Рыночный fit</div>
+              </div>
+              <div class="bg-[#0A0A0F] rounded-2xl p-4">
+                <div class="text-3xl font-bold text-rose-400">78</div>
+                <div class="text-xs text-gray-400 mt-1">Команда</div>
+              </div>
+              <div class="bg-[#0A0A0F] rounded-2xl p-4">
+                <div class="text-3xl font-bold text-amber-400">95</div>
+                <div class="text-xs text-gray-400 mt-1">Технология</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Рекомендации -->
+          <div class="bg-[#12121A] border border-white/10 rounded-3xl p-8">
+            <h3 class="font-semibold mb-5 flex items-center gap-2"><i class="fa-solid fa-lightbulb"></i> Ключевые insights</h3>
+            <ul class="space-y-6 text-sm">
+              <li class="flex gap-4">
+                <span class="text-emerald-400 text-xl">↑</span>
+                <div>Сильный продуктовый рынок (TAM > $2.4 млрд). Рекомендуем фокус на enterprise-сегменте.</div>
+              </li>
+              <li class="flex gap-4">
+                <span class="text-amber-400 text-xl">⚠</span>
+                <div>Конкуренция высокая. Нужно усилить уникальность через proprietary данные.</div>
+              </li>
+              <li class="flex gap-4">
+                <span class="text-violet-400 text-xl">★</span>
+                <div>Потенциал привлечения инвестиций — высокий. Подготовьте pitch deck по шаблону.</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- История предыдущих анализов (внизу) -->
+    <div class="mt-16">
+      <h2 class="text-2xl font-semibold mb-8">История анализов</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="card bg-[#12121A] border border-white/10 rounded-3xl p-6">
+          <div class="text-xs text-gray-400">10 апреля 2026</div>
+          <div class="font-medium mt-2">EcoTrack — трекинг углеродного следа</div>
+          <div class="text-emerald-400 text-sm mt-6">Скоринг: 9.1/10</div>
+        </div>
+        <div class="card bg-[#12121A] border border-white/10 rounded-3xl p-6">
+          <div class="text-xs text-gray-400">5 апреля 2026</div>
+          <div class="font-medium mt-2">NeuralHR — рекрутинг с ИИ</div>
+          <div class="text-amber-400 text-sm mt-6">Скоринг: 7.8/10</div>
+        </div>
+        <div class="card bg-[#12121A] border border-white/10 rounded-3xl p-6">
+          <div class="text-xs text-gray-400">28 марта 2026</div>
+          <div class="font-medium mt-2">SalesAI Pro (текущий)</div>
+          <div class="text-violet-400 text-sm mt-6">Скоринг: 8.7/10 • Активен</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-black py-12 text-center text-gray-500 text-sm">
+    <p>© 2026 StartupHub.ru • Обновлённый интерфейс Анализатора</p>
+  </footer>
+
+</body>
+</html>

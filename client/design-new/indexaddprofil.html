@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация • StartupHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+
+    /* Siri-style логотип */
+    .logo-dot {
+      position: relative; width: 48px; height: 48px;
+    }
+    .logo-dot::before, .logo-dot::after {
+      content: ''; position: absolute; border-radius: 9999px;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    .logo-dot::before {
+      width: 58px; height: 58px;
+      background: radial-gradient(circle, rgba(124,58,237,0.7) 10%, rgba(225,29,72,0.5) 40%, rgba(0,245,212,0.4) 70%, transparent);
+      animation: siriGlow 6s ease-in-out infinite;
+      filter: blur(10px);
+    }
+    .logo-dot::after {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, #7C3AED, #C026D3, #E11D48, #00F5D4, #22D3EE, #A855F7);
+      background-size: 300% 300%;
+      animation: colorFlow 8s ease infinite, siriBreath 4.5s ease-in-out infinite;
+      box-shadow: 0 0 30px rgba(124,58,237,0.9), inset 0 0 25px rgba(255,255,255,0.5);
+    }
+    @keyframes colorFlow { 0%{background-position:0% 50%} 25%{background-position:100% 30%} 50%{background-position:80% 100%} 75%{background-position:20% 70%} 100%{background-position:0% 50%} }
+    @keyframes siriBreath { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.15)} }
+    @keyframes siriGlow { 0%,100%{opacity:0.8; transform:translate(-50%,-50%) scale(1)} 50%{opacity:1; transform:translate(-50%,-50%) scale(1.2)} }
+
+    .step-active { background: linear-gradient(to right, #7C3AED, #E11D48); color: white; }
+  </style>
+</head>
+<body class="bg-[#0A0A0F] text-white min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0A0A0F]/80 backdrop-blur-xl">
+    <div class="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="logo-dot"></div>
+        <span class="heading text-3xl font-semibold tracking-tight">StartupHub</span>
+      </div>
+      <a href="index.html" class="text-gray-400 hover:text-white flex items-center gap-2">
+        ← На главную
+      </a>
+    </div>
+  </nav>
+
+  <div class="max-w-5xl mx-auto px-6 pt-32 pb-20">
+    
+    <!-- Заголовок -->
+    <div class="text-center mb-12">
+      <h1 class="heading text-5xl font-bold tracking-tighter">Давайте познакомимся</h1>
+      <p class="text-gray-400 mt-3 text-xl">Создайте аккаунт и заполните профиль за 2 минуты</p>
+    </div>
+
+    <!-- Прогресс шагов -->
+    <div class="flex justify-center mb-12">
+      <div class="flex gap-8">
+        <div onclick="switchStep(1)" id="step1" class="step-active w-10 h-10 rounded-2xl flex items-center justify-center font-semibold cursor-pointer">1</div>
+        <div onclick="switchStep(2)" id="step2" class="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center font-semibold cursor-pointer transition">2</div>
+      </div>
+    </div>
+
+    <!-- ШАГ 1: Регистрация -->
+    <div id="stepContent1">
+      <div class="max-w-md mx-auto bg-[#12121A] border border-white/10 rounded-3xl p-10">
+        <h2 class="text-2xl font-semibold mb-8 text-center">Создать аккаунт</h2>
+        
+        <div class="space-y-6">
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Email</label>
+            <input type="email" value="ivan@example.com" 
+                   class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500">
+          </div>
+          
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Пароль</label>
+            <input type="password" value="********" 
+                   class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Я</label>
+              <select id="role" class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5">
+                <option value="founder">Основатель стартапа</option>
+                <option value="investor">Инвестор</option>
+                <option value="partner">Партнёр / Ментор</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Страна</label>
+              <select class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5">
+                <option>Россия</option>
+                <option>Казахстан</option>
+                <option>Беларусь</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-4">
+            <button onclick="nextStep()" 
+                    class="w-full py-6 text-xl font-semibold rounded-3xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition">
+              Продолжить
+            </button>
+          </div>
+
+          <p class="text-center text-xs text-gray-500 mt-6">
+            Нажимая кнопку, вы соглашаетесь с <span class="text-violet-400">Условиями</span> и <span class="text-violet-400">Политикой конфиденциальности</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ШАГ 2: Заполнение профиля -->
+    <div id="stepContent2" class="hidden">
+      <div class="max-w-2xl mx-auto bg-[#12121A] border border-white/10 rounded-3xl p-10">
+        <h2 class="text-2xl font-semibold mb-8 text-center">Расскажите о себе</h2>
+
+        <div class="grid md:grid-cols-2 gap-10">
+          
+          <!-- Аватар -->
+          <div class="flex flex-col items-center">
+            <div class="w-40 h-40 bg-gradient-to-br from-violet-500 to-rose-500 rounded-3xl overflow-hidden border-4 border-white/20">
+              <img src="https://picsum.photos/id/64/400/400" alt="Аватар" class="w-full h-full object-cover">
+            </div>
+            <button onclick="alert('Загрузка аватара (демо)')" 
+                    class="mt-6 text-violet-400 hover:text-violet-300 flex items-center gap-2 text-sm font-medium">
+              <i class="fa-solid fa-camera"></i> Загрузить фото
+            </button>
+          </div>
+
+          <!-- Форма данных -->
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Имя и фамилия</label>
+              <input type="text" value="Иван Петров" 
+                     class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm text-gray-400 mb-2">Город</label>
+                <input type="text" value="Москва" 
+                       class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500">
+              </div>
+              <div>
+                <label class="block text-sm text-gray-400 mb-2">Телефон</label>
+                <input type="tel" value="+7 (999) 123-45-67" 
+                       class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Кратко о себе / должность</label>
+              <textarea rows="3" class="w-full bg-[#1A1A24] border border-white/10 rounded-3xl px-6 py-5 focus:outline-none focus:border-violet-500">Основатель AI-стартапа SalesAI Pro. Ищу инвесторов на Seed-раунд.</textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Ссылка на Telegram</label>
+              <input type="text" value="@ivanpetrov_startup" 
+                     class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="flex gap-4 mt-12">
+          <button onclick="prevStep()" 
+                  class="flex-1 py-6 text-lg font-medium rounded-3xl border border-white/30 hover:bg-white/10 transition">
+            Назад
+          </button>
+          <button onclick="finishRegistration()" 
+                  class="flex-1 py-6 text-lg font-semibold rounded-3xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition">
+            Завершить регистрацию
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchStep(step) {
+      document.getElementById('stepContent1').classList.add('hidden');
+      document.getElementById('stepContent2').classList.add('hidden');
+      document.getElementById('step' + step).classList.add('step-active');
+      
+      if (step === 1) {
+        document.getElementById('stepContent1').classList.remove('hidden');
+        document.getElementById('step2').classList.remove('step-active');
+      } else {
+        document.getElementById('stepContent2').classList.remove('hidden');
+        document.getElementById('step1').classList.remove('step-active');
+      }
+    }
+
+    function nextStep() {
+      switchStep(2);
+    }
+
+    function prevStep() {
+      switchStep(1);
+    }
+
+    function finishRegistration() {
+      alert("🎉 Поздравляем! Регистрация успешно завершена.\n\nТеперь вы можете разместить свой проект или начать искать инвесторов.");
+      // В реальном проекте здесь будет редирект на профиль или маркетплейс
+    }
+
+    // Инициализация — начинаем с первого шага
+    window.onload = () => {
+      switchStep(1);
+    };
+  </script>
+
+  <footer class="bg-black py-12 text-center text-gray-500 text-sm">
+    <p>© 2026 StartupHub.ru • Страница регистрации и заполнения профиля</p>
+  </footer>
+</body>
+</html>

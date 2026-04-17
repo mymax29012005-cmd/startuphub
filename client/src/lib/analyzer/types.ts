@@ -15,6 +15,11 @@ export type StartupAnalysisInput = {
   mode: AnalyzerMode;
   stage: StartupStage;
 
+  // Optional presentation fields (not used by the math model, but useful for UI/history)
+  title?: string;
+  description?: string;
+  industryLabel?: string;
+
   // Market & positioning
   marketValidation: number; // 0..100
   competition: CompetitionLevel;

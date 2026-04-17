@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Чаты • StartupHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+
+    /* Siri-style логотип */
+    .logo-dot {
+      position: relative; width: 44px; height: 44px;
+    }
+    .logo-dot::before, .logo-dot::after {
+      content: ''; position: absolute; border-radius: 9999px;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    .logo-dot::before {
+      width: 52px; height: 52px;
+      background: radial-gradient(circle, rgba(124,58,237,0.6) 10%, rgba(225,29,72,0.4) 40%, rgba(0,245,212,0.3) 70%, transparent);
+      animation: siriGlow 6s ease-in-out infinite;
+      filter: blur(8px);
+    }
+    .logo-dot::after {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, #7C3AED, #C026D3, #E11D48, #00F5D4, #22D3EE, #A855F7);
+      background-size: 300% 300%;
+      animation: colorFlow 7.5s ease infinite, siriBreath 4s ease-in-out infinite;
+      box-shadow: 0 0 25px rgba(124,58,237,0.9), inset 0 0 20px rgba(255,255,255,0.4);
+    }
+    @keyframes colorFlow { 0%{background-position:0% 50%} 25%{background-position:100% 30%} 50%{background-position:80% 100%} 75%{background-position:20% 70%} 100%{background-position:0% 50%} }
+    @keyframes siriBreath { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.12)} }
+    @keyframes siriGlow { 0%,100%{opacity:0.75; transform:translate(-50%,-50%) scale(1)} 50%{opacity:1; transform:translate(-50%,-50%) scale(1.15)} }
+
+    .nav-glass { background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(16px); }
+    
+    .chat-sidebar { background: #12121A; }
+    .message-bubble {
+      max-width: 75%;
+      padding: 14px 20px;
+      border-radius: 20px;
+      position: relative;
+    }
+    .my-message {
+      background: linear-gradient(to right, #7C3AED, #E11D48);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .their-message {
+      background: #1F1F2E;
+      border-bottom-left-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-[#0A0A0F] text-white h-screen flex flex-col">
+
+  <!-- Navbar -->
+  <nav class="nav-glass border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="logo-dot"></div>
+        <span class="heading text-2xl font-semibold tracking-tight">StartupHub</span>
+      </div>
+      <div class="flex items-center gap-8 text-sm font-medium">
+        <a href="index.html" class="hover:text-violet-400">Главная</a>
+        <a href="marketplace.html" class="hover:text-violet-400">Маркетплейс</a>
+        <a href="#" class="text-violet-400 font-semibold">Чаты</a>
+        <a href="profile.html" class="hover:text-violet-400">Профиль</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex flex-1 overflow-hidden">
+    
+    <!-- Сайдбар со списком чатов -->
+    <div class="w-96 border-r border-white/10 chat-sidebar flex flex-col">
+      <div class="p-6 border-b border-white/10">
+        <div class="relative">
+          <input type="text" placeholder="Поиск по чатам..." 
+                 class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl py-4 pl-12 text-sm focus:outline-none focus:border-violet-500">
+          <i class="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 space-y-2" id="chatList">
+        <!-- Заполняется через JS -->
+      </div>
+    </div>
+
+    <!-- Основная область чата -->
+    <div class="flex-1 flex flex-col">
+      
+      <!-- Заголовок активного чата -->
+      <div class="border-b border-white/10 px-8 py-5 flex items-center gap-4 bg-[#12121A]">
+        <div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-rose-500 rounded-2xl flex items-center justify-center text-2xl font-bold">А</div>
+        <div>
+          <div class="font-semibold text-lg">Анна Морозова</div>
+          <div class="text-emerald-400 text-sm flex items-center gap-1.5">
+            <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+            онлайн
+          </div>
+        </div>
+        <div class="ml-auto flex items-center gap-6 text-gray-400">
+          <i class="fa-solid fa-phone cursor-pointer hover:text-white"></i>
+          <i class="fa-solid fa-video cursor-pointer hover:text-white"></i>
+          <i class="fa-solid fa-ellipsis-v cursor-pointer hover:text-white"></i>
+        </div>
+      </div>
+
+      <!-- Сообщения -->
+      <div id="chatMessages" class="flex-1 overflow-y-auto p-8 space-y-8 bg-[#0A0A0F]">
+        <!-- Заполняется через JS -->
+      </div>
+
+      <!-- Поле ввода сообщения -->
+      <div class="p-6 border-t border-white/10 bg-[#12121A]">
+        <div class="flex gap-4">
+          <input id="messageInput" 
+                 type="text" 
+                 placeholder="Напишите сообщение..." 
+                 class="flex-1 bg-[#1A1A24] border border-white/10 rounded-3xl px-7 py-5 focus:outline-none focus:border-violet-500 text-base"
+                 onkeypress="if(event.key === 'Enter') sendMessage()">
+          
+          <button onclick="sendMessage()" 
+                  class="w-14 h-14 bg-gradient-to-br from-violet-600 to-rose-500 rounded-3xl flex items-center justify-center hover:scale-110 transition">
+            <i class="fa-solid fa-paper-plane text-xl"></i>
+          </button>
+        </div>
+        <div class="text-center text-[10px] text-gray-500 mt-3">Сообщения защищены end-to-end шифрованием</div>
+      </div>
+    </div>
+
+    <!-- Правая боковая панель (информация о собеседнике) -->
+    <div class="w-80 border-l border-white/10 bg-[#12121A] p-6 hidden lg:block">
+      <div class="text-center">
+        <div class="w-24 h-24 mx-auto bg-gradient-to-br from-violet-500 to-rose-500 rounded-3xl flex items-center justify-center text-5xl font-bold">А</div>
+        <h3 class="mt-5 font-semibold text-xl">Анна Морозова</h3>
+        <p class="text-emerald-400 text-sm">Инвестор • Angel</p>
+      </div>
+
+      <div class="mt-10 space-y-6 text-sm">
+        <div>
+          <div class="text-gray-400 mb-1">Интересы</div>
+          <div class="flex flex-wrap gap-2">
+            <span class="bg-white/10 px-4 py-1.5 rounded-2xl">AI</span>
+            <span class="bg-white/10 px-4 py-1.5 rounded-2xl">SaaS</span>
+            <span class="bg-white/10 px-4 py-1.5 rounded-2xl">Fintech</span>
+          </div>
+        </div>
+        
+        <div>
+          <div class="text-gray-400 mb-2">О собеседнике</div>
+          <p class="text-gray-300 text-sm leading-relaxed">
+            Ангельский инвестор с опытом 11 сделок. Специализируется на ранних стадиях AI и SaaS проектов. 
+            Готова обсуждать инвестиции от 5 до 25 млн ₽.
+          </p>
+        </div>
+      </div>
+
+      <button onclick="alert('Запрос на встречу отправлен!')" 
+              class="mt-12 w-full py-4 border border-violet-500 text-violet-400 rounded-3xl hover:bg-violet-500/10 transition">
+        Запросить встречу
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Пример чатов в сайдбаре
+    const chats = [
+      {id:1, name:"Анна Морозова", last:"Готова обсудить условия...", time:"14:22", unread:2, avatar:"А"},
+      {id:2, name:"Дмитрий Соколов", last:"Когда удобнее созвониться?", time:"11:05", unread:0, avatar:"Д"},
+      {id:3, name:"Фонд «Восход»", last:"Мы рассмотрели вашу заявку", time:"Вчера", unread:1, avatar:"Ф"}
+    ];
+
+    // Пример сообщений
+    const messages = [
+      {type: "their", text: "Здравствуйте, Иван! Посмотрела ваш проект SalesAI Pro. Очень интересно.", time: "14:18"},
+      {type: "my", text: "Добрый день, Анна! Спасибо, что нашли время. Готов ответить на любые вопросы.", time: "14:19"},
+      {type: "their", text: "Какой у вас сейчас MRR и сколько пользователей?", time: "14:20"},
+      {type: "my", text: "MRR — 840 тыс ₽, активных пользователей — 1270. Растём примерно на 28% в месяц.", time: "14:21"}
+    ];
+
+    function renderChatList() {
+      const container = document.getElementById('chatList');
+      container.innerHTML = '';
+      
+      chats.forEach(chat => {
+        const html = `
+          <div onclick="openChat(${chat.id})" class="flex gap-4 p-4 rounded-3xl hover:bg-white/5 cursor-pointer transition">
+            <div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-rose-500 rounded-2xl flex items-center justify-center text-2xl font-bold">${chat.avatar}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between">
+                <div class="font-medium truncate">${chat.name}</div>
+                <div class="text-xs text-gray-400">${chat.time}</div>
+              </div>
+              <div class="text-sm text-gray-400 truncate">${chat.last}</div>
+            </div>
+            ${chat.unread > 0 ? `<div class="w-6 h-6 bg-violet-500 text-white text-xs rounded-full flex items-center justify-center mt-1">${chat.unread}</div>` : ''}
+          </div>`;
+        container.innerHTML += html;
+      });
+    }
+
+    function renderMessages() {
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = '';
+      
+      messages.forEach(msg => {
+        const isMy = msg.type === "my";
+        const bubble = `
+          <div class="flex ${isMy ? 'justify-end' : 'justify-start'}">
+            <div class="${isMy ? 'my-message' : 'their-message'} message-bubble">
+              <div>${msg.text}</div>
+              <div class="text-[10px] mt-2 opacity-70 text-right">${msg.time}</div>
+            </div>
+          </div>`;
+        container.innerHTML += bubble;
+      });
+      
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      if (!input.value.trim()) return;
+      
+      const newMsg = {
+        type: "my",
+        text: input.value,
+        time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+      };
+      
+      messages.push(newMsg);
+      renderMessages();
+      input.value = '';
+    }
+
+    function openChat(id) {
+      alert(`Открыт чат с собеседником #${id} (демо)`);
+      // Здесь в реальном проекте будет смена активного чата
+    }
+
+    // Инициализация
+    window.onload = () => {
+      renderChatList();
+      renderMessages();
+    };
+  </script>
+</body>
+</html>
