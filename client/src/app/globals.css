@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 :root {
+  /* Высота фиксированного хедера (padding + логотип/меню). Синхронно с Header.tsx */
+  --site-header-height: 5.5rem;
+
   --bg0: #070a12;
   --bg1: #050817;
   --bg2: #050615;
@@ -145,6 +148,25 @@ select option {
 
 .section-black {
   background: #050507;
+}
+
+/* Карточки списка (design-new/card.html) */
+.listing-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+.listing-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 30px 60px -15px rgb(124 58 237 / 0.35);
+}
+
+/* Зоны загрузки (design-new/cardcreate.html) */
+.upload-box {
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.upload-box:hover {
+  border-color: rgb(124 58 237);
+  background-color: rgba(124, 58, 237, 0.06);
 }
 
 .progress-bar {

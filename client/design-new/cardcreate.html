@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Создать проект • StartupHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+
+    .logo-dot {
+      position: relative; width: 44px; height: 44px;
+    }
+    .logo-dot::before, .logo-dot::after {
+      content: ''; position: absolute; border-radius: 9999px;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    .logo-dot::before {
+      width: 52px; height: 52px;
+      background: radial-gradient(circle, rgba(124,58,237,0.6) 10%, rgba(225,29,72,0.4) 40%, rgba(0,245,212,0.3) 70%, transparent);
+      animation: siriGlow 6s ease-in-out infinite;
+      filter: blur(8px);
+    }
+    .logo-dot::after {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, #7C3AED, #C026D3, #E11D48, #00F5D4, #22D3EE, #A855F7);
+      background-size: 300% 300%;
+      animation: colorFlow 7.5s ease infinite, siriBreath 4s ease-in-out infinite;
+      box-shadow: 0 0 25px rgba(124,58,237,0.9), inset 0 0 20px rgba(255,255,255,0.4);
+    }
+    @keyframes colorFlow { 0%{background-position:0% 50%} 25%{background-position:100% 30%} 50%{background-position:80% 100%} 75%{background-position:20% 70%} 100%{background-position:0% 50%} }
+    @keyframes siriBreath { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.12)} }
+    @keyframes siriGlow { 0%,100%{opacity:0.75; transform:translate(-50%,-50%) scale(1)} 50%{opacity:1; transform:translate(-50%,-50%) scale(1.15)} }
+
+    .nav-glass { background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(16px); }
+    .upload-box {
+      transition: all 0.3s ease;
+    }
+    .upload-box:hover {
+      border-color: rgb(124 58 237);
+      background-color: rgba(124, 58, 237, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-[#0A0A0F] text-white min-h-screen">
+
+  <nav class="nav-glass fixed top-0 left-0 right-0 z-50 border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="logo-dot"></div>
+        <span class="heading text-2xl font-semibold tracking-tight">StartupHub</span>
+      </div>
+      <a href="#" class="text-gray-400 hover:text-white">← В маркетплейс</a>
+    </div>
+  </nav>
+
+  <div class="max-w-5xl mx-auto px-6 pt-28 pb-20">
+
+    <h1 class="heading text-5xl font-bold text-center tracking-tighter mb-2">Создать проект</h1>
+    <p class="text-center text-gray-400 text-lg mb-12">Все поля после "Основной информации" — опциональные</p>
+
+    <div class="bg-[#12121A] border border-white/10 rounded-3xl p-10 space-y-16">
+
+      <!-- 1. Основная информация -->
+      <div>
+        <h2 class="text-2xl font-semibold mb-8 flex items-center gap-3">
+          <span class="text-violet-400">1</span> Основная информация
+        </h2>
+        <div class="space-y-8">
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Название проекта</label>
+            <input type="text" value="SalesAI Pro" class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-7 py-6 text-lg focus:outline-none focus:border-violet-500">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Короткое описание</label>
+            <input type="text" value="ИИ-платформа для автоматизации продаж" class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-7 py-6 focus:outline-none focus:border-violet-500">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Полное описание</label>
+            <textarea rows="5" class="w-full bg-[#1A1A24] border border-white/10 rounded-3xl px-7 py-6 focus:outline-none focus:border-violet-500"></textarea>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Отрасль</label>
+              <select class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-7 py-6">
+                <option>SaaS</option>
+                <option>AI & Machine Learning</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Стадия проекта</label>
+              <select class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-7 py-6">
+                <option>Seed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Инвестиционные условия -->
+      <div>
+        <h2 class="text-2xl font-semibold mb-8 flex items-center gap-3">
+          <span class="text-rose-400">2</span> Инвестиционные условия
+        </h2>
+        <div class="grid md:grid-cols-2 gap-8">
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Сумма, которую хотите привлечь</label>
+            <div class="flex">
+              <input type="text" value="12 000 000" class="flex-1 bg-[#1A1A24] border border-white/10 rounded-l-2xl px-7 py-6 focus:outline-none focus:border-violet-500">
+              <span class="bg-[#1A1A24] border border-l-0 border-white/10 rounded-r-2xl px-6 py-6 text-gray-400">₽</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Оценка компании (pre-money)</label>
+            <div class="flex">
+              <input type="text" value="95 000 000" class="flex-1 bg-[#1A1A24] border border-white/10 rounded-l-2xl px-7 py-6 focus:outline-none focus:border-violet-500">
+              <span class="bg-[#1A1A24] border border-l-0 border-white/10 rounded-r-2xl px-6 py-6 text-gray-400">₽</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8">
+          <label class="block text-sm text-gray-400 mb-3">Какую долю компании готовы отдать?</label>
+          <input type="range" min="5" max="40" value="18" class="w-full accent-rose-500">
+          <div class="flex justify-between text-sm mt-2 font-medium">
+            <span>5%</span>
+            <span class="text-rose-400">18%</span>
+            <span>40%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Ключевые показатели -->
+      <div>
+        <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+          <span class="text-emerald-400">3</span> Ключевые показатели эффективности <span class="text-xs text-gray-500 font-normal">(опционально)</span>
+        </h2>
+        <div class="grid md:grid-cols-3 gap-6">
+          <div>
+            <input type="text" placeholder="2.8×" class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5">
+            <input type="text" placeholder="Рост эффективности продаж" class="w-full mt-3 bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 text-sm">
+          </div>
+          <div>
+            <input type="text" placeholder="68%" class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5">
+            <input type="text" placeholder="Сокращение времени на обработку лида" class="w-full mt-3 bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 text-sm">
+          </div>
+          <div>
+            <input type="text" placeholder="1270" class="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5">
+            <input type="text" placeholder="Активных пользователей" class="w-full mt-3 bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 text-sm">
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Что уже сделано -->
+      <div>
+        <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+          <span class="text-emerald-400">4</span> Что уже сделано <span class="text-xs text-gray-500 font-normal">(опционально)</span>
+        </h2>
+        <textarea rows="5" placeholder="MVP запущен, 1270 пользователей, MRR 840 тыс ₽, интеграции с amoCRM и т.д." 
+                  class="w-full bg-[#1A1A24] border border-white/10 rounded-3xl px-7 py-6"></textarea>
+      </div>
+
+      <!-- 5. Команда -->
+      <div>
+        <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+          <span class="text-violet-400">5</span> Команда <span class="text-xs text-gray-500 font-normal">(опционально)</span>
+        </h2>
+        <div id="teamContainer" class="space-y-6"></div>
+        <button onclick="addTeamMember()" 
+                class="mt-4 px-6 py-3 border border-white/30 rounded-2xl hover:bg-white/10 flex items-center gap-2">
+          <i class="fa-solid fa-plus"></i> Добавить члена команды
+        </button>
+      </div>
+
+      <!-- 6. Материалы проекта (новый блок) -->
+      <div>
+        <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+          <span class="text-amber-400">6</span> Материалы проекта <span class="text-xs text-gray-500 font-normal">(опционально)</span>
+        </h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div onclick="alert('Загрузка Pitch Deck (демо)')" 
+               class="upload-box border-2 border-dashed border-white/30 rounded-3xl p-10 text-center cursor-pointer hover:border-violet-500">
+            <i class="fa-solid fa-file-pdf text-6xl text-red-400 mb-4"></i>
+            <p class="font-medium">Pitch Deck (PDF)</p>
+            <p class="text-xs text-gray-500 mt-1">Перетащите файл или нажмите</p>
+          </div>
+          
+          <div onclick="alert('Загрузка Финансовой модели (демо)')" 
+               class="upload-box border-2 border-dashed border-white/30 rounded-3xl p-10 text-center cursor-pointer hover:border-violet-500">
+            <i class="fa-solid fa-file-excel text-6xl text-green-400 mb-4"></i>
+            <p class="font-medium">Финансовая модель (Excel)</p>
+            <p class="text-xs text-gray-500 mt-1">Перетащите файл или нажмите</p>
+          </div>
+          
+          <div onclick="alert('Загрузка Видео-питча (демо)')" 
+               class="upload-box border-2 border-dashed border-white/30 rounded-3xl p-10 text-center cursor-pointer hover:border-violet-500">
+            <i class="fa-solid fa-video text-6xl text-blue-400 mb-4"></i>
+            <p class="font-medium">Видео-питч</p>
+            <p class="text-xs text-gray-500 mt-1">Ссылка на YouTube / Vimeo или файл</p>
+          </div>
+          
+          <div onclick="alert('Загрузка других материалов (демо)')" 
+               class="upload-box border-2 border-dashed border-white/30 rounded-3xl p-10 text-center cursor-pointer hover:border-violet-500">
+            <i class="fa-solid fa-file text-6xl text-gray-400 mb-4"></i>
+            <p class="font-medium">Другие материалы</p>
+            <p class="text-xs text-gray-500 mt-1">One-pager, презентации, фото и т.д.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Кнопка публикации -->
+      <div class="pt-10 border-t border-white/10">
+        <button onclick="publishProject()" 
+                class="w-full py-7 text-xl font-semibold rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 transition">
+          Опубликовать проект
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function addTeamMember() {
+      const container = document.getElementById('teamContainer');
+      const div = document.createElement('div');
+      div.className = "grid md:grid-cols-2 gap-6 p-6 bg-[#1A1A24] rounded-3xl";
+      div.innerHTML = `
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Имя и фамилия</label>
+          <input type="text" placeholder="Иван Петров" class="w-full bg-[#0A0A0F] border border-white/10 rounded-2xl px-6 py-5">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Должность / роль</label>
+          <input type="text" placeholder="Founder & CEO" class="w-full bg-[#0A0A0F] border border-white/10 rounded-2xl px-6 py-5">
+        </div>
+      `;
+      container.appendChild(div);
+    }
+
+    function publishProject() {
+      alert("✅ Проект успешно опубликован!\n\nВсе введённые данные (включая инвестиционные условия, метрики, команду и материалы) будут отображены в детальной карточке проекта.");
+    }
+
+    // Добавляем одного члена команды по умолчанию
+    window.onload = () => {
+      addTeamMember();
+    };
+  </script>
+</body>
+</html>

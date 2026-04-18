@@ -81,7 +81,7 @@ export default function InvestorDetailPage({
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/investors" className="text-[var(--accent)] hover:text-white text-sm font-medium">
+        <Link href="/marketplace?tab=investors" className="text-[var(--accent)] hover:text-white text-sm font-medium">
           ← Назад к запросам инвестиций
         </Link>
         <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function InvestorDetailPage({
           {me && item && (me.role === "admin" || me.id === item.author.id) ? (
             <DeleteResourceButton
               apiUrl={`/api/v1/investors/${id}`}
-              onDeleted={() => router.push("/investors")}
+              onDeleted={() => router.push("/marketplace?tab=investors")}
             />
           ) : null}
         </div>

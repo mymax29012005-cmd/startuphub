@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev --name init",
     "seed": "ts-node --transpile-only -P tsconfig.json prisma/seed.ts"

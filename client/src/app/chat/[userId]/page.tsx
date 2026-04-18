@@ -237,7 +237,7 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
         <nav className="bg-[rgba(10,10,15,0.95)] backdrop-blur-md border-b border-white/10">
           <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
             <Link href="/" className="inline-flex items-center gap-3 min-w-0">
-              <span className="logo-dot inline-block h-11 w-11 rounded-full shrink-0" />
+              <span className="logo-dot inline-block h-4 w-4 shrink-0 rounded-full" />
               <span className="text-2xl font-semibold tracking-tight truncate">StartupHub</span>
             </Link>
           </div>
@@ -260,7 +260,7 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
         <nav className="bg-[rgba(10,10,15,0.95)] backdrop-blur-md border-b border-white/10">
           <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
             <Link href="/" className="inline-flex items-center gap-3 min-w-0">
-              <span className="logo-dot inline-block h-11 w-11 rounded-full shrink-0" />
+              <span className="logo-dot inline-block h-4 w-4 shrink-0 rounded-full" />
               <span className="text-2xl font-semibold tracking-tight truncate">StartupHub</span>
             </Link>
           </div>
@@ -284,7 +284,7 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
       <nav className="bg-[rgba(10,10,15,0.95)] backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-3 min-w-0">
-            <span className="logo-dot inline-block h-11 w-11 rounded-full shrink-0" />
+            <span className="logo-dot inline-block h-4 w-4 shrink-0 rounded-full" />
             <span className="text-2xl font-semibold tracking-tight truncate">StartupHub</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">

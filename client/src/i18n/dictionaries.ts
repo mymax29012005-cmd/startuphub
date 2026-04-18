@@ -7,6 +7,7 @@ const dictionaries: Record<Lang, any> = {
     nav: {
       home: "Главная",
       marketplace: "Маркетплейс",
+      auctions: "Аукционы",
       startups: "Стартапы",
       ideas: "Идеи",
       auction: "Аукцион",
@@ -350,6 +351,7 @@ const dictionaries: Record<Lang, any> = {
     nav: {
       home: "Home",
       marketplace: "Marketplace",
+      auctions: "Auctions",
       startups: "Startups",
       ideas: "Ideas",
       auction: "Auction",
@@ -655,6 +657,7 @@ const dictionaries: Record<Lang, any> = {
     nav: {
       home: "首页",
       marketplace: "市场",
+      auctions: "拍卖",
       startups: "初创公司",
       ideas: "创意",
       auction: "拍卖",

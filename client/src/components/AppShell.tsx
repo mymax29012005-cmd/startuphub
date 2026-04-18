@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       {hideHeader ? null : <Header />}
-      <main className="flex-1">{children}</main>
+      <main className={hideHeader ? "flex-1" : "flex-1 pt-[var(--site-header-height)]"}>{children}</main>
       {hideFooter ? null : <Footer />}
     </div>
   );

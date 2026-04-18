@@ -80,7 +80,7 @@ export default function PartnerDetailPage({
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/partners" className="text-[var(--accent)] hover:text-white text-sm font-medium">
+        <Link href="/marketplace?tab=partners" className="text-[var(--accent)] hover:text-white text-sm font-medium">
           ← Назад к запросам партнёров
         </Link>
         <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ export default function PartnerDetailPage({
           {me && item && (me.role === "admin" || me.id === item.author.id) ? (
             <DeleteResourceButton
               apiUrl={`/api/v1/partners/${id}`}
-              onDeleted={() => router.push("/partners")}
+              onDeleted={() => router.push("/marketplace?tab=partners")}
             />
           ) : null}
         </div>

@@ -86,11 +86,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stats?.startupsCount, stats?.ideasCount, stats?.activeAuctions]);
 
-  function scrollToAuctions() {
-    const el = document.getElementById("active-auctions");
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
   function fmtMoney(v: number) {
     return Number(v || 0).toLocaleString("ru-RU");
   }
@@ -140,33 +135,45 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <section className="hero-bg">
-        <div className="relative mx-auto max-w-6xl px-4 py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-5xl lg:text-6xl font-bold leading-tight text-white">
+      <section className="hero-bg relative flex min-h-[calc(100dvh-var(--site-header-height))] flex-col justify-center overflow-hidden">
+        <div className="relative mx-auto w-full max-w-7xl px-6 py-10 md:py-14">
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+            <div className="space-y-6 md:space-y-8">
+              {!loading ? (
+                stats && stats.activeAuctions > 0 ? (
+                  <div className="inline-flex items-center gap-2 rounded-3xl border border-white/10 bg-white/10 px-5 py-2 text-sm backdrop-blur-md">
+                    <span className="text-emerald-400">●</span>
+                    Уже {stats.activeAuctions} активных аукционов
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-3xl border border-white/10 bg-white/10 px-5 py-2 text-sm text-white/80 backdrop-blur-md">
+                    <span className="text-white/40">●</span>
+                    Аукционы — в разделе «Аукционы»
+                  </div>
+                )
+              ) : null}
+              <h1 className="text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl lg:text-7xl lg:leading-[1.05]">
                 Запусти стартап.
                 <span className="gradient-text block">Найди инвестиции.</span>
                 Продай долю.
               </h1>
-              <p className="mt-6 text-xl text-white/80 leading-relaxed">
+              <p className="max-w-xl text-lg leading-relaxed text-white/80 md:text-xl">
                 Платформа для стартаперов, инвесторов и покупателей бизнеса. Находи идеи, финансирование и партнёров в одном
                 месте.
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
                 <Link
                   href="/add-startup"
-                  className="inline-flex items-center justify-center px-8 py-4 rounded-full font-semibold text-white bg-gradient-to-r from-[#7c3aed] to-[#e11d48] hover:opacity-90 transition"
+                  className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#7c3aed] to-[#e11d48] px-8 py-4 text-center font-semibold text-white transition hover:opacity-90 md:px-10 md:py-5 md:text-lg"
                 >
                   Разместить проект
                 </Link>
-                <button
-                  type="button"
-                  onClick={scrollToAuctions}
-                  className="inline-flex items-center justify-center px-8 py-4 rounded-full font-semibold text-white border-2 border-[#7c3aed] hover:bg-[#7c3aed]/15 transition"
+                <Link
+                  href="/auction"
+                  className="inline-flex items-center justify-center rounded-full border-2 border-[#7c3aed] px-8 py-4 text-center font-semibold text-white transition hover:bg-[#7c3aed]/15 md:px-10 md:py-5 md:text-lg"
                 >
                   Смотреть аукционы
-                </button>
+                </Link>
               </div>
             </div>
 

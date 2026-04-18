@@ -161,7 +161,7 @@ export default function IdeaDetailPage({
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/ideas" className="text-[var(--accent)] hover:text-white text-sm font-medium">
+        <Link href="/marketplace?tab=ideas" className="text-[var(--accent)] hover:text-white text-sm font-medium">
           ← Назад к идеям
         </Link>
         <div className="flex items-center gap-2">
@@ -175,7 +175,7 @@ export default function IdeaDetailPage({
           {me && idea && (me.role === "admin" || me.id === idea.owner.id) ? (
             <DeleteResourceButton
               apiUrl={`/api/v1/ideas/${id}`}
-              onDeleted={() => router.push("/ideas")}
+              onDeleted={() => router.push("/marketplace?tab=ideas")}
             />
           ) : null}
           {me ? (

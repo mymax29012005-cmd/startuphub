@@ -47,7 +47,7 @@ export default function AddPartnerPage() {
         setError((data?.error as string) ?? "Ошибка при создании");
         return;
       }
-      router.push("/partners");
+      router.push("/marketplace?tab=partners");
     } catch {
       setError("Сетевая ошибка");
     } finally {

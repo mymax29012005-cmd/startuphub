@@ -4,7 +4,6 @@ import React, { use as useReact, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DeleteResourceButton } from "@/components/DeleteResourceButton";
@@ -166,10 +165,16 @@ export default function StartupDetailPage({
     );
   }, [startup]);
 
+  function heroGradient(cat: string) {
+    const c = (cat || "").toLowerCase();
+    if (c.includes("ai") || c.includes("ии")) return "from-violet-600 via-fuchsia-600 to-rose-500";
+    return "from-violet-600 via-fuchsia-600 to-rose-500";
+  }
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/startups" className="text-[var(--accent)] hover:text-white text-sm font-medium">
+        <Link href="/marketplace?tab=startups" className="text-[var(--accent)] hover:text-white text-sm font-medium">
           ← Назад к стартапам
         </Link>
         <div className="flex items-center gap-2">
@@ -201,7 +206,7 @@ export default function StartupDetailPage({
           {me && startup && (me.role === "admin" || me.id === startup.owner.id) ? (
             <DeleteResourceButton
               apiUrl={`/api/v1/startups/${id}`}
-              onDeleted={() => router.push("/startups")}
+              onDeleted={() => router.push("/marketplace?tab=startups")}
             />
           ) : null}
           {me ? (
@@ -361,31 +366,48 @@ export default function StartupDetailPage({
       ) : !startup ? (
         <div className="text-[rgba(234,240,255,0.72)]">Стартап не найден.</div>
       ) : (
-        <Card className="p-6 md:p-10">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge>{startup.category}</Badge>
-                {startup.auction ? <Badge>Аукцион</Badge> : null}
+        <div>
+          <div
+            className={`relative mb-12 h-[min(460px,70vh)] overflow-hidden rounded-3xl bg-gradient-to-br ${heroGradient(startup.category)}`}
+          >
+            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute bottom-0 left-0 right-0 p-8 md:p-14">
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <span className="rounded-3xl bg-white/20 px-5 py-2 text-sm font-medium text-white backdrop-blur-md">
+                  {startup.category}
+                </span>
+                <span className="rounded-3xl bg-emerald-500/80 px-5 py-2 text-sm font-medium text-white backdrop-blur-md">
+                  {stageLabelsByLang[lang]?.[startup.stage] ?? startup.stage}
+                </span>
+                {startup.auction ? (
+                  <span className="rounded-3xl bg-rose-500/80 px-5 py-2 text-sm font-medium text-white backdrop-blur-md">
+                    Аукцион
+                  </span>
+                ) : null}
               </div>
-              <h1 className="mt-3 text-3xl font-semibold text-white leading-tight">{startup.title}</h1>
-              <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)]">
-                {formatLabelsByLang[lang]?.[startup.format] ?? startup.format} ·{" "}
-                {stageLabelsByLang[lang]?.[startup.stage] ?? startup.stage}
-                {" · "}
-                {startup.isOnline ? formatLabelsByLang[lang]?.online : formatLabelsByLang[lang]?.offline}
-              </div>
+              <h1 className="text-4xl font-bold leading-none tracking-tighter text-white md:text-6xl">{startup.title}</h1>
+              <p className="mt-4 max-w-2xl text-lg text-white/90 md:text-2xl">
+                {startup.description.length > 160 ? `${startup.description.slice(0, 160)}…` : startup.description}
+              </p>
             </div>
-            <div className="text-right">
-              <div className="text-xs text-[rgba(234,240,255,0.72)]">Цена</div>
-              <div className="text-2xl font-semibold text-white">{startup.price.toLocaleString("ru-RU")} ₽</div>
+            <div className="absolute right-6 top-6 rounded-3xl bg-black/70 px-6 py-4 text-center backdrop-blur-xl md:right-10 md:top-10">
+              <div className="text-sm font-medium text-emerald-400">
+                {startup.isOnline ? "Онлайн" : "Офлайн"} · {formatLabelsByLang[lang]?.[startup.format] ?? startup.format}
+              </div>
+              <div className="mt-2 text-3xl font-semibold text-white">{startup.price.toLocaleString("ru-RU")} ₽</div>
+              <div className="text-xs text-gray-400">цель привлечения</div>
             </div>
           </div>
 
-          <div className="mt-6">{ownerBlock}</div>
+          <div className="grid gap-10 lg:grid-cols-12">
+            <div className="space-y-12 lg:col-span-8">
+              <div>
+                <h2 className="mb-6 text-3xl font-semibold text-white">О проекте</h2>
+                <p className="text-lg leading-relaxed text-gray-300">{startup.description}</p>
+              </div>
 
           {startup.analysis ? (
-            <div className="mt-6 rounded-3xl border border-[rgba(175,110,255,0.25)] bg-[rgba(175,110,255,0.07)] p-5">
+            <div className="rounded-3xl border border-[rgba(175,110,255,0.25)] bg-[rgba(175,110,255,0.07)] p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-sm font-semibold text-white">Отчёт анализатора</div>
@@ -521,7 +543,7 @@ export default function StartupDetailPage({
           ) : null}
 
           {startup.auction ? (
-            <div className="mt-6 rounded-3xl border border-[rgba(110,168,255,0.25)] bg-[rgba(110,168,255,0.08)] p-5">
+            <div className="rounded-3xl border border-[rgba(110,168,255,0.25)] bg-[rgba(110,168,255,0.08)] p-5">
               <div className="text-sm font-semibold text-white">Аукцион</div>
               <div className="mt-2 text-[rgba(234,240,255,0.72)]">
                 Текущая цена:{" "}
@@ -536,30 +558,84 @@ export default function StartupDetailPage({
             </div>
           ) : null}
 
-          {startup.attachments && startup.attachments.length ? (
-            <div className="mt-6">
-              <div className="text-sm font-semibold text-white">Файлы</div>
-              <div className="mt-3 grid grid-cols-1 gap-2">
-                {startup.attachments.map((a) => (
+          {(startup.attachments && startup.attachments.length > 0) || startup.analysis ? (
+            <div>
+              <h2 className="mb-6 text-3xl font-semibold text-white">Материалы</h2>
+              <div className="grid gap-4 md:grid-cols-2">
+                {startup.attachments?.map((a) => (
                   <a
                     key={a.id}
                     href={a.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)] hover:border-[rgba(110,168,255,0.35)] transition text-sm text-white/90"
+                    className="upload-box flex min-h-[120px] flex-col justify-center rounded-2xl border border-dashed border-[rgba(255,255,255,0.18)] bg-[#1A1A24] p-5 text-white transition hover:border-[rgba(110,168,255,0.45)]"
                   >
-                    {a.filename}
+                    <div className="text-xs uppercase tracking-wide text-[rgba(234,240,255,0.55)]">Файл</div>
+                    <div className="mt-2 text-sm font-semibold text-white/95">{a.filename}</div>
+                    <div className="mt-2 text-xs text-[var(--accent)]">Скачать →</div>
                   </a>
                 ))}
+                {startup.analysis ? (
+                  <button
+                    type="button"
+                    onClick={() => setAnalysisExpanded(true)}
+                    className="upload-box flex min-h-[120px] flex-col justify-center rounded-2xl border border-dashed border-[rgba(175,110,255,0.35)] bg-[#1A1A24] p-5 text-left text-white transition hover:border-[rgba(175,110,255,0.55)]"
+                  >
+                    <div className="text-xs uppercase tracking-wide text-[rgba(234,240,255,0.55)]">Отчёт анализатора</div>
+                    <div className="mt-2 text-sm font-semibold text-white/95">
+                      {startup.analysis.result?.successProbability != null
+                        ? `Вероятность успеха: ${Math.round(Number(startup.analysis.result.successProbability) * 100)}%`
+                        : "Результат анализа"}
+                    </div>
+                    <div className="mt-1 text-xs text-[rgba(234,240,255,0.72)]">
+                      {new Date(startup.analysis.createdAt).toLocaleString("ru-RU")}
+                    </div>
+                    <div className="mt-2 text-xs text-[var(--accent)]">Развернуть отчёт ↑</div>
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : null}
+            </div>
 
-          <div className="mt-6">
-            <div className="text-sm font-semibold text-white">Описание</div>
-            <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">{startup.description}</div>
+            <aside className="lg:col-span-4">
+              <div className="sticky top-[calc(var(--site-header-height)+1.5rem)] rounded-3xl border border-[rgba(255,255,255,0.10)] bg-[#12121A] p-8">
+                <div className="text-xs font-medium uppercase tracking-wide text-[rgba(234,240,255,0.55)]">Инвестиции</div>
+                <div className="mt-2 text-4xl font-semibold text-white">{startup.price.toLocaleString("ru-RU")} ₽</div>
+                <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)]">цель привлечения</div>
+                <div className="mt-6 space-y-2 border-t border-white/10 pt-6 text-sm text-[rgba(234,240,255,0.85)]">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-[rgba(234,240,255,0.55)]">Стадия</span>
+                    <span className="font-medium text-white">{stageLabelsByLang[lang]?.[startup.stage] ?? startup.stage}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-[rgba(234,240,255,0.55)]">Формат</span>
+                    <span className="font-medium text-white">{formatLabelsByLang[lang]?.[startup.format] ?? startup.format}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-[rgba(234,240,255,0.55)]">Локация</span>
+                    <span className="font-medium text-white">
+                      {startup.isOnline ? formatLabelsByLang[lang]?.online : formatLabelsByLang[lang]?.offline}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-6 border-t border-white/10 pt-6">
+                  <div className="text-xs font-medium uppercase tracking-wide text-[rgba(234,240,255,0.55)]">Основатель</div>
+                  <div className="mt-3">{ownerBlock}</div>
+                </div>
+                <Link
+                  href={`/users/${startup.owner.id}`}
+                  className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-sm font-semibold text-white transition hover:opacity-95"
+                >
+                  Связаться
+                </Link>
+                <Link href="/startup-analyzer" className="mt-3 block text-center text-sm text-[var(--accent)] hover:text-white">
+                  Открыть анализатор
+                </Link>
+              </div>
+            </aside>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

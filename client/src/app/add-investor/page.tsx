@@ -51,7 +51,7 @@ export default function AddInvestorPage() {
         setError((data?.error as string) ?? "Ошибка при создании");
         return;
       }
-      router.push("/investors");
+      router.push("/marketplace?tab=investors");
     } catch {
       setError("Сетевая ошибка");
     } finally {

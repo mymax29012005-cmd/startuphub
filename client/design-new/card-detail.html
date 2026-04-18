@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SalesAI Pro — Детали проекта • StartupHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+
+    .logo-dot {
+      position: relative; width: 44px; height: 44px;
+    }
+    .logo-dot::before, .logo-dot::after {
+      content: ''; position: absolute; border-radius: 9999px;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    .logo-dot::before {
+      width: 52px; height: 52px;
+      background: radial-gradient(circle, rgba(124,58,237,0.6) 10%, rgba(225,29,72,0.4) 40%, rgba(0,245,212,0.3) 70%, transparent);
+      animation: siriGlow 6s ease-in-out infinite;
+      filter: blur(8px);
+    }
+    .logo-dot::after {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, #7C3AED, #C026D3, #E11D48, #00F5D4, #22D3EE, #A855F7);
+      background-size: 300% 300%;
+      animation: colorFlow 7.5s ease infinite, siriBreath 4s ease-in-out infinite;
+      box-shadow: 0 0 25px rgba(124,58,237,0.9), inset 0 0 20px rgba(255,255,255,0.4);
+    }
+    @keyframes colorFlow { 0%{background-position:0% 50%} 25%{background-position:100% 30%} 50%{background-position:80% 100%} 75%{background-position:20% 70%} 100%{background-position:0% 50%} }
+    @keyframes siriBreath { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.12)} }
+    @keyframes siriGlow { 0%,100%{opacity:0.75; transform:translate(-50%,-50%) scale(1)} 50%{opacity:1; transform:translate(-50%,-50%) scale(1.15)} }
+
+    .nav-glass { background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(16px); }
+  </style>
+</head>
+<body class="bg-[#0A0A0F] text-white">
+
+  <!-- Navbar -->
+  <nav class="nav-glass fixed top-0 left-0 right-0 z-50 border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="logo-dot"></div>
+        <span class="heading text-2xl font-semibold tracking-tight">StartupHub</span>
+      </div>
+      <button onclick="alert('Вернулись в маркетплейс (демо)')" 
+              class="flex items-center gap-2 text-sm font-medium">
+        ← Назад в маркетплейс
+      </button>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-6 pt-28 pb-20">
+
+    <!-- Главная обложка -->
+    <div class="h-96 md:h-[460px] bg-gradient-to-br from-violet-600 via-fuchsia-600 to-rose-500 rounded-3xl relative overflow-hidden mb-12">
+      <div class="absolute inset-0 bg-black/30"></div>
+      <div class="absolute bottom-0 left-0 right-0 p-10 md:p-16">
+        <div class="flex flex-wrap items-center gap-4 mb-4">
+          <span class="px-6 py-2 bg-white/20 backdrop-blur-md rounded-3xl text-sm font-medium">AI • SaaS</span>
+          <span class="px-6 py-2 bg-emerald-500/80 backdrop-blur-md rounded-3xl text-sm font-medium">Seed раунд</span>
+        </div>
+        <h1 class="heading text-5xl md:text-6xl font-bold leading-none tracking-tighter">SalesAI Pro</h1>
+        <p class="text-xl md:text-2xl text-white/90 mt-4 max-w-2xl">
+          ИИ-платформа, которая увеличивает эффективность менеджеров по продажам в 2.8 раза
+        </p>
+      </div>
+      
+      <!-- Статус и таймер -->
+      <div class="absolute top-8 right-8 bg-black/70 backdrop-blur-xl px-8 py-4 rounded-3xl text-center">
+        <div class="text-emerald-400 text-sm font-medium">Активный проект</div>
+        <div class="text-3xl font-semibold mt-1">12 млн ₽</div>
+        <div class="text-xs text-gray-400">нужно привлечь</div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-10">
+      
+      <!-- Основная информация (левая колонка) -->
+      <div class="lg:col-span-8 space-y-12">
+
+        <!-- О проекте -->
+        <div>
+          <h2 class="text-3xl font-semibold mb-6">О проекте</h2>
+          <p class="text-gray-300 leading-relaxed text-lg">
+            SalesAI Pro — это современная ИИ-платформа, которая помогает компаниям автоматизировать процесс продаж. 
+            Система автоматически квалифицирует лиды, готовит персонализированные предложения, прогнозирует вероятность закрытия сделки и даёт рекомендации менеджерам в реальном времени.
+          </p>
+          <div class="mt-8 grid md:grid-cols-3 gap-6">
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="text-emerald-400 text-4xl font-bold">2.8×</div>
+              <div class="text-sm text-gray-400 mt-2">Рост эффективности продаж</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="text-violet-400 text-4xl font-bold">68%</div>
+              <div class="text-sm text-gray-400 mt-2">Сокращение времени на обработку лида</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="text-amber-400 text-4xl font-bold">1270</div>
+              <div class="text-sm text-gray-400 mt-2">Активных пользователей</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Что мы уже сделали -->
+        <div>
+          <h2 class="text-3xl font-semibold mb-6">Что уже сделано</h2>
+          <ul class="space-y-4 text-gray-300">
+            <li class="flex gap-4"><span class="text-emerald-400">✓</span> MVP запущен в декабре 2025</li>
+            <li class="flex gap-4"><span class="text-emerald-400">✓</span> 1270 активных пользователей</li>
+            <li class="flex gap-4"><span class="text-emerald-400">✓</span> MRR: 840 000 ₽</li>
+            <li class="flex gap-4"><span class="text-emerald-400">✓</span> Интеграция с amoCRM, Bitrix24 и Telegram</li>
+          </ul>
+        </div>
+
+        <!-- Команда -->
+        <div>
+          <h2 class="text-3xl font-semibold mb-6">Команда</h2>
+          <div class="grid md:grid-cols-3 gap-6">
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="font-medium">Иван Петров</div>
+              <div class="text-sm text-gray-400">Founder &amp; CEO</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="font-medium">Мария Сидорова</div>
+              <div class="text-sm text-gray-400">CTO • ML Engineer</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="font-medium">Алексей Ковалёв</div>
+              <div class="text-sm text-gray-400">Head of Sales</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Правая колонка: Инвестиционная информация -->
+      <div class="lg:col-span-4">
+        <div class="bg-[#12121A] border border-white/10 rounded-3xl p-8 sticky top-28">
+          <h3 class="text-2xl font-semibold mb-8">Инвестиционные условия</h3>
+          
+          <div class="space-y-8">
+            <div>
+              <div class="text-sm text-gray-400">Стадия</div>
+              <div class="font-semibold text-xl">Seed</div>
+            </div>
+            
+            <div>
+              <div class="text-sm text-gray-400">Оценка компании (pre-money)</div>
+              <div class="font-semibold text-xl">95 млн ₽</div>
+            </div>
+            
+            <div>
+              <div class="text-sm text-gray-400">Минимальная инвестиция</div>
+              <div class="font-semibold text-xl">3 млн ₽</div>
+            </div>
+            
+            <div>
+              <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full w-[68%] bg-gradient-to-r from-violet-500 to-rose-500"></div>
+              </div>
+              <div class="flex justify-between text-xs mt-2">
+                <span class="text-emerald-400">Собрано: 8.2 млн ₽</span>
+                <span>из 12 млн ₽</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-10 space-y-4">
+            <button onclick="alert('Запрос на встречу отправлен! (демо)')" 
+                    class="w-full py-6 bg-gradient-to-r from-violet-600 to-rose-500 rounded-3xl font-semibold text-lg hover:brightness-110 transition">
+              Связаться с основателем
+            </button>
+            
+            <button onclick="alert('Вы добавили проект в избранное (демо)')" 
+                    class="w-full py-6 border border-white/30 hover:bg-white/10 rounded-3xl font-medium transition">
+              Добавить в избранное
+            </button>
+          </div>
+
+          <div class="text-center text-xs text-gray-500 mt-8">
+            Проект проверен модерацией • 12 апреля 2026
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Нижняя секция: Документы и материалы -->
+    <div class="mt-20 bg-[#12121A] border border-white/10 rounded-3xl p-10">
+      <h2 class="text-3xl font-semibold mb-8">Материалы проекта</h2>
+      <div class="grid md:grid-cols-4 gap-6">
+        <div class="bg-[#1A1A24] p-6 rounded-3xl hover:bg-[#252532] transition cursor-pointer">
+          <i class="fa-solid fa-file-pdf text-4xl text-red-400 mb-4"></i>
+          <div class="font-medium">Pitch Deck</div>
+          <div class="text-xs text-gray-400">18 слайдов • PDF</div>
+        </div>
+        <div class="bg-[#1A1A24] p-6 rounded-3xl hover:bg-[#252532] transition cursor-pointer">
+          <i class="fa-solid fa-file-powerpoint text-4xl text-orange-400 mb-4"></i>
+          <div class="font-medium">Финансовая модель</div>
+          <div class="text-xs text-gray-400">Excel • 3 года прогноза</div>
+        </div>
+        <div class="bg-[#1A1A24] p-6 rounded-3xl hover:bg-[#252532] transition cursor-pointer">
+          <i class="fa-solid fa-video text-4xl text-blue-400 mb-4"></i>
+          <div class="font-medium">Видео-питч (2:40)</div>
+          <div class="text-xs text-gray-400">YouTube</div>
+        </div>
+        <div class="bg-[#1A1A24] p-6 rounded-3xl hover:bg-[#252532] transition cursor-pointer">
+          <i class="fa-solid fa-file text-4xl text-gray-400 mb-4"></i>
+          <div class="font-medium">One-pager</div>
+          <div class="text-xs text-gray-400">PDF • 1 страница</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-black py-12 text-center text-gray-500 text-sm">
+    <p>© 2026 StartupHub.ru • Детальная страница проекта</p>
+  </footer>
+</body>
+</html>

@@ -125,7 +125,7 @@ export default function RegisterPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0A0A0F]/80 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-3">
-            <span className="logo-dot inline-block h-12 w-12 rounded-full" />
+            <span className="logo-dot inline-block h-4 w-4 rounded-full" />
             <span className="text-3xl font-semibold tracking-tight">StartupHub</span>
           </Link>
           <Link href="/" className="text-gray-400 hover:text-white flex items-center gap-2">

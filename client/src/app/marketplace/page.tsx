@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 
 import { stageLabelsByLang } from "@/lib/labelMaps";
 
-type TabKey = "startups" | "ideas" | "auctions" | "investors" | "partners";
+type TabKey = "startups" | "ideas" | "investors" | "partners";
 
 type StartupItem = {
   id: string;
@@ -24,14 +25,6 @@ type IdeaItem = {
   category: string;
   price: number;
   stage: string;
-};
-
-type AuctionItem = {
-  id: string;
-  currentPrice: number;
-  startsAt?: string;
-  endsAt?: string | null;
-  startup: { id: string; title: string; category: string; description: string };
 };
 
 type InvestorItem = {
@@ -53,7 +46,7 @@ type MarketplaceCardVM = {
   href: string;
   title: string;
   desc: string;
-  pill?: { text: string; kind: "startup" | "idea" | "auction" };
+  pill?: { text: string; kind: "startup" | "idea" | "accent" };
   amount?: string;
   location?: string;
 };
@@ -61,7 +54,6 @@ type MarketplaceCardVM = {
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "startups", label: "Стартапы" },
   { key: "ideas", label: "Идеи" },
-  { key: "auctions", label: "Аукционы" },
   { key: "investors", label: "Инвесторы" },
   { key: "partners", label: "Партнёры" },
 ];
@@ -69,8 +61,23 @@ const tabs: Array<{ key: TabKey; label: string }> = [
 const industries = ["AI & ML", "Fintech", "SaaS", "E-commerce", "Green Tech", "HealthTech"] as const;
 const geos = ["Москва", "Санкт-Петербург", "Новосибирск", "Казахстан", "Беларусь", "Онлайн"] as const;
 
-export default function MarketplacePage() {
-  const [activeTab, setActiveTab] = useState<TabKey>("startups");
+function tabFromSearchParams(sp: URLSearchParams): TabKey {
+  const t = sp.get("tab");
+  if (t === "ideas" || t === "investors" || t === "partners" || t === "startups") return t;
+  return "startups";
+}
+
+function MarketplaceInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab = useMemo(() => tabFromSearchParams(searchParams), [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get("tab") === "auctions") {
+      router.replace("/auction");
+    }
+  }, [router, searchParams]);
+
   const [loading, setLoading] = useState(false);
   const [dbError, setDbError] = useState(false);
 
@@ -83,9 +90,12 @@ export default function MarketplacePage() {
 
   const [startups, setStartups] = useState<StartupItem[] | null>(null);
   const [ideas, setIdeas] = useState<IdeaItem[] | null>(null);
-  const [auctions, setAuctions] = useState<AuctionItem[] | null>(null);
   const [investors, setInvestors] = useState<InvestorItem[] | null>(null);
   const [partners, setPartners] = useState<PartnerItem[] | null>(null);
+
+  function selectTab(key: TabKey) {
+    router.replace(`/marketplace?tab=${key}`, { scroll: false });
+  }
 
   function parseMoney(s: string) {
     const cleaned = (s || "").replace(/[^\d]/g, "");
@@ -96,32 +106,6 @@ export default function MarketplacePage() {
 
   function fmtMoney(v: number) {
     return Number(v || 0).toLocaleString("ru-RU") + " ₽";
-  }
-
-  function fmtTimeLeft(a: AuctionItem) {
-    const now = Date.now();
-    const ends = a.endsAt ? new Date(a.endsAt).getTime() : NaN;
-    const starts = a.startsAt ? new Date(a.startsAt).getTime() : NaN;
-
-    if (!Number.isNaN(ends) && ends > now) {
-      const mins = Math.max(0, Math.floor((ends - now) / 60000));
-      const days = Math.floor(mins / (60 * 24));
-      const hours = Math.floor((mins % (60 * 24)) / 60);
-      const mm = mins % 60;
-      if (days >= 1) return `Осталось ${days} ${days === 1 ? "день" : days < 5 ? "дня" : "дней"}`;
-      if (hours >= 1) return `Осталось ${hours}ч ${mm}м`;
-      return `Осталось ${mm}м`;
-    }
-
-    if (!Number.isNaN(starts) && starts > now) {
-      const mins = Math.max(0, Math.floor((starts - now) / 60000));
-      const hours = Math.floor(mins / 60);
-      const mm = mins % 60;
-      if (hours >= 1) return `Старт через ${hours}ч ${mm}м`;
-      return `Старт через ${mm}м`;
-    }
-
-    return "";
   }
 
   async function ensureLoaded(tab: TabKey) {
@@ -137,11 +121,6 @@ export default function MarketplacePage() {
         const r = await fetch("/api/v1/ideas", { cache: "no-store" });
         if (!r.ok) throw new Error("db");
         setIdeas((await r.json()) as IdeaItem[]);
-      }
-      if (tab === "auctions" && auctions === null) {
-        const r = await fetch("/api/v1/auctions", { cache: "no-store" });
-        if (!r.ok) throw new Error("db");
-        setAuctions((await r.json()) as AuctionItem[]);
       }
       if (tab === "investors" && investors === null) {
         const r = await fetch("/api/v1/investors", { cache: "no-store" });
@@ -165,7 +144,7 @@ export default function MarketplacePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  const totalCount = (startups?.length ?? 0) + (ideas?.length ?? 0) + (auctions?.length ?? 0) + (investors?.length ?? 0) + (partners?.length ?? 0);
+  const totalCount = (startups?.length ?? 0) + (ideas?.length ?? 0) + (investors?.length ?? 0) + (partners?.length ?? 0);
 
   const cards: MarketplaceCardVM[] = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -204,7 +183,7 @@ export default function MarketplacePage() {
           href: `/startups/${x.id}`,
           title: x.title,
           desc: x.description,
-          pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "startup" },
+          pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "startup" as const },
           amount: fmtMoney(x.price),
           location: x.isOnline ? "Онлайн" : "",
         }));
@@ -225,23 +204,8 @@ export default function MarketplacePage() {
           href: `/ideas/${x.id}`,
           title: x.title,
           desc: x.description,
-          pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "idea" },
+          pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "idea" as const },
           amount: fmtMoney(x.price),
-          location: "",
-        }));
-    }
-
-    if (activeTab === "auctions") {
-      const list = auctions ?? [];
-      return list
-        .filter((x) => matchesBase([x.startup.title, x.startup.description, x.startup.category]))
-        .map((x) => ({
-          id: x.id,
-          href: `/auction/${x.id}`,
-          title: x.startup.title,
-          desc: `Текущая ставка ${fmtMoney(x.currentPrice)}`,
-          pill: { text: fmtTimeLeft(x) || "Аукцион", kind: "auction" },
-          amount: fmtMoney(x.currentPrice),
           location: "",
         }));
     }
@@ -260,6 +224,7 @@ export default function MarketplacePage() {
           href: `/investors/${x.id}`,
           title: `Инвестор: ${fmtMoney(x.amount)}`,
           desc: x.description,
+          pill: { text: "Запрос", kind: "accent" as const },
           amount: fmtMoney(x.amount),
           location: "",
         }));
@@ -277,32 +242,35 @@ export default function MarketplacePage() {
         href: `/partners/${x.id}`,
         title: x.industry,
         desc: x.description,
+        pill: { text: "Партнёр", kind: "accent" as const },
         amount: "",
         location: "",
       }));
-  }, [activeTab, amountMax, amountMin, ideas, investors, partners, search, selectedGeos, selectedIndustries, stage, startups, auctions]);
+  }, [activeTab, amountMax, amountMin, ideas, investors, partners, search, selectedGeos, selectedIndustries, stage, startups]);
 
   return (
-    <div className="pt-20 max-w-7xl mx-auto px-6">
-      <div className="py-12 border-b border-white/10">
-        <h1 className="text-5xl md:text-6xl font-bold tracking-tighter mb-3">Маркетплейс</h1>
-        <p className="text-xl text-gray-400 max-w-2xl">
-          {totalCount > 0 ? `Более ${totalCount} стартапов, идей, аукционов, инвесторов и партнёров в одном месте` : "Стартапы, идеи, аукционы, инвесторы и партнёры в одном месте"}
+    <div className="mx-auto max-w-7xl px-6">
+      <div className="border-b border-white/10 py-12">
+        <h1 className="mb-3 text-5xl font-bold tracking-tighter md:text-6xl">Маркетплейс</h1>
+        <p className="max-w-2xl text-xl text-gray-400">
+          {totalCount > 0
+            ? `Более ${totalCount} стартапов, идей, инвесторов и партнёров в одном месте`
+            : "Стартапы, идеи, инвесторы и партнёры в одном месте — аукционы в отдельном разделе «Аукционы»"}
         </p>
 
-        <div className="mt-8 relative">
-          <div className="bg-[#12121A] border border-white/10 rounded-3xl px-6 py-5 flex items-center gap-4 shadow-xl">
+        <div className="relative mt-8">
+          <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-[#12121A] px-6 py-5 shadow-xl">
             <span className="text-xl text-gray-400">⌕</span>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               type="text"
               placeholder="Поиск по названию, отрасли, ключевому слову..."
-              className="flex-1 bg-transparent outline-none text-lg placeholder-gray-500"
+              className="flex-1 bg-transparent text-lg outline-none placeholder-gray-500"
             />
             <button
               type="button"
-              className="px-8 py-3 bg-violet-600 hover:bg-violet-500 rounded-2xl font-medium"
+              className="rounded-2xl bg-violet-600 px-8 py-3 font-medium hover:bg-violet-500"
               onClick={() => void ensureLoaded(activeTab)}
             >
               Найти
@@ -311,17 +279,17 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-8 border-b border-white/10 pb-4 mt-8 overflow-x-auto">
+      <div className="mt-8 flex items-center gap-8 overflow-x-auto border-b border-white/10 pb-4">
         {tabs.map((t) => {
           const active = t.key === activeTab;
           return (
             <button
               key={t.key}
               type="button"
-              onClick={() => setActiveTab(t.key)}
+              onClick={() => selectTab(t.key)}
               className={[
-                "px-6 py-3 text-lg whitespace-nowrap transition",
-                active ? "border-b-[3px] border-[#7C3AED] text-white font-semibold" : "text-gray-400 hover:text-white",
+                "whitespace-nowrap px-6 py-3 text-lg transition",
+                active ? "border-b-[3px] border-[#7C3AED] font-semibold text-white" : "text-gray-400 hover:text-white",
               ].join(" ")}
             >
               {t.label}
@@ -331,11 +299,13 @@ export default function MarketplacePage() {
       </div>
 
       <div className="flex gap-8 pt-8">
-        <div className="w-72 min-w-0 hidden lg:block bg-[#12121A] border border-white/10 rounded-3xl p-6 h-fit sticky top-28">
-          <h3 className="font-semibold mb-6 flex items-center gap-2">⚙ Фильтры</h3>
+        <div
+          className="sticky top-[calc(var(--site-header-height)+0.75rem)] hidden h-fit min-w-0 w-72 rounded-3xl border border-white/10 bg-[#12121A] p-6 lg:block"
+        >
+          <h3 className="mb-6 flex items-center gap-2 font-semibold">⚙ Фильтры</h3>
 
           <div className="mb-6">
-            <p className="text-sm text-gray-400 mb-3">Отрасль</p>
+            <p className="mb-3 text-sm text-gray-400">Отрасль</p>
             <div className="flex flex-wrap gap-2">
               {industries.map((x) => {
                 const on = selectedIndustries.has(x);
@@ -352,7 +322,7 @@ export default function MarketplacePage() {
                       });
                     }}
                     className={[
-                      "cursor-pointer text-xs px-4 py-2 rounded-2xl transition",
+                      "cursor-pointer rounded-2xl px-4 py-2 text-xs transition",
                       on ? "bg-violet-600" : "bg-white/10 hover:bg-violet-600",
                     ].join(" ")}
                   >
@@ -364,11 +334,11 @@ export default function MarketplacePage() {
           </div>
 
           <div className="mb-6">
-            <p className="text-sm text-gray-400 mb-3">Стадия</p>
+            <p className="mb-3 text-sm text-gray-400">Стадия</p>
             <select
               value={stage}
               onChange={(e) => setStage(e.target.value)}
-              className="w-full bg-white/10 border border-white/10 rounded-2xl px-4 py-3 text-white"
+              className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white"
             >
               <option value="">Любая стадия</option>
               <option value="idea">Идея</option>
@@ -379,32 +349,32 @@ export default function MarketplacePage() {
           </div>
 
           <div className="mb-6">
-            <p className="text-sm text-gray-400 mb-3">Сумма привлечения</p>
-            <div className="flex flex-col gap-3 min-w-0">
+            <p className="mb-3 text-sm text-gray-400">Сумма привлечения</p>
+            <div className="flex min-w-0 flex-col gap-3">
               <input
                 value={amountMin}
                 onChange={(e) => setAmountMin(e.target.value)}
                 type="text"
                 placeholder="от 500 тыс"
-                className="w-full min-w-0 box-border bg-white/10 border border-white/10 rounded-2xl px-4 py-3"
+                className="box-border min-w-0 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3"
               />
               <input
                 value={amountMax}
                 onChange={(e) => setAmountMax(e.target.value)}
                 type="text"
                 placeholder="до 50 млн"
-                className="w-full min-w-0 box-border bg-white/10 border border-white/10 rounded-2xl px-4 py-3"
+                className="box-border min-w-0 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3"
               />
             </div>
           </div>
 
           <div>
-            <p className="text-sm text-gray-400 mb-3">География</p>
+            <p className="mb-3 text-sm text-gray-400">География</p>
             <div className="grid grid-cols-2 gap-2 text-sm">
               {geos.map((g) => {
                 const on = selectedGeos.has(g);
                 return (
-                  <label key={g} className="flex items-center gap-2 cursor-pointer">
+                  <label key={g} className="flex cursor-pointer items-center gap-2">
                     <input
                       type="checkbox"
                       checked={on}
@@ -431,37 +401,39 @@ export default function MarketplacePage() {
         </div>
 
         <div className="flex-1">
-          {loading ? <div className="text-gray-400 py-12">Загрузка…</div> : null}
-          {dbError ? <div className="text-gray-400 py-12">База данных недоступна</div> : null}
+          {loading ? <div className="py-12 text-gray-400">Загрузка…</div> : null}
+          {dbError ? <div className="py-12 text-gray-400">База данных недоступна</div> : null}
 
           {!loading && !dbError ? (
             cards.length === 0 ? (
-              <div className="text-gray-400 col-span-full text-center py-12">В этой категории пока ничего нет</div>
+              <div className="col-span-full py-12 text-center text-gray-400">В этой категории пока ничего нет</div>
             ) : (
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {cards.map((it) => (
                   <Link
                     key={it.id}
                     href={it.href}
-                    className="card-hover bg-[#12121A] border border-white/10 rounded-3xl overflow-hidden p-6 block"
+                    className="card-hover block overflow-hidden rounded-3xl border border-white/10 bg-[#12121A] p-6"
                   >
-                    <div className="flex justify-between items-start mb-4 gap-3">
-                      <h3 className="font-semibold text-xl leading-snug">{it.title}</h3>
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <h3 className="text-xl font-semibold leading-snug">{it.title}</h3>
                       {it.pill ? (
                         <span
                           className={[
-                            "text-xs px-4 py-1 rounded-2xl whitespace-nowrap",
-                            it.pill.kind === "auction"
-                              ? "bg-rose-500/20 text-rose-400"
-                              : "bg-emerald-500/20 text-emerald-400",
+                            "whitespace-nowrap rounded-2xl px-4 py-1 text-xs",
+                            it.pill.kind === "idea"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : it.pill.kind === "accent"
+                                ? "bg-violet-500/20 text-violet-300"
+                                : "bg-emerald-500/20 text-emerald-400",
                           ].join(" ")}
                         >
                           {it.pill.text}
                         </span>
                       ) : null}
                     </div>
-                    <p className="text-gray-400 mb-6 line-clamp-3">{it.desc}</p>
-                    <div className="flex justify-between text-sm gap-4">
+                    <p className="mb-6 line-clamp-3 text-gray-400">{it.desc}</p>
+                    <div className="flex justify-between gap-4 text-sm">
                       <div className="min-w-0">
                         {it.amount ? (
                           <span className="truncate">
@@ -471,7 +443,7 @@ export default function MarketplacePage() {
                           <span />
                         )}
                       </div>
-                      <div className="text-violet-400 truncate">{it.location ?? ""}</div>
+                      <div className="truncate text-violet-400">{it.location ?? ""}</div>
                     </div>
                   </Link>
                 ))}
@@ -479,7 +451,7 @@ export default function MarketplacePage() {
             )
           ) : null}
 
-          <div className="mt-16 pb-24 text-center text-gray-500 text-sm">
+          <div className="mt-16 pb-24 text-center text-sm text-gray-500">
             <div>© {new Date().getFullYear()} StartupHub.ru — Маркетплейс</div>
             <div className="mt-2">Демо-версия страницы Маркетплейс с фильтрами, табами и поиском</div>
           </div>
@@ -489,3 +461,12 @@ export default function MarketplacePage() {
   );
 }
 
+export default function MarketplacePage() {
+  return (
+    <Suspense
+      fallback={<div className="mx-auto max-w-7xl px-6 py-16 text-center text-gray-400">Загрузка маркетплейса…</div>}
+    >
+      <MarketplaceInner />
+    </Suspense>
+  );
+}
