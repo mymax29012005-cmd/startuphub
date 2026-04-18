@@ -274,7 +274,9 @@ startupsRouter.post("/", requireAuth, async (req, res) => {
     }
 
     res.status(201).json(created);
-  } catch (_e) {
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[POST /api/v1/startups]", e);
     return res.status(503).json({ error: "База данных недоступна" });
   }
 });

@@ -21,11 +21,11 @@ npm ci --prefix database
 npm ci --prefix server
 npm ci --prefix client
 
-echo ">>> prisma migrate deploy"
-npm --prefix database exec prisma migrate deploy
+echo ">>> prisma migrate deploy (cwd: database/)"
+( cd "$APP_DIR/database" && npx prisma migrate deploy )
 
-echo ">>> prisma generate"
-npm --prefix database exec prisma generate
+echo ">>> prisma generate (cwd: database/)"
+( cd "$APP_DIR/database" && npx prisma generate )
 
 echo ">>> build server"
 npm --prefix server run build
