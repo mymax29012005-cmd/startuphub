@@ -306,7 +306,9 @@ function AddStartupInner() {
 
       const data = await r.json().catch(() => ({}));
       if (!r.ok) {
-        setError((data?.error as string) ?? "Ошибка при создании");
+        const base = (data?.error as string) ?? "Ошибка при создании";
+        const hint = typeof (data as { hint?: unknown }).hint === "string" ? (data as { hint: string }).hint : "";
+        setError(hint ? `${base} — ${hint}` : base);
         return;
       }
       try {

@@ -2,6 +2,24 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
+
+function hintForStartupDbError(e: unknown): string | undefined {
+  const raw = e instanceof Error ? e.message : String(e);
+  const m = raw + (e && typeof e === "object" && "meta" in e ? " " + JSON.stringify((e as { meta?: unknown }).meta) : "");
+  if (/MODULE_NOT_FOUND|\.prisma\/client|Cannot find module ['"]\.prisma\/client/i.test(m)) {
+    return "На сервере выполните: cd database && npx prisma generate, затем pm2 restart startuphub-api";
+  }
+  if (/P1001|Can't reach database server|ECONNREFUSED/i.test(m)) {
+    return "PostgreSQL недоступен по DATABASE_URL (хост, порт, firewall, sslmode).";
+  }
+  if (/P2022|does not exist|Unknown column|column .* not found/i.test(m)) {
+    return "Нужна миграция: cd database && npx prisma migrate deploy";
+  }
+  if (/DATABASE_URL is not set/i.test(m)) {
+    return "В окружении PM2 не задан DATABASE_URL (или не читается .env).";
+  }
+  return undefined;
+}
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
 import { allowedCategories } from "../../lib/categories";
 import { requireAuth } from "../../middleware/auth";
@@ -277,7 +295,8 @@ startupsRouter.post("/", requireAuth, async (req, res) => {
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error("[POST /api/v1/startups]", e);
-    return res.status(503).json({ error: "База данных недоступна" });
+    const hint = hintForStartupDbError(e);
+    return res.status(503).json({ error: "База данных недоступна", ...(hint ? { hint } : {}) });
   }
 });
 
