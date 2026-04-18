@@ -149,6 +149,9 @@ model Startup {
 
   attachments Attachment[]
 
+  /// JSON: tagline, valuationPreMoney, equityOfferedPct, kpis[], milestones, team[], videoPitchUrl, …
+  profileExtra Json?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

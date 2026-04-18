@@ -12,6 +12,7 @@ export type StartupCardModel = {
   id: string;
   title: string;
   description: string;
+  tagline?: string;
   category: string;
   price: number;
   stage: string;
@@ -92,7 +93,12 @@ export function StartupCard({
 
         <div className="p-6">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="text-xl font-semibold leading-tight tracking-tight text-white">{startup.title}</h3>
+            <div>
+              <h3 className="text-xl font-semibold leading-tight tracking-tight text-white">{startup.title}</h3>
+              {startup.tagline?.trim() ? (
+                <p className="mt-1 text-sm text-violet-300/90">{startup.tagline}</p>
+              ) : null}
+            </div>
             {onToggleFavorite ? (
               <Button
                 type="button"

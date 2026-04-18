@@ -8,6 +8,44 @@ import { requireAuth } from "../../middleware/auth";
 
 export const startupsRouter = Router();
 
+const profileExtraSchema = z
+  .object({
+    tagline: z.string().max(280).optional(),
+    valuationPreMoney: z.coerce.number().nonnegative().optional(),
+    equityOfferedPct: z.coerce.number().min(0).max(100).optional(),
+    kpis: z
+      .array(
+        z.object({
+          value: z.string().max(100).optional(),
+          label: z.string().max(250).optional(),
+        }),
+      )
+      .max(6)
+      .optional(),
+    milestones: z.string().max(4000).optional(),
+    team: z
+      .array(
+        z.object({
+          name: z.string().max(160),
+          role: z.string().max(200),
+        }),
+      )
+      .max(30)
+      .optional(),
+    videoPitchUrl: z.string().max(2000).optional(),
+    materialSlotIds: z
+      .object({
+        pitchDeckId: z.string().uuid().nullable().optional(),
+        financialModelId: z.string().uuid().nullable().optional(),
+        videoFileId: z.string().uuid().nullable().optional(),
+        otherIds: z.array(z.string().uuid()).max(50).optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict()
+  .optional();
+
 const createStartupSchema = z.object({
   title: z.string().min(1).max(120),
   description: z.string().min(10).max(2000),
@@ -23,6 +61,8 @@ const createStartupSchema = z.object({
   stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]),
   format: z.enum(["online", "offline", "hybrid"]),
   isOnline: z.boolean().optional(),
+
+  profileExtra: profileExtraSchema,
 
   analysisId: z.string().uuid().optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
@@ -52,6 +92,7 @@ const updateStartupSchema = z.object({
   isOnline: z.boolean().optional(),
   analysisId: z.string().uuid().nullable().optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
+  profileExtra: profileExtraSchema.nullable().optional(),
 });
 
 startupsRouter.get("/", async (req, res) => {
@@ -83,10 +124,16 @@ startupsRouter.get("/", async (req, res) => {
     );
 
     res.json(
-      startups.map((s) => ({
+      startups.map((s) => {
+        const extra = (s as { profileExtra?: unknown }).profileExtra as
+          | { tagline?: string }
+          | null
+          | undefined;
+        return {
         id: s.id,
         title: s.title,
         description: s.description,
+        tagline: extra && typeof extra === "object" && typeof extra.tagline === "string" ? extra.tagline : undefined,
         category: s.category,
         price: Number(s.price),
         stage: s.stage,
@@ -108,7 +155,8 @@ startupsRouter.get("/", async (req, res) => {
                 endsAt: s.auction.endsAt,
               }
             : null,
-      })),
+        };
+      })
     );
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
@@ -146,6 +194,7 @@ startupsRouter.get("/:startupId", async (req, res) => {
       stage: startup.stage,
       format: startup.format,
       isOnline: startup.isOnline,
+      profileExtra: (startup as { profileExtra?: unknown }).profileExtra ?? null,
       analysisId: (startup as any).analysisId ?? null,
       analysis: startup.analysis
         ? { id: startup.analysis.id, createdAt: startup.analysis.createdAt, result: startup.analysis.result }
@@ -198,6 +247,7 @@ startupsRouter.post("/", requireAuth, async (req, res) => {
         stage: data.stage,
         format: data.format,
         isOnline: data.isOnline ?? true,
+        profileExtra: data.profileExtra ? (data.profileExtra as any) : undefined,
         ownerId: req.user!.userId,
         analysisId: data.analysisId ?? null,
         auction: data.auction
@@ -280,18 +330,23 @@ startupsRouter.put("/:startupId", requireAuth, async (req, res) => {
       }
     }
 
+    const updateData: Record<string, unknown> = {
+      ...(data.title !== undefined ? { title: data.title } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.category !== undefined ? { category: data.category } : {}),
+      ...(data.price !== undefined ? { price: data.price } : {}),
+      ...(data.stage !== undefined ? { stage: data.stage } : {}),
+      ...(data.format !== undefined ? { format: data.format } : {}),
+      ...(data.isOnline !== undefined ? { isOnline: data.isOnline } : {}),
+      ...(data.analysisId !== undefined ? { analysisId: data.analysisId } : {}),
+      ...(data.profileExtra !== undefined
+        ? { profileExtra: data.profileExtra === null ? null : (data.profileExtra as object) }
+        : {}),
+    };
+
     const updated = await prisma.startup.update({
       where: { id: row.id },
-      data: {
-        ...(data.title !== undefined ? { title: data.title } : {}),
-        ...(data.description !== undefined ? { description: data.description } : {}),
-        ...(data.category !== undefined ? { category: data.category } : {}),
-        ...(data.price !== undefined ? { price: data.price } : {}),
-        ...(data.stage !== undefined ? { stage: data.stage } : {}),
-        ...(data.format !== undefined ? { format: data.format } : {}),
-        ...(data.isOnline !== undefined ? { isOnline: data.isOnline } : {}),
-        ...(data.analysisId !== undefined ? { analysisId: data.analysisId } : {}),
-      },
+      data: updateData as any,
       select: { id: true },
     });
 

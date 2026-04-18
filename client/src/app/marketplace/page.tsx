@@ -12,6 +12,7 @@ type StartupItem = {
   id: string;
   title: string;
   description: string;
+  tagline?: string;
   category: string;
   price: number;
   stage: string;
@@ -170,7 +171,7 @@ function MarketplaceInner() {
       const list = startups ?? [];
       return list
         .filter((x) => {
-          if (!matchesBase([x.title, x.description, x.category])) return false;
+          if (!matchesBase([x.title, x.description, x.tagline ?? "", x.category])) return false;
           if (inds.size > 0 && !Array.from(inds).some((i) => x.category.toLowerCase().includes(i.toLowerCase()))) return false;
           if (stage && x.stage !== stage) return false;
           if (!matchesAmount(x.price)) return false;
@@ -182,7 +183,7 @@ function MarketplaceInner() {
           id: x.id,
           href: `/startups/${x.id}`,
           title: x.title,
-          desc: x.description,
+          desc: (x.tagline && x.tagline.trim()) || x.description,
           pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "startup" as const },
           amount: fmtMoney(x.price),
           location: x.isOnline ? "Онлайн" : "",

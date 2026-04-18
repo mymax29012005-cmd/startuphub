@@ -12,10 +12,21 @@ import { CashflowBars } from "@/components/analyzer/CashflowBars";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 
+type StartupProfileExtra = {
+  tagline?: string;
+  valuationPreMoney?: number;
+  equityOfferedPct?: number;
+  kpis?: { value?: string; label?: string }[];
+  milestones?: string;
+  team?: { name: string; role: string }[];
+  videoPitchUrl?: string;
+};
+
 type StartupDetail = {
   id: string;
   title: string;
   description: string;
+  profileExtra?: StartupProfileExtra | null;
   category: string;
   price: number;
   stage: string;
@@ -387,7 +398,11 @@ export default function StartupDetailPage({
               </div>
               <h1 className="text-4xl font-bold leading-none tracking-tighter text-white md:text-6xl">{startup.title}</h1>
               <p className="mt-4 max-w-2xl text-lg text-white/90 md:text-2xl">
-                {startup.description.length > 160 ? `${startup.description.slice(0, 160)}…` : startup.description}
+                {startup.profileExtra?.tagline?.trim()
+                  ? startup.profileExtra.tagline
+                  : startup.description.length > 160
+                    ? `${startup.description.slice(0, 160)}…`
+                    : startup.description}
               </p>
             </div>
             <div className="absolute right-6 top-6 rounded-3xl bg-black/70 px-6 py-4 text-center backdrop-blur-xl md:right-10 md:top-10">
@@ -405,6 +420,83 @@ export default function StartupDetailPage({
                 <h2 className="mb-6 text-3xl font-semibold text-white">О проекте</h2>
                 <p className="text-lg leading-relaxed text-gray-300">{startup.description}</p>
               </div>
+
+              {startup.profileExtra &&
+              (startup.profileExtra.valuationPreMoney != null ||
+                startup.profileExtra.equityOfferedPct != null) ? (
+                <div>
+                  <h2 className="mb-4 text-2xl font-semibold text-white">Инвестиционные условия</h2>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {startup.profileExtra.valuationPreMoney != null ? (
+                      <div className="rounded-2xl border border-white/10 bg-[#1A1A24] p-5">
+                        <div className="text-xs text-gray-500">Оценка (pre-money)</div>
+                        <div className="mt-1 text-lg font-semibold text-white">
+                          {Math.round(Number(startup.profileExtra.valuationPreMoney)).toLocaleString("ru-RU")} ₽
+                        </div>
+                      </div>
+                    ) : null}
+                    {startup.profileExtra.equityOfferedPct != null ? (
+                      <div className="rounded-2xl border border-white/10 bg-[#1A1A24] p-5">
+                        <div className="text-xs text-gray-500">Доля к инвестору</div>
+                        <div className="mt-1 text-lg font-semibold text-rose-300">
+                          {Math.round(Number(startup.profileExtra.equityOfferedPct))}%
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {startup.profileExtra?.kpis?.length ? (
+                <div>
+                  <h2 className="mb-4 text-2xl font-semibold text-white">Ключевые показатели</h2>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    {startup.profileExtra.kpis.map((k, i) =>
+                      k.value || k.label ? (
+                        <div key={i} className="rounded-2xl border border-white/10 bg-[#1A1A24] p-4">
+                          <div className="text-lg font-semibold text-white">{k.value || "—"}</div>
+                          <div className="mt-1 text-sm text-gray-400">{k.label || ""}</div>
+                        </div>
+                      ) : null,
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {startup.profileExtra?.milestones?.trim() ? (
+                <div>
+                  <h2 className="mb-4 text-2xl font-semibold text-white">Что уже сделано</h2>
+                  <p className="text-lg leading-relaxed text-gray-300">{startup.profileExtra.milestones}</p>
+                </div>
+              ) : null}
+
+              {startup.profileExtra?.team?.length ? (
+                <div>
+                  <h2 className="mb-4 text-2xl font-semibold text-white">Команда</h2>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {startup.profileExtra.team.map((m, i) => (
+                      <div key={i} className="rounded-2xl border border-white/10 bg-[#1A1A24] px-4 py-3">
+                        <div className="font-medium text-white">{m.name}</div>
+                        <div className="text-sm text-gray-400">{m.role}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {startup.profileExtra?.videoPitchUrl?.trim() ? (
+                <div>
+                  <h2 className="mb-2 text-2xl font-semibold text-white">Видео-питч</h2>
+                  <a
+                    href={startup.profileExtra.videoPitchUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[var(--accent)] hover:text-white"
+                  >
+                    {startup.profileExtra.videoPitchUrl}
+                  </a>
+                </div>
+              ) : null}
 
           {startup.analysis ? (
             <div className="rounded-3xl border border-[rgba(175,110,255,0.25)] bg-[rgba(175,110,255,0.07)] p-5">
