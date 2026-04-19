@@ -97,7 +97,7 @@ export function Header() {
           </div>
           <div className="hidden md:block">
             {loading ? null : user ? (
-              <Link href="/profile">
+              <Link href="/profile" className="inline-flex overflow-hidden rounded-2xl">
                 <Button variant="brand" className="h-11 rounded-2xl px-6">
                   {t("nav.profile")}
                 </Button>

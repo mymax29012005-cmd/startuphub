@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 
 import { accountTypeLabelsByLang } from "@/lib/labelMaps";
+import { composeBio } from "@/lib/profileBio";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const accountTypes = ["founder", "investor", "partner", "buyer"] as const;
@@ -86,14 +87,7 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
     try {
-      const composedBio = [
-        country && country !== "Россия" ? `Страна: ${country}` : null,
-        city.trim() ? `Город: ${city.trim()}` : null,
-        telegram.trim() ? `Telegram: ${telegram.trim()}` : null,
-        bio.trim() ? bio.trim() : null,
-      ]
-        .filter(Boolean)
-        .join("\n");
+      const composedBio = composeBio({ country, city, telegram, freeText: bio });
 
       const form = new FormData();
       form.append("name", name.trim());

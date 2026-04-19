@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
-import { allowedCategories } from "@/lib/categories";
+import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
@@ -76,7 +76,7 @@ function AddIdeaInner() {
       const d = JSON.parse(raw) as any;
       if (!title && d?.title) setTitle(String(d.title));
       if (!description && d?.description) setDescription(String(d.description));
-      if (category === (allowedCategories[0]?.value ?? "SaaS") && d?.category) setCategory(String(d.category));
+      if (category === (allowedCategories[0]?.value ?? "SaaS") && d?.category) setCategory(asAllowedCategory(String(d.category)));
       if (!price && d?.price) setPrice(String(d.price));
       if (d?.stage) setStage(d.stage);
       if (d?.format) setFormat(d.format);
@@ -172,7 +172,7 @@ function AddIdeaInner() {
             <select
               className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => setCategory(asAllowedCategory(e.target.value))}
             >
               {allowedCategories.map((c) => (
                 <option key={c.value} value={c.value}>

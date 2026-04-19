@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
-import { allowedCategories } from "@/lib/categories";
+import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 export default function AddInvestorPage() {
@@ -70,7 +70,7 @@ export default function AddInvestorPage() {
             <select
               className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
               value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
+              onChange={(e) => setIndustry(asAllowedCategory(e.target.value))}
             >
               {allowedCategories.map((c) => (
                 <option key={c.value} value={c.value}>

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { allowedCategories } from "@/lib/categories";
+import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
 
 type Me = { id: string; role: "user" | "admin" };
@@ -66,7 +66,7 @@ export default function EditInvestorPage({ params }: { params: Promise<{ id: str
         const data = (await r.json()) as InvestorDetail;
         if (cancelled) return;
         setItem(data);
-        setIndustry(data.industry ?? (allowedCategories[0]?.value ?? "SaaS"));
+        setIndustry(asAllowedCategory(data.industry ?? (allowedCategories[0]?.value ?? "SaaS")));
         setAmount(String(data.amount ?? ""));
         setDescription(data.description ?? "");
         setStatus((data.status as any) ?? "active");
@@ -141,7 +141,7 @@ export default function EditInvestorPage({ params }: { params: Promise<{ id: str
               <select
                 className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
                 value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
+                onChange={(e) => setIndustry(asAllowedCategory(e.target.value))}
               >
                 {allowedCategories.map((c) => (
                   <option key={c.value} value={c.value}>

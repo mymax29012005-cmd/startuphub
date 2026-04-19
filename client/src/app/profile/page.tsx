@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import { UserActivityFeed, type PublicUserActivity } from "@/components/profile/PublicUserProfile";
 import { accountTypeLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
+import { extractLinkedIn, extractTelegram, stripMetaLines } from "@/lib/profileBio";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type Me = {
@@ -30,27 +31,6 @@ type StartupListItem = {
   stage: string;
   auction: null | { currentPrice: number; endsAt: string };
 };
-
-function extractTelegram(bio: string | null) {
-  if (!bio) return null;
-  const m = bio.match(/Telegram:\s*(@?\S+)/i);
-  return m?.[1] ?? null;
-}
-
-function extractLinkedIn(bio: string | null) {
-  if (!bio) return null;
-  const m = bio.match(/(https?:\/\/(www\.)?linkedin\.com\/\S+)/i);
-  return m?.[1] ?? null;
-}
-
-function stripMetaLines(bio: string | null) {
-  if (!bio) return "";
-  return bio
-    .split("\n")
-    .filter((l) => !/^(Страна:|Город:|Telegram:|LinkedIn:)/i.test(l.trim()))
-    .join("\n")
-    .trim();
-}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -197,7 +177,6 @@ export default function ProfilePage() {
                   <div className="h-full w-full flex items-center justify-center text-white/40 text-sm">Нет фото</div>
                 )}
               </div>
-              <div className="absolute bottom-4 right-4 w-6 h-6 bg-emerald-500 border-4 border-[#0A0A0F] rounded-full" />
             </div>
 
             <div className="mt-6 text-center md:text-left">

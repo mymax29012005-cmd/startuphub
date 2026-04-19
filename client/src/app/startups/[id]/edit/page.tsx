@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/i18n/I18nProvider";
-import { allowedCategories } from "@/lib/categories";
+import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
@@ -93,7 +93,7 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
         if (cancelled) return;
         setItem(data);
         setTitle(data.title ?? "");
-        setCategory(data.category ?? (allowedCategories[0]?.value ?? "SaaS"));
+        setCategory(asAllowedCategory(data.category ?? (allowedCategories[0]?.value ?? "SaaS")));
         setPrice(String(data.price ?? ""));
         setDescription(data.description ?? "");
         setStage((data.stage as any) ?? "seed");
@@ -121,7 +121,7 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
       const d = JSON.parse(raw) as any;
       if (d?.title != null) setTitle(String(d.title));
       if (d?.description != null) setDescription(String(d.description));
-      if (d?.category != null) setCategory(String(d.category));
+      if (d?.category != null) setCategory(asAllowedCategory(String(d.category)));
       if (d?.price != null) setPrice(String(d.price));
       if (d?.stage) setStage(d.stage);
       if (d?.format) setFormat(d.format);
@@ -259,7 +259,7 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
               </div>
               <label>
                 <div className="mb-2 block text-sm text-gray-400">Отрасль</div>
-                <select className={fieldClass} value={category} onChange={(e) => setCategory(e.target.value)}>
+                <select className={fieldClass} value={category} onChange={(e) => setCategory(asAllowedCategory(e.target.value))}>
                   {allowedCategories.map((c) => (
                     <option key={c.value} value={c.value}>
                       {c.label}

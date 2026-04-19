@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 
-import { stageLabelsByLang } from "@/lib/labelMaps";
+import { allowedCategories } from "@/lib/categories";
+import { formatLabelsByLang, partnerRoleLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 
 type TabKey = "startups" | "ideas" | "investors" | "partners";
 
@@ -16,6 +17,7 @@ type StartupItem = {
   category: string;
   price: number;
   stage: string;
+  format?: "online" | "offline" | "hybrid";
   isOnline: boolean;
 };
 
@@ -26,6 +28,7 @@ type IdeaItem = {
   category: string;
   price: number;
   stage: string;
+  format?: "online" | "offline" | "hybrid";
 };
 
 type InvestorItem = {
@@ -37,7 +40,7 @@ type InvestorItem = {
 
 type PartnerItem = {
   id: string;
-  role: string;
+  role: "supplier" | "reseller" | "integration" | "cofounder";
   industry: string;
   description: string;
 };
@@ -59,8 +62,9 @@ const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "partners", label: "Партнёры" },
 ];
 
-const industries = ["AI & ML", "Fintech", "SaaS", "E-commerce", "Green Tech", "HealthTech"] as const;
-const geos = ["Москва", "Санкт-Петербург", "Новосибирск", "Казахстан", "Беларусь", "Онлайн"] as const;
+const stageFilterValues = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
+const formatFilterValues = ["online", "offline", "hybrid"] as const;
+const partnerRoles = ["supplier", "reseller", "integration", "cofounder"] as const;
 
 function tabFromSearchParams(sp: URLSearchParams): TabKey {
   const t = sp.get("tab");
@@ -87,7 +91,9 @@ function MarketplaceInner() {
   const [stage, setStage] = useState("");
   const [amountMin, setAmountMin] = useState("");
   const [amountMax, setAmountMax] = useState("");
-  const [selectedGeos, setSelectedGeos] = useState<Set<string>>(new Set(["Москва", "Санкт-Петербург"]));
+  /** Пустой набор = не фильтровать. Иначе — карточка должна совпадать по формату (как при создании). */
+  const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set());
+  const [selectedPartnerRoles, setSelectedPartnerRoles] = useState<Set<string>>(new Set());
 
   const [startups, setStartups] = useState<StartupItem[] | null>(null);
   const [ideas, setIdeas] = useState<IdeaItem[] | null>(null);
@@ -150,7 +156,8 @@ function MarketplaceInner() {
   const cards: MarketplaceCardVM[] = useMemo(() => {
     const q = search.trim().toLowerCase();
     const inds = selectedIndustries;
-    const geo = selectedGeos;
+    const formats = selectedFormats;
+    const partnerRolesSel = selectedPartnerRoles;
     const min = parseMoney(amountMin);
     const max = parseMoney(amountMax);
 
@@ -172,11 +179,13 @@ function MarketplaceInner() {
       return list
         .filter((x) => {
           if (!matchesBase([x.title, x.description, x.tagline ?? "", x.category])) return false;
-          if (inds.size > 0 && !Array.from(inds).some((i) => x.category.toLowerCase().includes(i.toLowerCase()))) return false;
+          if (inds.size > 0 && !inds.has(x.category)) return false;
           if (stage && x.stage !== stage) return false;
           if (!matchesAmount(x.price)) return false;
-          const loc = x.isOnline ? "Онлайн" : "";
-          if (geo.size > 0 && loc && !geo.has(loc)) return false;
+          if (formats.size > 0) {
+            const fmt = x.format ?? (x.isOnline ? "online" : "offline");
+            if (!formats.has(fmt)) return false;
+          }
           return true;
         })
         .map((x) => ({
@@ -186,7 +195,12 @@ function MarketplaceInner() {
           desc: (x.tagline && x.tagline.trim()) || x.description,
           pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "startup" as const },
           amount: fmtMoney(x.price),
-          location: x.isOnline ? "Онлайн" : "",
+          location:
+            x.format != null
+              ? (formatLabelsByLang.ru?.[x.format] ?? x.format)
+              : x.isOnline
+                ? (formatLabelsByLang.ru?.online ?? "Онлайн")
+                : (formatLabelsByLang.ru?.offline ?? "Офлайн"),
         }));
     }
 
@@ -195,9 +209,13 @@ function MarketplaceInner() {
       return list
         .filter((x) => {
           if (!matchesBase([x.title, x.description, x.category])) return false;
-          if (inds.size > 0 && !Array.from(inds).some((i) => x.category.toLowerCase().includes(i.toLowerCase()))) return false;
+          if (inds.size > 0 && !inds.has(x.category)) return false;
           if (stage && x.stage !== stage) return false;
           if (!matchesAmount(x.price)) return false;
+          if (formats.size > 0) {
+            const fmt = x.format ?? "online";
+            if (!formats.has(fmt)) return false;
+          }
           return true;
         })
         .map((x) => ({
@@ -207,7 +225,7 @@ function MarketplaceInner() {
           desc: x.description,
           pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "idea" as const },
           amount: fmtMoney(x.price),
-          location: "",
+          location: x.format ? (formatLabelsByLang.ru?.[x.format] ?? x.format) : "",
         }));
     }
 
@@ -216,7 +234,7 @@ function MarketplaceInner() {
       return list
         .filter((x) => {
           if (!matchesBase([x.industry, x.description])) return false;
-          if (inds.size > 0 && !Array.from(inds).some((i) => x.industry.toLowerCase().includes(i.toLowerCase()))) return false;
+          if (inds.size > 0 && !inds.has(x.industry)) return false;
           if (!matchesAmount(x.amount)) return false;
           return true;
         })
@@ -235,7 +253,8 @@ function MarketplaceInner() {
     return list
       .filter((x) => {
         if (!matchesBase([x.industry, x.role, x.description])) return false;
-        if (inds.size > 0 && !Array.from(inds).some((i) => x.industry.toLowerCase().includes(i.toLowerCase()))) return false;
+        if (inds.size > 0 && !inds.has(x.industry)) return false;
+        if (partnerRolesSel.size > 0 && !partnerRolesSel.has(x.role)) return false;
         return true;
       })
       .map((x) => ({
@@ -243,11 +262,24 @@ function MarketplaceInner() {
         href: `/partners/${x.id}`,
         title: x.industry,
         desc: x.description,
-        pill: { text: "Партнёр", kind: "accent" as const },
+        pill: { text: partnerRoleLabelsByLang.ru?.[x.role] ?? x.role, kind: "accent" as const },
         amount: "",
         location: "",
       }));
-  }, [activeTab, amountMax, amountMin, ideas, investors, partners, search, selectedGeos, selectedIndustries, stage, startups]);
+  }, [
+    activeTab,
+    amountMax,
+    amountMin,
+    ideas,
+    investors,
+    partners,
+    search,
+    selectedFormats,
+    selectedPartnerRoles,
+    selectedIndustries,
+    stage,
+    startups,
+  ]);
 
   return (
     <div className="mx-auto max-w-7xl px-6">
@@ -306,19 +338,19 @@ function MarketplaceInner() {
           <h3 className="mb-6 flex items-center gap-2 font-semibold">⚙ Фильтры</h3>
 
           <div className="mb-6">
-            <p className="mb-3 text-sm text-gray-400">Отрасль</p>
+            <p className="mb-3 text-sm text-gray-400">Категория (как в карточке)</p>
             <div className="flex flex-wrap gap-2">
-              {industries.map((x) => {
-                const on = selectedIndustries.has(x);
+              {allowedCategories.map((x) => {
+                const on = selectedIndustries.has(x.value);
                 return (
                   <button
-                    key={x}
+                    key={x.value}
                     type="button"
                     onClick={() => {
                       setSelectedIndustries((prev) => {
                         const next = new Set(prev);
-                        if (next.has(x)) next.delete(x);
-                        else next.add(x);
+                        if (next.has(x.value)) next.delete(x.value);
+                        else next.add(x.value);
                         return next;
                       });
                     }}
@@ -327,7 +359,7 @@ function MarketplaceInner() {
                       on ? "bg-violet-600" : "bg-white/10 hover:bg-violet-600",
                     ].join(" ")}
                   >
-                    {x}
+                    {x.label}
                   </button>
                 );
               })}
@@ -342,10 +374,11 @@ function MarketplaceInner() {
               className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white"
             >
               <option value="">Любая стадия</option>
-              <option value="idea">Идея</option>
-              <option value="pre-seed">Pre-Seed</option>
-              <option value="seed">Seed</option>
-              <option value="series-a">Series A</option>
+              {stageFilterValues.map((v) => (
+                <option key={v} value={v}>
+                  {stageLabelsByLang.ru?.[v] ?? v}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -369,36 +402,69 @@ function MarketplaceInner() {
             </div>
           </div>
 
-          <div>
-            <p className="mb-3 text-sm text-gray-400">География</p>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {geos.map((g) => {
-                const on = selectedGeos.has(g);
-                return (
-                  <label key={g} className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setSelectedGeos((prev) => {
-                          const next = new Set(prev);
-                          if (checked) next.add(g);
-                          else next.delete(g);
-                          return next;
-                        });
-                      }}
-                      className="accent-violet-500"
-                    />
-                    {g}
-                  </label>
-                );
-              })}
+          {activeTab === "startups" || activeTab === "ideas" ? (
+            <div>
+              <p className="mb-3 text-sm text-gray-400">Формат (онлайн / офлайн / гибрид)</p>
+              <div className="flex flex-col gap-2 text-sm">
+                {formatFilterValues.map((f) => {
+                  const on = selectedFormats.has(f);
+                  const label = formatLabelsByLang.ru?.[f] ?? f;
+                  return (
+                    <label key={f} className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectedFormats((prev) => {
+                            const next = new Set(prev);
+                            if (checked) next.add(f);
+                            else next.delete(f);
+                            return next;
+                          });
+                        }}
+                        className="accent-violet-500"
+                      />
+                      {label}
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="mt-2 text-xs text-white/40">Ничего не отмечено — показываем все форматы.</div>
             </div>
-            <div className="mt-3 text-xs text-white/40">
-              Сейчас гео доступно только там, где данные есть (например, “Онлайн” для некоторых карточек).
+          ) : null}
+
+          {activeTab === "partners" ? (
+            <div className="mt-6">
+              <p className="mb-3 text-sm text-gray-400">Роль партнёра</p>
+              <div className="flex flex-col gap-2 text-sm">
+                {partnerRoles.map((r) => {
+                  const on = selectedPartnerRoles.has(r);
+                  const label = partnerRoleLabelsByLang.ru?.[r] ?? r;
+                  return (
+                    <label key={r} className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectedPartnerRoles((prev) => {
+                            const next = new Set(prev);
+                            if (checked) next.add(r);
+                            else next.delete(r);
+                            return next;
+                          });
+                        }}
+                        className="accent-violet-500"
+                      />
+                      {label}
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="mt-2 text-xs text-white/40">Ничего не отмечено — все роли.</div>
             </div>
-          </div>
+          ) : null}
         </div>
 
         <div className="flex-1">
@@ -409,19 +475,30 @@ function MarketplaceInner() {
             cards.length === 0 ? (
               <div className="col-span-full py-12 text-center text-gray-400">В этой категории пока ничего нет</div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <div className="flex flex-col gap-4">
                 {cards.map((it) => (
                   <Link
                     key={it.id}
                     href={it.href}
-                    className="card-hover block overflow-hidden rounded-3xl border border-white/10 bg-[#12121A] p-6"
+                    className="card-hover flex flex-col gap-4 rounded-3xl border border-white/10 bg-[#161618] p-6 transition hover:border-violet-500/25 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
                   >
-                    <div className="mb-4 flex items-start justify-between gap-3">
-                      <h3 className="text-xl font-semibold leading-snug">{it.title}</h3>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-xl font-semibold leading-snug text-white md:text-2xl">{it.title}</h3>
+                      <p className="mt-2 text-base leading-relaxed text-gray-400">{it.desc}</p>
+                      <div className="mt-4 text-sm">
+                        {it.amount ? (
+                          <span>
+                            <span className="text-gray-500">Нужно:</span>{" "}
+                            <span className="font-semibold text-white">{it.amount}</span>
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 flex-row items-center justify-between gap-4 sm:flex-col sm:items-end">
                       {it.pill ? (
                         <span
                           className={[
-                            "whitespace-nowrap rounded-2xl px-4 py-1 text-xs",
+                            "whitespace-nowrap rounded-2xl px-4 py-1.5 text-xs font-medium",
                             it.pill.kind === "idea"
                               ? "bg-emerald-500/20 text-emerald-400"
                               : it.pill.kind === "accent"
@@ -432,19 +509,9 @@ function MarketplaceInner() {
                           {it.pill.text}
                         </span>
                       ) : null}
-                    </div>
-                    <p className="mb-6 line-clamp-3 text-gray-400">{it.desc}</p>
-                    <div className="flex justify-between gap-4 text-sm">
-                      <div className="min-w-0">
-                        {it.amount ? (
-                          <span className="truncate">
-                            <span className="text-gray-400">Нужно:</span> <span className="font-medium">{it.amount}</span>
-                          </span>
-                        ) : (
-                          <span />
-                        )}
-                      </div>
-                      <div className="truncate text-violet-400">{it.location ?? ""}</div>
+                      {it.location ? (
+                        <span className="text-sm font-medium text-violet-400 sm:text-right">{it.location}</span>
+                      ) : null}
                     </div>
                   </Link>
                 ))}

@@ -4,6 +4,12 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
 import type { AuctionCardModel } from "@/components/cards/AuctionCard";
+import {
+  PlatformSpotlightSection,
+  type SpotlightIdea,
+  type SpotlightInvestor,
+  type SpotlightStartup,
+} from "@/components/home/PlatformSpotlightSection";
 
 type Stats = {
   startupsCount: number;
@@ -15,6 +21,9 @@ export default function Home() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [auctions, setAuctions] = useState<AuctionCardModel[]>([]);
+  const [spotStartup, setSpotStartup] = useState<SpotlightStartup | null>(null);
+  const [spotIdea, setSpotIdea] = useState<SpotlightIdea | null>(null);
+  const [spotInvestor, setSpotInvestor] = useState<SpotlightInvestor | null>(null);
   const [counters, setCounters] = useState<{ projects: number; auctions: number; deals: number }>({
     projects: 0,
     auctions: 0,
@@ -48,6 +57,23 @@ export default function Home() {
         const aR = await fetch("/api/v1/auctions", { cache: "no-store" });
         const a = await aR.json();
         if (!cancelled) setAuctions((a ?? []).slice(0, 3));
+        const [stR, idR, invR] = await Promise.all([
+          fetch("/api/v1/startups", { cache: "no-store" }),
+          fetch("/api/v1/ideas", { cache: "no-store" }),
+          fetch("/api/v1/investors", { cache: "no-store" }),
+        ]);
+        if (stR.ok) {
+          const st = (await stR.json()) as SpotlightStartup[];
+          if (!cancelled) setSpotStartup(st[0] ?? null);
+        }
+        if (idR.ok) {
+          const id = (await idR.json()) as SpotlightIdea[];
+          if (!cancelled) setSpotIdea(id[0] ?? null);
+        }
+        if (invR.ok) {
+          const inv = (await invR.json()) as SpotlightInvestor[];
+          if (!cancelled) setSpotInvestor(inv[0] ?? null);
+        }
       } catch {
         // ignore
       }
@@ -264,47 +290,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="active-auctions" className="section-black">
-        <div className="mx-auto max-w-6xl px-4 py-20">
-          <div className="flex items-end justify-between gap-6 mb-10">
-            <div>
-              <div className="text-4xl font-bold text-white">Активные аукционы</div>
-            </div>
-            <Link href="/auction" className="text-sm font-medium text-white/60 hover:text-white transition">
-              Все аукционы →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {auctions.map((a) => (
-              <Link
-                key={a.id}
-                href={`/auction/${a.id}`}
-                className="glass border border-white/10 rounded-3xl overflow-hidden block card-hover"
-                aria-label={`Открыть аукцион: ${a.startup.title}`}
-              >
-                <div className={`h-44 bg-gradient-to-r ${auctionGradientByCategory(a.startup.category)} relative`}>
-                  {fmtTimeLeft(a) ? (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 text-xs px-3 py-1 rounded-full bg-black/55 text-white/85 border border-white/10">
-                      {fmtTimeLeft(a)}
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="p-8">
-                  <div className="text-xl font-bold text-white leading-snug">{a.startup.title}</div>
-                  <div className="mt-2 text-white/50 text-sm">{a.startup.category}</div>
-
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="text-white/75 text-sm">Текущая ставка:</div>
-                    <div className="text-[#00f5d4] font-bold">{fmtMoney(a.currentPrice)} ₽</div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PlatformSpotlightSection
+        auction={auctions[0] ?? null}
+        startup={spotStartup}
+        idea={spotIdea}
+        investor={spotInvestor}
+        fmtMoney={fmtMoney}
+        auctionTimeLabel={fmtTimeLeft}
+        auctionGradient={auctionGradientByCategory}
+      />
 
       <section className="hero-bg">
         <div className="relative mx-auto max-w-6xl px-4 py-20 text-center">

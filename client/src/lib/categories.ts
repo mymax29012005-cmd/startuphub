@@ -1,19 +1,27 @@
-export type CategoryOption = { value: string; label: string };
+/**
+ * Категории карточек (синхронно с server/src/lib/categories.ts).
+ * В формах используется массив { value, label }; в фильтрах — .value.
+ */
+const SLUGS = [
+  "SaaS",
+  "AI",
+  "FinTech",
+  "EdTech",
+  "HealthTech",
+  "E-commerce",
+  "Marketplace",
+  "Mobile",
+  "Web",
+  "Hardware",
+  "Gaming",
+  "Media",
+  "Other",
+] as const;
 
-// Один общий перечень, чтобы люди не плодили новые "категории" как попало.
-export const allowedCategories: CategoryOption[] = [
-  { value: "SaaS", label: "SaaS" },
-  { value: "AI", label: "AI / ML" },
-  { value: "FinTech", label: "FinTech" },
-  { value: "EdTech", label: "EdTech" },
-  { value: "HealthTech", label: "HealthTech" },
-  { value: "E-commerce", label: "E-commerce" },
-  { value: "Marketplace", label: "Маркетплейс" },
-  { value: "Mobile", label: "Мобильное приложение" },
-  { value: "Web", label: "Веб-сервис" },
-  { value: "Hardware", label: "Hardware / IoT" },
-  { value: "Gaming", label: "Игры" },
-  { value: "Media", label: "Медиа / Контент" },
-  { value: "Other", label: "Другое" },
-];
+export type AllowedCategory = (typeof SLUGS)[number];
 
+export const allowedCategories = SLUGS.map((value) => ({ value, label: value }));
+
+export function asAllowedCategory(raw: string): AllowedCategory {
+  return (SLUGS as readonly string[]).includes(raw) ? (raw as AllowedCategory) : "Other";
+}
