@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Алексей Морозов • Инвестор • StartupHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+  </style>
+</head>
+<body class="bg-[#0A0A0F] text-white">
+
+  <nav class="fixed top-0 left-0 right-0 bg-[#0A0A0F]/90 backdrop-blur-xl border-b border-white/10 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center text-white font-bold">A</div>
+        <span class="heading text-2xl font-semibold">StartupHub</span>
+      </div>
+      <button onclick="history.back()" class="text-gray-400 hover:text-white">← Назад в маркетплейс</button>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-6 pt-28 pb-20">
+    <div class="grid lg:grid-cols-12 gap-12">
+      
+      <!-- Левая колонка -->
+      <div class="lg:col-span-8 space-y-12">
+        <div>
+          <div class="flex items-center gap-4">
+            <div class="w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center text-5xl">👔</div>
+            <div>
+              <h1 class="heading text-5xl font-bold">Алексей Морозов</h1>
+              <p class="text-emerald-400 text-2xl mt-2">Angel Investor</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="text-3xl font-semibold mb-5">Обо мне</h2>
+          <p class="text-gray-300 text-lg leading-relaxed">
+            Ангельский инвестор с фокусом на ранние стадии. Инвестирую в AI, SaaS и Fintech. 
+            Предпочитаю работать с основателями, у которых есть сильная продуктовая экспертиза и traction.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-3xl font-semibold mb-5">Инвестиционные критерии</h2>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="text-sm text-gray-400">Чек</div>
+              <div class="text-2xl font-semibold mt-2">5 – 25 млн ₽</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="text-sm text-gray-400">Стадии</div>
+              <div class="text-2xl font-semibold mt-2">Pre-seed &amp; Seed</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="text-sm text-gray-400">Количество сделок</div>
+              <div class="text-2xl font-semibold mt-2">14</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="text-sm text-gray-400">Успешных выходов</div>
+              <div class="text-2xl font-semibold mt-2">3</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="text-3xl font-semibold mb-5">Интересы</h2>
+          <div class="flex flex-wrap gap-3">
+            <span class="bg-white/10 px-6 py-3 rounded-3xl">Artificial Intelligence</span>
+            <span class="bg-white/10 px-6 py-3 rounded-3xl">SaaS</span>
+            <span class="bg-white/10 px-6 py-3 rounded-3xl">Fintech</span>
+            <span class="bg-white/10 px-6 py-3 rounded-3xl">B2B Solutions</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Правая колонка -->
+      <div class="lg:col-span-4">
+        <div class="bg-[#12121A] border border-white/10 rounded-3xl p-8 sticky top-28">
+          <h3 class="font-semibold text-xl mb-6">Готов инвестировать</h3>
+          
+          <button onclick="alert('Сообщение отправлено Алексею Морозову')" 
+                  class="w-full py-6 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl font-semibold text-lg mb-4">
+            Написать инвестору
+          </button>
+          
+          <button onclick="alert('Профиль добавлен в избранное')" 
+                  class="w-full py-6 border border-white/30 hover:bg-white/10 rounded-3xl font-medium">
+            Добавить в избранное
+          </button>
+
+          <div class="mt-10 text-xs text-gray-500 text-center">
+            Последняя активность: 2 дня назад
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

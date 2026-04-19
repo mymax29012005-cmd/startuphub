@@ -43,6 +43,12 @@ function AddIdeaInner() {
   const [solution, setSolution] = useState("");
   const [market, setMarket] = useState("");
 
+  const [city, setCity] = useState("");
+  const [doneItemsRaw, setDoneItemsRaw] = useState("");
+  const [needsText, setNeedsText] = useState("");
+  const [helpTagsRaw, setHelpTagsRaw] = useState("");
+  const [coverGradient, setCoverGradient] = useState<"default" | "emerald" | "violet" | "blue">("default");
+
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -82,6 +88,11 @@ function AddIdeaInner() {
       if (d?.problem) setProblem(String(d.problem));
       if (d?.solution) setSolution(String(d.solution));
       if (d?.market) setMarket(String(d.market));
+      if (d?.city) setCity(String(d.city));
+      if (d?.doneItemsRaw) setDoneItemsRaw(String(d.doneItemsRaw));
+      if (d?.needsText) setNeedsText(String(d.needsText));
+      if (d?.helpTagsRaw) setHelpTagsRaw(String(d.helpTagsRaw));
+      if (d?.coverGradient) setCoverGradient(d.coverGradient);
       if (Array.isArray(d?.attachments)) setAttachments(d.attachments);
     } catch {
       // ignore
@@ -101,6 +112,17 @@ function AddIdeaInner() {
       return;
     }
 
+    const doneItems = doneItemsRaw
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 24);
+    const helpTags = helpTagsRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 24);
+
     try {
       const r = await fetch("/api/v1/ideas", {
         method: "POST",
@@ -118,6 +140,13 @@ function AddIdeaInner() {
           problem: problem || undefined,
           solution: solution || undefined,
           market: market || undefined,
+          profileExtra: {
+            city: city.trim() || undefined,
+            doneItems: doneItems.length ? doneItems : undefined,
+            needsText: needsText.trim() || undefined,
+            helpTags: helpTags.length ? helpTags : undefined,
+            coverGradient: coverGradient === "default" ? undefined : coverGradient,
+          },
         }),
       });
       const data = await r.json().catch(() => ({}));
@@ -221,6 +250,38 @@ function AddIdeaInner() {
                 </select>
               </label>
             </div>
+
+            <div className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
+              <div className="text-sm font-semibold text-white">Поля карточки (как в превью)</div>
+              <p className="mt-2 text-sm text-gray-500">Город, «что сделано», «что нужно», теги помощи и градиент шапки.</p>
+              <div className="mt-6 space-y-6">
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Город</div>
+                  <input className={fc} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Москва" />
+                </label>
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Что уже сделано (каждая строка — пункт)</div>
+                  <textarea className={`${fc} min-h-[120px] rounded-3xl`} value={doneItemsRaw} onChange={(e) => setDoneItemsRaw(e.target.value)} rows={5} />
+                </label>
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Что нужно для реализации</div>
+                  <textarea className={`${fc} min-h-[100px] rounded-3xl`} value={needsText} onChange={(e) => setNeedsText(e.target.value)} rows={4} />
+                </label>
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Нужна помощь (теги через запятую)</div>
+                  <input className={fc} value={helpTagsRaw} onChange={(e) => setHelpTagsRaw(e.target.value)} placeholder="Сооснователь, Инвестиции, Менторство" />
+                </label>
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Градиент шапки</div>
+                  <select className={fc} value={coverGradient} onChange={(e) => setCoverGradient(e.target.value as any)}>
+                    <option value="default">Тёплый (янтарь → оранж)</option>
+                    <option value="emerald">Изумруд → бирюза</option>
+                    <option value="violet">Фиолет → роза</option>
+                    <option value="blue">Синий → циан</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -247,6 +308,11 @@ function AddIdeaInner() {
                       problem,
                       solution,
                       market,
+                      city,
+                      doneItemsRaw,
+                      needsText,
+                      helpTagsRaw,
+                      coverGradient,
                       attachments,
                     }),
                   );

@@ -12,6 +12,8 @@ import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const roles = ["supplier", "reseller", "integration", "cofounder"] as const;
 
+type ServiceRow = { title: string; note: string };
+
 export default function AddPartnerPage() {
   const router = useRouter();
   const { lang } = useI18n();
@@ -19,7 +21,20 @@ export default function AddPartnerPage() {
 
   const [role, setRole] = useState<(typeof roles)[number]>("supplier");
   const [industry, setIndustry] = useState(allowedCategories[0]?.value ?? "SaaS");
+
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerType, setPartnerType] = useState("");
   const [description, setDescription] = useState("");
+
+  const [services, setServices] = useState<ServiceRow[]>([
+    { title: "", note: "" },
+    { title: "", note: "" },
+    { title: "", note: "" },
+    { title: "", note: "" },
+  ]);
+  const [fitForRaw, setFitForRaw] = useState("");
+  const [ctaText, setCtaText] = useState("Стать партнёром / Получить условия");
+
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -30,6 +45,17 @@ export default function AddPartnerPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    const fitFor = fitForRaw
+      .split("\n")
+      .map((s) => s.replace(/^\s*•\s*/, "").trim())
+      .filter(Boolean)
+      .slice(0, 24);
+
+    const svc = services
+      .map((s) => ({ title: s.title.trim(), note: s.note.trim() || undefined }))
+      .filter((s) => s.title.length > 0);
+
     try {
       const r = await fetch("/api/v1/partners", {
         method: "POST",
@@ -39,6 +65,13 @@ export default function AddPartnerPage() {
           role,
           industry,
           description,
+          profileExtra: {
+            partnerName: partnerName.trim() || "Партнёр",
+            partnerType: partnerType.trim() || undefined,
+            services: svc.length ? svc : undefined,
+            fitFor: fitFor.length ? fitFor : undefined,
+            ctaText: ctaText.trim() || undefined,
+          },
           attachmentIds: attachments.map((a) => a.id),
         }),
       });
@@ -58,17 +91,27 @@ export default function AddPartnerPage() {
   return (
     <AddListingPageChrome
       backHref="/marketplace?tab=partners"
-      title="Запрос партнёра"
-      subtitle="Оформление как у карточки стартапа"
+      title="Карточка партнёра"
+      subtitle="Услуги, условия и аудитория — как в превью маркетплейса"
     >
       <form onSubmit={onSubmit} className="space-y-16 rounded-3xl border border-white/10 bg-[#12121A] p-8 md:p-10">
         <div>
           <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
-            <span className="text-violet-400">1</span> Основная информация
+            <span className="text-violet-400">1</span> Организация и позиционирование
           </h2>
           <div className="space-y-8">
+            <div className="grid gap-8 md:grid-cols-2">
+              <label>
+                <div className="mb-2 block text-sm text-gray-400">Название</div>
+                <input className={fc} value={partnerName} onChange={(e) => setPartnerName(e.target.value)} placeholder="Например: Яндекс.Облако" />
+              </label>
+              <label>
+                <div className="mb-2 block text-sm text-gray-400">Тип партнёрства</div>
+                <input className={fc} value={partnerType} onChange={(e) => setPartnerType(e.target.value)} placeholder="Например: Технологический партнёр" />
+              </label>
+            </div>
             <label>
-              <div className="mb-2 block text-sm text-gray-400">Роль</div>
+              <div className="mb-2 block text-sm text-gray-400">Роль в запросе (внутренняя классификация)</div>
               <select className={fc} value={role} onChange={(e) => setRole(e.target.value as (typeof roles)[number])}>
                 {roles.map((r) => (
                   <option key={r} value={r}>
@@ -76,7 +119,6 @@ export default function AddPartnerPage() {
                   </option>
                 ))}
               </select>
-              <p className="mt-2 text-sm text-gray-500">Кого ищете: поставщика, реселлера, интеграцию или кофаундера.</p>
             </label>
             <label>
               <div className="mb-2 block text-sm text-gray-400">Категория / отрасль</div>
@@ -89,10 +131,10 @@ export default function AddPartnerPage() {
               </select>
             </label>
             <label>
-              <div className="mb-2 block text-sm text-gray-400">Описание запроса</div>
+              <div className="mb-2 block text-sm text-gray-400">Чем вы помогаете стартапам</div>
               <textarea
                 className={`${fc} min-h-[160px] rounded-3xl`}
-                placeholder="Задача, условия, что предлагаете взамен…"
+                placeholder="Облако, скидки, кредиты, экспертиза, сопровождение…"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
@@ -103,10 +145,67 @@ export default function AddPartnerPage() {
 
         <div>
           <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
-            <span className="text-emerald-400">2</span> Файлы
+            <span className="text-cyan-400">2</span> Доступные услуги (до 4 блоков)
+          </h2>
+          <div className="space-y-6">
+            {services.map((row, idx) => (
+              <div key={idx} className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
+                <div className="mb-4 text-sm font-semibold text-white/90">Услуга {idx + 1}</div>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <label>
+                    <div className="mb-2 block text-xs text-gray-400">Название</div>
+                    <input
+                      className={fc}
+                      value={row.title}
+                      onChange={(e) =>
+                        setServices((prev) => prev.map((s, i) => (i === idx ? { ...s, title: e.target.value } : s)))
+                      }
+                      placeholder="Например: Облачные серверы"
+                    />
+                  </label>
+                  <label>
+                    <div className="mb-2 block text-xs text-gray-400">Условия / примечание</div>
+                    <input
+                      className={fc}
+                      value={row.note}
+                      onChange={(e) =>
+                        setServices((prev) => prev.map((s, i) => (i === idx ? { ...s, note: e.target.value } : s)))
+                      }
+                      placeholder="от 0 ₽, скидка 50%…"
+                    />
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+            <span className="text-emerald-400">3</span> Для кого вы подходите
+          </h2>
+          <label>
+            <div className="mb-2 block text-sm text-gray-400">Список (каждая строка — пункт)</div>
+            <textarea
+              className={`${fc} min-h-[140px] rounded-3xl`}
+              placeholder={"Стартапы на любой стадии\nAI и ML проекты\n…"}
+              value={fitForRaw}
+              onChange={(e) => setFitForRaw(e.target.value)}
+              rows={6}
+            />
+          </label>
+          <label className="mt-8 block">
+            <div className="mb-2 block text-sm text-gray-400">Текст на кнопке (на странице карточки)</div>
+            <input className={fc} value={ctaText} onChange={(e) => setCtaText(e.target.value)} />
+          </label>
+        </div>
+
+        <div>
+          <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+            <span className="text-rose-400">4</span> Файлы
           </h2>
           <div className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
-            <p className="text-sm text-gray-400">Документы по проекту — опционально.</p>
+            <p className="text-sm text-gray-400">Презентация условий, PDF — опционально.</p>
             <input
               type="file"
               multiple
@@ -155,7 +254,7 @@ export default function AddPartnerPage() {
             disabled={loading || uploading}
             className="w-full rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 py-7 text-xl font-semibold text-white hover:brightness-110 disabled:opacity-60"
           >
-            {loading ? "…" : "Опубликовать запрос"}
+            {loading ? "…" : "Опубликовать карточку"}
           </Button>
         </div>
       </form>

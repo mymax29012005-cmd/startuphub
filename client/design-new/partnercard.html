@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Яндекс.Облако • Партнёр • StartupHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+  </style>
+</head>
+<body class="bg-[#0A0A0F] text-white">
+
+  <nav class="fixed top-0 left-0 right-0 bg-[#0A0A0F]/90 backdrop-blur-xl border-b border-white/10 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl">☁</div>
+        <span class="heading text-2xl font-semibold">StartupHub</span>
+      </div>
+      <button onclick="history.back()" class="text-gray-400 hover:text-white">← Назад</button>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-6 pt-28 pb-20">
+    <div class="grid lg:grid-cols-12 gap-12">
+      
+      <div class="lg:col-span-8 space-y-12">
+        <div>
+          <h1 class="heading text-5xl font-bold">Яндекс.Облако</h1>
+          <p class="text-cyan-400 text-2xl mt-2">Технологический партнёр</p>
+        </div>
+
+        <div>
+          <h2 class="text-3xl font-semibold mb-5">Чем мы помогаем стартапам</h2>
+          <p class="text-gray-300 text-lg leading-relaxed">
+            Предоставляем облачную инфраструктуру, инструменты ИИ и аналитики со специальными условиями для стартапов. 
+            До 50% скидка на первые 6 месяцев + бесплатные кредиты на тестирование.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-3xl font-semibold mb-6">Доступные услуги</h2>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="font-medium">Облачные серверы и хранение</div>
+              <div class="text-sm text-gray-400 mt-2">от 0 ₽ при регистрации стартапа</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="font-medium">YandexGPT и AI-инструменты</div>
+              <div class="text-sm text-gray-400 mt-2">Специальные лимиты для стартапов</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="font-medium">Аналитика и мониторинг</div>
+              <div class="text-sm text-gray-400 mt-2">Бесплатный доступ к Yandex Metrika и DataLens</div>
+            </div>
+            <div class="bg-[#12121A] p-6 rounded-3xl">
+              <div class="font-medium">Техническая поддержка</div>
+              <div class="text-sm text-gray-400 mt-2">Приоритетная поддержка</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Правая колонка -->
+      <div class="lg:col-span-4">
+        <div class="bg-[#12121A] border border-white/10 rounded-3xl p-8 sticky top-28">
+          <h3 class="font-semibold text-xl mb-6">Для кого мы подходим</h3>
+          <ul class="space-y-4 text-gray-300">
+            <li>• Стартапы на любой стадии</li>
+            <li>• AI и ML проекты</li>
+            <li>• Продукты с большой нагрузкой</li>
+            <li>• Команды от 2 до 50 человек</li>
+          </ul>
+
+          <button onclick="alert('Запрос на партнёрство отправлен')" 
+                  class="mt-10 w-full py-6 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-3xl font-semibold text-lg">
+            Стать партнёром / Получить условия
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

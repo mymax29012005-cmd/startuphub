@@ -1,13 +1,14 @@
 "use client";
 
-import React, { use as useReact, useEffect, useState } from "react";
+import React, { use as useReact, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { Badge } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
-import { DeleteResourceButton } from "@/components/DeleteResourceButton";
 import { Button } from "@/components/ui/Button";
+import { DeleteResourceButton } from "@/components/DeleteResourceButton";
+import { partnerRoleLabelsByLang } from "@/lib/labelMaps";
+import { useI18n } from "@/i18n/I18nProvider";
+import type { PartnerProfileExtra, PartnerService } from "@/lib/marketplaceExtras";
 
 type Me = { id: string; role: "user" | "admin" };
 
@@ -26,7 +27,13 @@ type PartnerDetail = {
     size: number | null;
     createdAt: string;
   }>;
+  profileExtra?: PartnerProfileExtra | null;
 };
+
+function initials(name: string) {
+  const p = name.trim().split(/\s+/).filter(Boolean);
+  return (p[0]?.[0] ?? "?").toUpperCase();
+}
 
 export default function PartnerDetailPage({
   params,
@@ -34,6 +41,7 @@ export default function PartnerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const { lang } = useI18n();
   const { id } = useReact(params);
   const [me, setMe] = useState<Me | null>(null);
   const [item, setItem] = useState<PartnerDetail | null>(null);
@@ -77,91 +85,118 @@ export default function PartnerDetailPage({
     };
   }, [id]);
 
+  const display = useMemo(() => {
+    if (!item) return null;
+    const pe = item.profileExtra ?? null;
+    const name = (pe?.partnerName?.trim() || item.author.name || "Партнёр").trim();
+    const sub = (pe?.partnerType?.trim() || partnerRoleLabelsByLang[lang]?.[item.role as any] || item.role).trim();
+    const services: PartnerService[] = (pe?.services ?? []).filter((s) => s.title?.trim());
+    const fitFor = pe?.fitFor ?? [];
+    const cta = (pe?.ctaText?.trim() || "Стать партнёром / Получить условия").trim();
+    return { name, sub, services, fitFor, cta, pe };
+  }, [item, lang]);
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/marketplace?tab=partners" className="text-[var(--accent)] hover:text-white text-sm font-medium">
-          ← Назад к запросам партнёров
-        </Link>
-        <div className="flex items-center gap-2">
-          {me && item && (me.role === "admin" || me.id === item.author.id) ? (
-            <Link href={`/partners/${id}/edit`}>
-              <Button variant="secondary" className="h-10">
-                Редактировать
-              </Button>
-            </Link>
-          ) : null}
-          {me && item && (me.role === "admin" || me.id === item.author.id) ? (
-            <DeleteResourceButton
-              apiUrl={`/api/v1/partners/${id}`}
-              onDeleted={() => router.push("/marketplace?tab=partners")}
-            />
-          ) : null}
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="text-[rgba(234,240,255,0.72)]">Загрузка…</div>
-      ) : dbError ? (
-        <div className="text-[rgba(234,240,255,0.72)]">База данных недоступна.</div>
-      ) : !item ? (
-        <div className="text-[rgba(234,240,255,0.72)]">Запрос не найден.</div>
-      ) : (
-        <Card className="p-6 md:p-10">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge>{item.industry}</Badge>
-                <Badge>{item.role}</Badge>
-              </div>
-              <h1 className="mt-3 text-3xl font-semibold text-white leading-tight">Запрос партнёра</h1>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-[rgba(234,240,255,0.72)]">Создан</div>
-              <div className="text-sm font-semibold text-white">
-                {new Date(item.createdAt).toLocaleString("ru-RU")}
-              </div>
-            </div>
+    <div className="min-h-screen bg-[#0A0A0F] text-white">
+      <div className="mx-auto max-w-7xl px-6 pb-20 pt-10">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <Link href="/marketplace?tab=partners" className="text-sm text-gray-400 transition hover:text-white">
+            ← Назад в маркетплейс
+          </Link>
+          <div className="flex items-center gap-2">
+            {me && item && (me.role === "admin" || me.id === item.author.id) ? (
+              <Link href={`/partners/${id}/edit`}>
+                <Button variant="secondary" className="h-10">
+                  Редактировать
+                </Button>
+              </Link>
+            ) : null}
+            {me && item && (me.role === "admin" || me.id === item.author.id) ? (
+              <DeleteResourceButton apiUrl={`/api/v1/partners/${id}`} onDeleted={() => router.push("/marketplace?tab=partners")} />
+            ) : null}
           </div>
+        </div>
 
-          <div className="mt-6 flex items-center gap-4">
-            <div className="h-14 w-14 rounded-3xl bg-white/5 border border-[rgba(255,255,255,0.12)] overflow-hidden">
-              {item.author.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.author.avatarUrl} alt={item.author.name} className="h-full w-full object-cover" />
+        {loading ? (
+          <div className="text-gray-400">Загрузка…</div>
+        ) : dbError ? (
+          <div className="text-gray-400">База данных недоступна.</div>
+        ) : !item || !display ? (
+          <div className="text-gray-400">Карточка не найдена.</div>
+        ) : (
+          <div className="grid gap-12 lg:grid-cols-12">
+            <div className="space-y-12 lg:col-span-8">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-2xl font-bold">
+                  {initials(display.name)}
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{display.name}</h1>
+                  <p className="mt-2 text-2xl text-cyan-400">{display.sub}</p>
+                  <p className="mt-3 text-sm text-gray-500">Категория: {item.industry}</p>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="mb-5 text-3xl font-semibold">Чем мы помогаем стартапам</h2>
+                <p className="text-lg leading-relaxed text-gray-300">{item.description}</p>
+              </div>
+
+              {display.services.length ? (
+                <div>
+                  <h2 className="mb-6 text-3xl font-semibold">Доступные услуги</h2>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {display.services.map((s) => (
+                      <div key={s.title} className="rounded-3xl bg-[#12121A] p-6">
+                        <div className="font-medium">{s.title}</div>
+                        {s.note ? <div className="mt-2 text-sm text-gray-400">{s.note}</div> : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {item.attachments && item.attachments.length ? (
+                <div>
+                  <h2 className="mb-5 text-3xl font-semibold">Файлы</h2>
+                  <div className="grid gap-2">
+                    {item.attachments.map((a) => (
+                      <a
+                        key={a.id}
+                        href={a.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-3xl border border-white/10 bg-[#12121A] p-4 text-sm text-white/90 transition hover:border-cyan-500/40"
+                      >
+                        {a.filename}
+                      </a>
+                    ))}
+                  </div>
+                </div>
               ) : null}
             </div>
-            <div>
-              <div className="text-sm font-semibold text-white">{item.author.name}</div>
-            </div>
-          </div>
 
-          <div className="mt-6">
-            <div className="text-sm font-semibold text-white">Описание</div>
-            <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">{item.description}</div>
-          </div>
-
-          {item.attachments && item.attachments.length ? (
-            <div className="mt-6">
-              <div className="text-sm font-semibold text-white">Файлы</div>
-              <div className="mt-3 grid grid-cols-1 gap-2">
-                {item.attachments.map((a) => (
-                  <a
-                    key={a.id}
-                    href={a.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)] hover:border-[rgba(110,168,255,0.35)] transition text-sm text-white/90"
-                  >
-                    {a.filename}
-                  </a>
-                ))}
+            <div className="lg:col-span-4">
+              <div className="sticky top-24 rounded-3xl border border-white/10 bg-[#12121A] p-8">
+                <h3 className="mb-6 text-xl font-semibold">Для кого мы подходим</h3>
+                {display.fitFor.length ? (
+                  <ul className="space-y-4 text-gray-300">
+                    {display.fitFor.map((line) => (
+                      <li key={line}>• {line}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500">Список можно добавить при создании карточки.</p>
+                )}
+                <Button type="button" className="mt-10 w-full rounded-3xl bg-gradient-to-r from-blue-500 to-cyan-500 py-6 text-lg font-semibold hover:brightness-110">
+                  {display.cta}
+                </Button>
+                <div className="mt-8 text-center text-xs text-gray-500">Опубликовано: {new Date(item.createdAt).toLocaleString("ru-RU")}</div>
               </div>
             </div>
-          ) : null}
-        </Card>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-

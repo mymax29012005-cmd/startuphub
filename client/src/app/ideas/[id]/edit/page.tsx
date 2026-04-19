@@ -11,6 +11,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
+import type { IdeaProfileExtra } from "@/lib/marketplaceExtras";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
@@ -32,6 +33,7 @@ type IdeaDetail = {
   market: string | null;
   analysisId?: string | null;
   attachments?: UploadedAttachment[];
+  profileExtra?: IdeaProfileExtra | null;
 };
 
 export default function EditIdeaPage({ params }: { params: Promise<{ id: string }> }) {
@@ -57,6 +59,11 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
   const [problem, setProblem] = useState("");
   const [solution, setSolution] = useState("");
   const [market, setMarket] = useState("");
+  const [city, setCity] = useState("");
+  const [doneItemsRaw, setDoneItemsRaw] = useState("");
+  const [needsText, setNeedsText] = useState("");
+  const [helpTagsRaw, setHelpTagsRaw] = useState("");
+  const [coverGradient, setCoverGradient] = useState<"default" | "emerald" | "violet" | "blue">("default");
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -102,6 +109,12 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
         setProblem(data.problem ?? "");
         setSolution(data.solution ?? "");
         setMarket(data.market ?? "");
+        const pe = data.profileExtra ?? null;
+        setCity(pe?.city ?? "");
+        setDoneItemsRaw((pe?.doneItems ?? []).join("\n"));
+        setNeedsText(pe?.needsText ?? "");
+        setHelpTagsRaw((pe?.helpTags ?? []).join(", "));
+        setCoverGradient((pe?.coverGradient as any) ?? "default");
         setAnalysisId((data.analysisId as any) ?? null);
         setAttachments((data.attachments as any) ?? []);
       } catch {
@@ -135,6 +148,11 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
       if (d?.problem != null) setProblem(String(d.problem));
       if (d?.solution != null) setSolution(String(d.solution));
       if (d?.market != null) setMarket(String(d.market));
+      if (d?.city != null) setCity(String(d.city));
+      if (d?.doneItemsRaw != null) setDoneItemsRaw(String(d.doneItemsRaw));
+      if (d?.needsText != null) setNeedsText(String(d.needsText));
+      if (d?.helpTagsRaw != null) setHelpTagsRaw(String(d.helpTagsRaw));
+      if (d?.coverGradient) setCoverGradient(d.coverGradient);
       if (Array.isArray(d?.attachments)) setAttachments(d.attachments);
       localStorage.removeItem(draftKey);
     } catch {
@@ -173,6 +191,16 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
               setErr(null);
               try {
                 const priceNum = price === "" ? undefined : Number(price);
+                const doneItems = doneItemsRaw
+                  .split("\n")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .slice(0, 24);
+                const helpTags = helpTagsRaw
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .slice(0, 24);
                 const r = await fetch(`/api/v1/ideas/${id}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
@@ -189,6 +217,13 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
                     problem: problem || null,
                     solution: solution || null,
                     market: market || null,
+                    profileExtra: {
+                      city: city.trim() || null,
+                      doneItems: doneItems.length ? doneItems : [],
+                      needsText: needsText.trim() || null,
+                      helpTags: helpTags.length ? helpTags : [],
+                      coverGradient: coverGradient === "default" ? null : coverGradient,
+                    },
                   }),
                 });
                 const j = await r.json().catch(() => null);
@@ -295,6 +330,43 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
             />
 
             <div className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)]">
+              <div className="text-sm font-semibold text-white">Карточка в маркетплейсе</div>
+              <div className="mt-4 space-y-3">
+                <Input placeholder="Город" value={city} onChange={(e) => setCity(e.target.value)} />
+                <textarea
+                  className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[90px]"
+                  placeholder="Что уже сделано (каждая строка — пункт)"
+                  value={doneItemsRaw}
+                  onChange={(e) => setDoneItemsRaw(e.target.value)}
+                />
+                <textarea
+                  className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[70px]"
+                  placeholder="Что нужно для реализации"
+                  value={needsText}
+                  onChange={(e) => setNeedsText(e.target.value)}
+                />
+                <Input
+                  placeholder="Нужна помощь (теги через запятую)"
+                  value={helpTagsRaw}
+                  onChange={(e) => setHelpTagsRaw(e.target.value)}
+                />
+                <label className="block">
+                  <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Градиент шапки</div>
+                  <select
+                    className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
+                    value={coverGradient}
+                    onChange={(e) => setCoverGradient(e.target.value as any)}
+                  >
+                    <option value="default">Тёплый</option>
+                    <option value="emerald">Изумруд</option>
+                    <option value="violet">Фиолет</option>
+                    <option value="blue">Синий</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)]">
               <div className="text-sm font-semibold text-white">Отчёт анализатора</div>
               <div className="mt-2 text-xs text-[rgba(234,240,255,0.72)]">
                 Сейчас:{" "}
@@ -319,6 +391,11 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
                           problem,
                           solution,
                           market,
+                          city,
+                          doneItemsRaw,
+                          needsText,
+                          helpTagsRaw,
+                          coverGradient,
                           attachments,
                         }),
                       );

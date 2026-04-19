@@ -4,7 +4,6 @@ import React, { use as useReact, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DeleteResourceButton } from "@/components/DeleteResourceButton";
@@ -12,6 +11,7 @@ import { RadarChart } from "@/components/analyzer/RadarChart";
 import { CashflowBars } from "@/components/analyzer/CashflowBars";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
+import { ideaHeroGradientClass, type IdeaProfileExtra } from "@/lib/marketplaceExtras";
 
 type IdeaDetail = {
   id: string;
@@ -40,6 +40,7 @@ type IdeaDetail = {
   problem: string | null;
   solution: string | null;
   market: string | null;
+  profileExtra?: IdeaProfileExtra | null;
 };
 
 type Me = { id: string; role: "user" | "admin" };
@@ -159,84 +160,186 @@ export default function IdeaDetailPage({
   }, [idea]);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/marketplace?tab=ideas" className="text-[var(--accent)] hover:text-white text-sm font-medium">
-          ← Назад к идеям
-        </Link>
-        <div className="flex items-center gap-2">
-          {me && idea && (me.role === "admin" || me.id === idea.owner.id) ? (
-            <Link href={`/ideas/${id}/edit`}>
-              <Button variant="secondary" className="h-10">
-                Редактировать
+    <div className="min-h-screen bg-[#0A0A0F] text-white">
+      <div className="mx-auto max-w-7xl px-6 pb-20 pt-10">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <Link href="/marketplace?tab=ideas" className="text-sm text-gray-400 transition hover:text-white">
+            ← Назад в маркетплейс
+          </Link>
+          <div className="flex items-center gap-2">
+            {me && idea && (me.role === "admin" || me.id === idea.owner.id) ? (
+              <Link href={`/ideas/${id}/edit`}>
+                <Button variant="secondary" className="h-10">
+                  Редактировать
+                </Button>
+              </Link>
+            ) : null}
+            {me && idea && (me.role === "admin" || me.id === idea.owner.id) ? (
+              <DeleteResourceButton
+                apiUrl={`/api/v1/ideas/${id}`}
+                onDeleted={() => router.push("/marketplace?tab=ideas")}
+              />
+            ) : null}
+            {me ? (
+              <Button
+                variant="ghost"
+                className="h-10 w-10 rounded-2xl border border-white/15"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  try {
+                    const next = !favorited;
+                    const r = await fetch("/api/v1/favorites/toggle", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({ type: "idea", id }),
+                    });
+                    if (!r.ok) return;
+                    setFavorited(next);
+                  } catch {
+                    // ignore
+                  }
+                }}
+              >
+                <span className={favorited ? "text-[var(--accent-strong)]" : "text-gray-400"}>
+                  {favorited ? "♥" : "♡"}
+                </span>
               </Button>
-            </Link>
-          ) : null}
-          {me && idea && (me.role === "admin" || me.id === idea.owner.id) ? (
-            <DeleteResourceButton
-              apiUrl={`/api/v1/ideas/${id}`}
-              onDeleted={() => router.push("/marketplace?tab=ideas")}
-            />
-          ) : null}
-          {me ? (
-            <Button
-              variant="ghost"
-              className="h-10 w-10 rounded-2xl border border-[rgba(255,255,255,0.16)]"
-              onClick={async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                try {
-                  const next = !favorited;
-                  const r = await fetch("/api/v1/favorites/toggle", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ type: "idea", id }),
-                  });
-                  if (!r.ok) return;
-                  setFavorited(next);
-                } catch {
-                  // ignore
-                }
-              }}
-            >
-              <span className={favorited ? "text-[var(--accent-strong)]" : "text-[var(--muted)]"}>
-                {favorited ? "♥" : "♡"}
-              </span>
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="text-[rgba(234,240,255,0.72)]">Загрузка…</div>
-      ) : dbError ? (
-        <div className="text-[rgba(234,240,255,0.72)]">База данных недоступна.</div>
-      ) : !idea ? (
-        <div className="text-[rgba(234,240,255,0.72)]">Идея не найдена.</div>
-      ) : (
-        <Card className="p-6 md:p-10">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge>{idea.category}</Badge>
-              </div>
-              <h1 className="mt-3 text-3xl font-semibold text-white leading-tight">{idea.title}</h1>
-              <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)]">
-                {formatLabelsByLang[lang]?.[idea.format] ?? idea.format} ·{" "}
-                {stageLabelsByLang[lang]?.[idea.stage] ?? idea.stage}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-[rgba(234,240,255,0.72)]">Цена</div>
-              <div className="text-2xl font-semibold text-white">{idea.price.toLocaleString("ru-RU")} ₽</div>
-            </div>
+            ) : null}
           </div>
+        </div>
 
-          <div className="mt-6">{ownerBlock}</div>
+        {loading ? (
+          <div className="text-gray-400">Загрузка…</div>
+        ) : dbError ? (
+          <div className="text-gray-400">База данных недоступна.</div>
+        ) : !idea ? (
+          <div className="text-gray-400">Идея не найдена.</div>
+        ) : (
+          <>
+            <div
+              className={[
+                "relative mb-12 h-80 overflow-hidden rounded-3xl bg-gradient-to-br",
+                ideaHeroGradientClass(idea.profileExtra?.coverGradient),
+              ].join(" ")}
+            >
+              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-10">
+                <span className="rounded-3xl bg-white/20 px-5 py-2 text-sm backdrop-blur-md">Идея</span>
+                <h1 className="mt-4 max-w-4xl text-4xl font-bold leading-tight tracking-tight md:text-5xl">{idea.title}</h1>
+              </div>
+            </div>
 
-          {idea.analysis ? (
-            <div className="mt-6 rounded-3xl border border-[rgba(175,110,255,0.25)] bg-[rgba(175,110,255,0.07)] p-5">
+            <div className="grid gap-12 lg:grid-cols-12">
+              <div className="space-y-12 lg:col-span-8">
+                <div>
+                  <h2 className="mb-6 text-3xl font-semibold">Описание идеи</h2>
+                  <p className="text-lg leading-relaxed text-gray-300">{idea.description}</p>
+                </div>
+
+                <div>
+                  <h2 className="mb-6 text-3xl font-semibold">Что уже сделано</h2>
+                  {(() => {
+                    const done = idea.profileExtra?.doneItems?.filter(Boolean) ?? [];
+                    const fallback = idea.solution?.trim()
+                      ? idea.solution
+                          .split("\n")
+                          .map((s) => s.trim())
+                          .filter(Boolean)
+                      : [];
+                    const items = done.length ? done : fallback;
+                    if (!items.length) {
+                      return <p className="text-gray-400">Пока не заполнено — можно добавить при редактировании.</p>;
+                    }
+                    return (
+                      <ul className="space-y-4 text-gray-300">
+                        {items.map((line) => (
+                          <li key={line} className="flex gap-3">
+                            <span className="text-emerald-400">✓</span>
+                            <span>{line}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
+                </div>
+
+                <div>
+                  <h2 className="mb-6 text-3xl font-semibold">Что нужно для реализации</h2>
+                  <p className="text-lg leading-relaxed text-gray-300">
+                    {idea.profileExtra?.needsText?.trim() || idea.problem?.trim() || "—"}
+                  </p>
+                </div>
+
+                {idea.solution || idea.market ? (
+                  <div className="rounded-3xl border border-white/10 bg-[#12121A] p-6">
+                    <div className="text-sm font-semibold text-white">Дополнительно</div>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      {idea.solution ? (
+                        <div>
+                          <div className="text-xs text-gray-400">Решение</div>
+                          <div className="mt-2 text-sm leading-relaxed text-gray-300">{idea.solution}</div>
+                        </div>
+                      ) : null}
+                      {idea.market ? (
+                        <div>
+                          <div className="text-xs text-gray-400">Рынок</div>
+                          <div className="mt-2 text-sm leading-relaxed text-gray-300">{idea.market}</div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="lg:col-span-4">
+                <div className="sticky top-24 rounded-3xl border border-white/10 bg-[#12121A] p-8">
+                  <h3 className="mb-6 text-xl font-semibold">Информация об идее</h3>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="text-sm text-gray-400">Автор</div>
+                      <div className="mt-1 font-medium">{idea.owner.name}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Город</div>
+                      <div className="mt-1 font-medium">{idea.profileExtra?.city?.trim() || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Стадия</div>
+                      <div className="mt-1 font-medium text-amber-400">{stageLabelsByLang[lang]?.[idea.stage] ?? idea.stage}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Формат</div>
+                      <div className="mt-1 font-medium">{formatLabelsByLang[lang]?.[idea.format] ?? idea.format}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Ориентир цены</div>
+                      <div className="mt-1 font-medium">{idea.price.toLocaleString("ru-RU")} ₽</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Нужна помощь</div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(idea.profileExtra?.helpTags?.length ? idea.profileExtra.helpTags : [idea.category]).map((t) => (
+                          <span key={t} className="rounded-2xl bg-white/10 px-4 py-1 text-sm">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 border-t border-white/10 pt-6">{ownerBlock}</div>
+                  <Button
+                    type="button"
+                    className="mt-10 w-full rounded-3xl bg-gradient-to-r from-violet-600 to-rose-500 py-5 text-base font-semibold hover:brightness-110"
+                  >
+                    Связаться с автором
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {idea.analysis ? (
+            <div className="mt-12 rounded-3xl border border-[rgba(175,110,255,0.25)] bg-[rgba(175,110,255,0.07)] p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-sm font-semibold text-white">Отчёт анализатора</div>
@@ -369,52 +472,27 @@ export default function IdeaDetailPage({
             </div>
           ) : null}
 
-          {idea.attachments && idea.attachments.length ? (
-            <div className="mt-6">
-              <div className="text-sm font-semibold text-white">Файлы</div>
-              <div className="mt-3 grid grid-cols-1 gap-2">
-                {idea.attachments.map((a) => (
-                  <a
-                    key={a.id}
-                    href={a.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)] hover:border-[rgba(110,168,255,0.35)] transition text-sm text-white/90"
-                  >
-                    {a.filename}
-                  </a>
-                ))}
+            {idea.attachments && idea.attachments.length ? (
+              <div className="mt-12">
+                <h2 className="mb-4 text-2xl font-semibold">Файлы</h2>
+                <div className="grid grid-cols-1 gap-2">
+                  {idea.attachments.map((a) => (
+                    <a
+                      key={a.id}
+                      href={a.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-3xl border border-white/10 bg-[#12121A] p-4 text-sm text-white/90 transition hover:border-violet-500/40"
+                    >
+                      {a.filename}
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : null}
-
-          <div className="mt-6">
-            <div className="text-sm font-semibold text-white">Описание</div>
-            <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">{idea.description}</div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-5 glass rounded-3xl border border-[rgba(255,255,255,0.12)]">
-              <div className="text-sm font-semibold text-white">Проблема</div>
-              <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">
-                {idea.problem ? idea.problem : "—"}
-              </div>
-            </Card>
-            <Card className="p-5 glass rounded-3xl border border-[rgba(255,255,255,0.12)] md:col-span-1">
-              <div className="text-sm font-semibold text-white">Решение</div>
-              <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">
-                {idea.solution ? idea.solution : "—"}
-              </div>
-            </Card>
-            <Card className="p-5 glass rounded-3xl border border-[rgba(255,255,255,0.12)] md:col-span-1">
-              <div className="text-sm font-semibold text-white">Рынок</div>
-              <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">
-                {idea.market ? idea.market : "—"}
-              </div>
-            </Card>
-          </div>
-        </Card>
-      )}
+            ) : null}
+          </>
+        )}
+      </div>
     </div>
   );
 }

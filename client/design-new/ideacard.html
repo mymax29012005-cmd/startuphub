@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Умный холодильник с ИИ-рецептами • StartupHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+    .logo-dot { position: relative; width: 44px; height: 44px; }
+    /* (Siri-логотип оставлен тот же, что и раньше) */
+  </style>
+</head>
+<body class="bg-[#0A0A0F] text-white">
+
+  <nav class="fixed top-0 left-0 right-0 bg-[#0A0A0F]/90 backdrop-blur-xl border-b border-white/10 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="logo-dot"></div>
+        <span class="heading text-2xl font-semibold">StartupHub</span>
+      </div>
+      <button onclick="history.back()" class="text-gray-400 hover:text-white">← Назад</button>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-6 pt-28 pb-20">
+
+    <div class="h-80 bg-gradient-to-br from-amber-500 to-orange-500 rounded-3xl relative mb-12">
+      <div class="absolute bottom-0 left-0 right-0 p-10">
+        <span class="px-5 py-2 bg-white/20 backdrop-blur-md rounded-3xl text-sm">Идея</span>
+        <h1 class="heading text-5xl font-bold mt-4">Умный холодильник с ИИ-рецептами</h1>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-12">
+      <div class="lg:col-span-8 space-y-12">
+        <div>
+          <h2 class="text-3xl font-semibold mb-6">Описание идеи</h2>
+          <p class="text-gray-300 text-lg leading-relaxed">
+            Холодильник, который анализирует содержимое, предлагает рецепты на основе имеющихся продуктов, 
+            учитывает предпочтения и диетические ограничения пользователя. Экономит время и сокращает пищевые отходы.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-3xl font-semibold mb-6">Что уже сделано</h2>
+          <ul class="space-y-4 text-gray-300">
+            <li class="flex gap-3"><span class="text-emerald-400">✓</span> Проведён опрос 450 респондентов</li>
+            <li class="flex gap-3"><span class="text-emerald-400">✓</span> Разработана концепция и UI/UX приложения</li>
+            <li class="flex gap-3"><span class="text-emerald-400">✓</span> Есть初步 расчёты экономики</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-3xl font-semibold mb-6">Что нужно для реализации</h2>
+          <p class="text-gray-300">Сооснователь с опытом в hardware / IoT, инвестиции на прототип, партнёрство с производителями холодильников.</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-4">
+        <div class="bg-[#12121A] border border-white/10 rounded-3xl p-8 sticky top-28">
+          <h3 class="text-xl font-semibold mb-6">Информация об идее</h3>
+          <div class="space-y-6">
+            <div>
+              <div class="text-gray-400 text-sm">Автор</div>
+              <div class="font-medium">Анна Ковалёва</div>
+            </div>
+            <div>
+              <div class="text-gray-400 text-sm">Город</div>
+              <div class="font-medium">Москва</div>
+            </div>
+            <div>
+              <div class="text-gray-400 text-sm">Стадия</div>
+              <div class="font-medium text-amber-400">Идея / Концепция</div>
+            </div>
+            <div>
+              <div class="text-gray-400 text-sm">Нужна помощь</div>
+              <div class="flex flex-wrap gap-2">
+                <span class="bg-white/10 px-4 py-1 rounded-2xl text-sm">Сооснователь</span>
+                <span class="bg-white/10 px-4 py-1 rounded-2xl text-sm">Инвестиции</span>
+                <span class="bg-white/10 px-4 py-1 rounded-2xl text-sm">Менторство</span>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="alert('Запрос отправлен автору идеи')" 
+                  class="mt-10 w-full py-5 bg-gradient-to-r from-violet-600 to-rose-500 rounded-3xl font-semibold">
+            Связаться с автором
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

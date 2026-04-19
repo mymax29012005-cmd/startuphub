@@ -26,6 +26,15 @@ const createIdeaSchema = z.object({
   problem: z.string().max(2000).optional(),
   solution: z.string().max(2000).optional(),
   market: z.string().max(2000).optional(),
+  profileExtra: z
+    .object({
+      city: z.string().min(1).max(80).optional(),
+      doneItems: z.array(z.string().min(1).max(120)).max(24).optional(),
+      helpTags: z.array(z.string().min(1).max(40)).max(24).optional(),
+      needsText: z.string().min(1).max(2000).optional(),
+      coverGradient: z.string().min(1).max(80).optional(),
+    })
+    .optional(),
 });
 
 const updateIdeaSchema = z.object({
@@ -47,6 +56,15 @@ const updateIdeaSchema = z.object({
   problem: z.string().max(2000).optional().nullable(),
   solution: z.string().max(2000).optional().nullable(),
   market: z.string().max(2000).optional().nullable(),
+  profileExtra: z
+    .object({
+      city: z.string().min(1).max(80).optional().nullable(),
+      doneItems: z.array(z.string().min(1).max(120)).max(24).optional(),
+      helpTags: z.array(z.string().min(1).max(40)).max(24).optional(),
+      needsText: z.string().min(1).max(2000).optional().nullable(),
+      coverGradient: z.string().min(1).max(80).optional().nullable(),
+    })
+    .optional(),
 });
 
 ideasRouter.get("/", async (req, res) => {
@@ -94,6 +112,7 @@ ideasRouter.get("/", async (req, res) => {
         problem: i.problem,
         solution: i.solution,
         market: i.market,
+        profileExtra: (i as any).profileExtra ?? null,
       })),
     );
   } catch (_e) {
@@ -146,6 +165,7 @@ ideasRouter.get("/:ideaId", async (req, res) => {
       problem: idea.problem,
       solution: idea.solution,
       market: idea.market,
+      profileExtra: (idea as any).profileExtra ?? null,
     });
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
@@ -185,6 +205,7 @@ ideasRouter.post("/", requireAuth, async (req, res) => {
         market: data.market ?? null,
         ownerId: req.user!.userId,
         analysisId: data.analysisId ?? null,
+        ...(data.profileExtra ? { profileExtra: data.profileExtra as any } : {}),
       },
       select: { id: true },
     });
@@ -261,6 +282,7 @@ ideasRouter.put("/:ideaId", requireAuth, async (req, res) => {
         ...(data.solution !== undefined ? { solution: data.solution } : {}),
         ...(data.market !== undefined ? { market: data.market } : {}),
         ...(data.analysisId !== undefined ? { analysisId: data.analysisId } : {}),
+        ...(data.profileExtra !== undefined ? { profileExtra: data.profileExtra as any } : {}),
       },
       select: { id: true },
     });

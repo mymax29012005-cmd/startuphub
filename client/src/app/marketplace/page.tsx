@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 
+import { MarketplaceIdeaRow, MarketplaceInvestorRow, MarketplacePartnerRow } from "@/components/marketplace/MarketplaceRows";
 import { allowedCategories } from "@/lib/categories";
 import { formatLabelsByLang, partnerRoleLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
+import type { IdeaProfileExtra, InvestorProfileExtra, PartnerProfileExtra } from "@/lib/marketplaceExtras";
 
 type TabKey = "startups" | "ideas" | "investors" | "partners";
 
@@ -29,6 +31,8 @@ type IdeaItem = {
   price: number;
   stage: string;
   format?: "online" | "offline" | "hybrid";
+  owner?: { id: string; name: string; avatarUrl: string | null };
+  profileExtra?: IdeaProfileExtra | null;
 };
 
 type InvestorItem = {
@@ -36,6 +40,9 @@ type InvestorItem = {
   industry: string;
   description: string;
   amount: number;
+  status?: string;
+  author?: { name: string; avatarUrl: string | null };
+  profileExtra?: InvestorProfileExtra | null;
 };
 
 type PartnerItem = {
@@ -43,9 +50,11 @@ type PartnerItem = {
   role: "supplier" | "reseller" | "integration" | "cofounder";
   industry: string;
   description: string;
+  author?: { name: string; avatarUrl: string | null };
+  profileExtra?: PartnerProfileExtra | null;
 };
 
-type MarketplaceCardVM = {
+type StartupCardVM = {
   id: string;
   href: string;
   title: string;
@@ -163,133 +172,148 @@ function MarketplaceInner() {
 
   const totalCount = (startups?.length ?? 0) + (ideas?.length ?? 0) + (investors?.length ?? 0) + (partners?.length ?? 0);
 
-  const cards: MarketplaceCardVM[] = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const inds = selectedIndustries;
-    const formats = selectedFormats;
-    const partnerRolesSel = selectedPartnerRoles;
-    const min = parseMoney(amountMin);
-    const max = parseMoney(amountMax);
+  const filterCtx = useMemo(() => {
+    return {
+      q: search.trim().toLowerCase(),
+      inds: selectedIndustries,
+      formats: selectedFormats,
+      partnerRolesSel: selectedPartnerRoles,
+      min: parseMoney(amountMin),
+      max: parseMoney(amountMax),
+    };
+  }, [search, selectedIndustries, selectedFormats, selectedPartnerRoles, amountMin, amountMax]);
 
-    function matchesBase(texts: string[]) {
-      if (!q) return true;
-      const blob = texts.join(" ").toLowerCase();
-      return blob.includes(q);
-    }
+  function matchesBase(q: string, texts: string[]) {
+    if (!q) return true;
+    const blob = texts.join(" ").toLowerCase();
+    return blob.includes(q);
+  }
 
-    function matchesAmount(v: number | null) {
-      if (v == null) return true;
-      if (min != null && v < min) return false;
-      if (max != null && v > max) return false;
-      return true;
-    }
+  function matchesAmount(min: number | null, max: number | null, v: number | null) {
+    if (v == null) return true;
+    if (min != null && v < min) return false;
+    if (max != null && v > max) return false;
+    return true;
+  }
 
-    if (activeTab === "startups") {
-      const list = startups ?? [];
-      return list
-        .filter((x) => {
-          if (!matchesBase([x.title, x.description, x.tagline ?? "", x.category])) return false;
-          if (inds.size > 0 && !inds.has(x.category)) return false;
-          if (stage && x.stage !== stage) return false;
-          if (!matchesAmount(x.price)) return false;
-          if (formats.size > 0) {
-            const fmt = x.format ?? (x.isOnline ? "online" : "offline");
-            if (!formats.has(fmt)) return false;
-          }
-          return true;
-        })
-        .map((x) => ({
-          id: x.id,
-          href: `/startups/${x.id}`,
-          title: x.title,
-          desc: (x.tagline && x.tagline.trim()) || x.description,
-          pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "startup" as const },
-          amount: fmtMoney(x.price),
-          location:
-            x.format != null
-              ? (formatLabelsByLang.ru?.[x.format] ?? x.format)
-              : x.isOnline
-                ? (formatLabelsByLang.ru?.online ?? "Онлайн")
-                : (formatLabelsByLang.ru?.offline ?? "Офлайн"),
-        }));
-    }
+  function investorComparableAmount(x: InvestorItem) {
+    const pe = x.profileExtra;
+    if (pe?.checkMax != null) return pe.checkMax;
+    if (pe?.checkMin != null) return pe.checkMin;
+    return x.amount;
+  }
 
-    if (activeTab === "ideas") {
-      const list = ideas ?? [];
-      return list
-        .filter((x) => {
-          if (!matchesBase([x.title, x.description, x.category])) return false;
-          if (inds.size > 0 && !inds.has(x.category)) return false;
-          if (stage && x.stage !== stage) return false;
-          if (!matchesAmount(x.price)) return false;
-          if (formats.size > 0) {
-            const fmt = x.format ?? "online";
-            if (!formats.has(fmt)) return false;
-          }
-          return true;
-        })
-        .map((x) => ({
-          id: x.id,
-          href: `/ideas/${x.id}`,
-          title: x.title,
-          desc: x.description,
-          pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "idea" as const },
-          amount: fmtMoney(x.price),
-          location: x.format ? (formatLabelsByLang.ru?.[x.format] ?? x.format) : "",
-        }));
-    }
-
-    if (activeTab === "investors") {
-      const list = investors ?? [];
-      return list
-        .filter((x) => {
-          if (!matchesBase([x.industry, x.description])) return false;
-          if (inds.size > 0 && !inds.has(x.industry)) return false;
-          if (!matchesAmount(x.amount)) return false;
-          return true;
-        })
-        .map((x) => ({
-          id: x.id,
-          href: `/investors/${x.id}`,
-          title: `Инвестор: ${fmtMoney(x.amount)}`,
-          desc: x.description,
-          pill: { text: "Запрос", kind: "accent" as const },
-          amount: fmtMoney(x.amount),
-          location: "",
-        }));
-    }
-
-    const list = partners ?? [];
+  const startupCards: StartupCardVM[] = useMemo(() => {
+    const { q, inds, formats, min, max } = filterCtx;
+    const list = startups ?? [];
     return list
       .filter((x) => {
-        if (!matchesBase([x.industry, x.role, x.description])) return false;
-        if (inds.size > 0 && !inds.has(x.industry)) return false;
-        if (partnerRolesSel.size > 0 && !partnerRolesSel.has(x.role)) return false;
+        if (!matchesBase(q, [x.title, x.description, x.tagline ?? "", x.category])) return false;
+        if (inds.size > 0 && !inds.has(x.category)) return false;
+        if (stage && x.stage !== stage) return false;
+        if (!matchesAmount(min, max, x.price)) return false;
+        if (formats.size > 0) {
+          const fmt = x.format ?? (x.isOnline ? "online" : "offline");
+          if (!formats.has(fmt)) return false;
+        }
         return true;
       })
       .map((x) => ({
         id: x.id,
-        href: `/partners/${x.id}`,
-        title: x.industry,
-        desc: x.description,
-        pill: { text: partnerRoleLabelsByLang.ru?.[x.role] ?? x.role, kind: "accent" as const },
-        amount: "",
-        location: "",
+        href: `/startups/${x.id}`,
+        title: x.title,
+        desc: (x.tagline && x.tagline.trim()) || x.description,
+        pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "startup" as const },
+        amount: fmtMoney(x.price),
+        location:
+          x.format != null
+            ? (formatLabelsByLang.ru?.[x.format] ?? x.format)
+            : x.isOnline
+              ? (formatLabelsByLang.ru?.online ?? "Онлайн")
+              : (formatLabelsByLang.ru?.offline ?? "Офлайн"),
       }));
-  }, [
-    activeTab,
-    amountMax,
-    amountMin,
-    ideas,
-    investors,
-    partners,
-    search,
-    selectedFormats,
-    selectedPartnerRoles,
-    selectedIndustries,
-    stage,
-    startups,
-  ]);
+  }, [filterCtx, startups, stage]);
+
+  const filteredIdeas: IdeaItem[] = useMemo(() => {
+    const { q, inds, formats, min, max } = filterCtx;
+    const list = ideas ?? [];
+    return list.filter((x) => {
+      const pe = x.profileExtra ?? null;
+      if (
+        !matchesBase(q, [
+          x.title,
+          x.description,
+          x.category,
+          pe?.city ?? "",
+          ...(pe?.helpTags ?? []),
+        ])
+      )
+        return false;
+      if (inds.size > 0 && !inds.has(x.category)) return false;
+      if (stage && x.stage !== stage) return false;
+      if (!matchesAmount(min, max, x.price)) return false;
+      if (formats.size > 0) {
+        const fmt = x.format ?? "online";
+        if (!formats.has(fmt)) return false;
+      }
+      return true;
+    });
+  }, [filterCtx, ideas, stage]);
+
+  const filteredInvestors: InvestorItem[] = useMemo(() => {
+    const { q, inds, min, max } = filterCtx;
+    const list = investors ?? [];
+    return list.filter((x) => {
+      const pe = x.profileExtra ?? null;
+      if (
+        !matchesBase(q, [
+          x.industry,
+          x.description,
+          pe?.investorName ?? "",
+          pe?.investorTitle ?? "",
+          ...(pe?.interests ?? []),
+        ])
+      )
+        return false;
+      if (inds.size > 0 && !inds.has(x.industry)) return false;
+      if (!matchesAmount(min, max, investorComparableAmount(x))) return false;
+      return true;
+    });
+  }, [filterCtx, investors]);
+
+  const filteredPartners: PartnerItem[] = useMemo(() => {
+    const { q, inds, partnerRolesSel } = filterCtx;
+    const list = partners ?? [];
+    return list.filter((x) => {
+      const pe = x.profileExtra ?? null;
+      const svc = (pe?.services ?? []).map((s) => s.title);
+      if (
+        !matchesBase(q, [
+          x.industry,
+          x.role,
+          x.description,
+          pe?.partnerName ?? "",
+          pe?.partnerType ?? "",
+          pe?.helpText ?? "",
+          ...svc,
+          ...(pe?.fitFor ?? []),
+        ])
+      )
+        return false;
+      if (inds.size > 0 && !inds.has(x.industry)) return false;
+      if (partnerRolesSel.size > 0 && !partnerRolesSel.has(x.role)) return false;
+      return true;
+    });
+  }, [filterCtx, partners]);
+
+  const listIsEmpty =
+    activeTab === "startups"
+      ? startupCards.length === 0
+      : activeTab === "ideas"
+        ? filteredIdeas.length === 0
+        : activeTab === "investors"
+          ? filteredInvestors.length === 0
+          : filteredPartners.length === 0;
 
   return (
     <div className="mx-auto max-w-7xl px-6">
@@ -397,7 +421,7 @@ function MarketplaceInner() {
                 className="rounded-2xl border border-white/10 bg-[#1A1A24] px-5 py-4 text-left transition hover:border-violet-500/50 hover:bg-white/5"
               >
                 <div className="font-semibold text-white">Инвестор</div>
-                <div className="mt-1 text-xs text-gray-500">Запрос на инвестиции</div>
+                <div className="mt-1 text-xs text-gray-500">Профиль: чек, стадии, опыт</div>
               </Link>
               <Link
                 href="/add-partner"
@@ -553,49 +577,54 @@ function MarketplaceInner() {
           {dbError ? <div className="py-12 text-gray-400">База данных недоступна</div> : null}
 
           {!loading && !dbError ? (
-            cards.length === 0 ? (
+            listIsEmpty ? (
               <div className="col-span-full py-12 text-center text-gray-400">В этой категории пока ничего нет</div>
             ) : (
               <div className="flex flex-col gap-4">
-                {cards.map((it) => (
-                  <Link
-                    key={it.id}
-                    href={it.href}
-                    className="card-hover flex flex-col gap-4 rounded-3xl border border-white/10 bg-[#161618] p-6 transition hover:border-violet-500/25 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-xl font-semibold leading-snug text-white md:text-2xl">{it.title}</h3>
-                      <p className="mt-2 text-base leading-relaxed text-gray-400">{it.desc}</p>
-                      <div className="mt-4 text-sm">
-                        {it.amount ? (
-                          <span>
-                            <span className="text-gray-500">Нужно:</span>{" "}
-                            <span className="font-semibold text-white">{it.amount}</span>
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 flex-row items-center justify-between gap-4 sm:flex-col sm:items-end">
-                      {it.pill ? (
-                        <span
-                          className={[
-                            "whitespace-nowrap rounded-2xl px-4 py-1.5 text-xs font-medium",
-                            it.pill.kind === "idea"
-                              ? "bg-emerald-500/20 text-emerald-400"
-                              : it.pill.kind === "accent"
-                                ? "bg-violet-500/20 text-violet-300"
-                                : "bg-emerald-500/20 text-emerald-400",
-                          ].join(" ")}
-                        >
-                          {it.pill.text}
-                        </span>
-                      ) : null}
-                      {it.location ? (
-                        <span className="text-sm font-medium text-violet-400 sm:text-right">{it.location}</span>
-                      ) : null}
-                    </div>
-                  </Link>
-                ))}
+                {activeTab === "startups"
+                  ? startupCards.map((it) => (
+                      <Link
+                        key={it.id}
+                        href={it.href}
+                        className="card-hover flex flex-col gap-4 rounded-3xl border border-white/10 bg-[#161618] p-6 transition hover:border-violet-500/25 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-xl font-semibold leading-snug text-white md:text-2xl">{it.title}</h3>
+                          <p className="mt-2 text-base leading-relaxed text-gray-400">{it.desc}</p>
+                          <div className="mt-4 text-sm">
+                            {it.amount ? (
+                              <span>
+                                <span className="text-gray-500">Нужно:</span>{" "}
+                                <span className="font-semibold text-white">{it.amount}</span>
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 flex-row items-center justify-between gap-4 sm:flex-col sm:items-end">
+                          {it.pill ? (
+                            <span
+                              className={[
+                                "whitespace-nowrap rounded-2xl px-4 py-1.5 text-xs font-medium",
+                                it.pill.kind === "idea"
+                                  ? "bg-emerald-500/20 text-emerald-400"
+                                  : it.pill.kind === "accent"
+                                    ? "bg-violet-500/20 text-violet-300"
+                                    : "bg-emerald-500/20 text-emerald-400",
+                              ].join(" ")}
+                            >
+                              {it.pill.text}
+                            </span>
+                          ) : null}
+                          {it.location ? (
+                            <span className="text-sm font-medium text-violet-400 sm:text-right">{it.location}</span>
+                          ) : null}
+                        </div>
+                      </Link>
+                    ))
+                  : null}
+                {activeTab === "ideas" ? filteredIdeas.map((x) => <MarketplaceIdeaRow key={x.id} idea={x} />) : null}
+                {activeTab === "investors" ? filteredInvestors.map((x) => <MarketplaceInvestorRow key={x.id} item={x} />) : null}
+                {activeTab === "partners" ? filteredPartners.map((x) => <MarketplacePartnerRow key={x.id} item={x} />) : null}
               </div>
             )
           ) : null}

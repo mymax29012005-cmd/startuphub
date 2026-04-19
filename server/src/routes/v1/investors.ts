@@ -18,6 +18,18 @@ const createInvestorSchema = z.object({
     }),
   description: z.string().min(10).max(2000),
   amount: z.coerce.number().positive(),
+  profileExtra: z
+    .object({
+      investorName: z.string().min(1).max(90),
+      investorTitle: z.string().max(90).optional(),
+      checkMin: z.coerce.number().positive().optional(),
+      checkMax: z.coerce.number().positive().optional(),
+      stages: z.array(z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"])).max(10).optional(),
+      dealsCount: z.coerce.number().int().min(0).max(9999).optional(),
+      exitsCount: z.coerce.number().int().min(0).max(9999).optional(),
+      interests: z.array(z.string().min(1).max(48)).max(24).optional(),
+    })
+    .optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
 });
 
@@ -33,6 +45,18 @@ const updateInvestorSchema = z.object({
   description: z.string().min(10).max(2000).optional(),
   amount: z.coerce.number().positive().optional(),
   status: z.enum(["active", "paused", "closed"]).optional(),
+  profileExtra: z
+    .object({
+      investorName: z.string().min(1).max(90).optional(),
+      investorTitle: z.string().max(90).optional(),
+      checkMin: z.coerce.number().positive().optional().nullable(),
+      checkMax: z.coerce.number().positive().optional().nullable(),
+      stages: z.array(z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"])).max(10).optional(),
+      dealsCount: z.coerce.number().int().min(0).max(9999).optional().nullable(),
+      exitsCount: z.coerce.number().int().min(0).max(9999).optional().nullable(),
+      interests: z.array(z.string().min(1).max(48)).max(24).optional(),
+    })
+    .optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
 });
 
@@ -53,6 +77,7 @@ investorsRouter.get("/", async (_req, res) => {
         status: it.status,
         authorId: it.authorId,
         author: it.author,
+        profileExtra: (it as any).profileExtra ?? null,
       })),
     );
   } catch (_e) {
@@ -97,6 +122,7 @@ investorsRouter.post("/", requireAuth, async (req, res) => {
         description: parsed.data.description,
         amount: parsed.data.amount,
         authorId: req.user!.userId,
+        ...(parsed.data.profileExtra ? { profileExtra: parsed.data.profileExtra as any } : {}),
       },
       select: { id: true },
     });
@@ -158,6 +184,7 @@ investorsRouter.put("/:requestId", requireAuth, async (req, res) => {
         ...(data.description !== undefined ? { description: data.description } : {}),
         ...(data.amount !== undefined ? { amount: data.amount } : {}),
         ...(data.status !== undefined ? { status: data.status as any } : {}),
+        ...(data.profileExtra !== undefined ? { profileExtra: data.profileExtra as any } : {}),
       },
       select: { id: true },
     });

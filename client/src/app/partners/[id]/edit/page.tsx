@@ -9,10 +9,13 @@ import { Card } from "@/components/ui/Card";
 import { useI18n } from "@/i18n/I18nProvider";
 import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { partnerRoleLabelsByLang } from "@/lib/labelMaps";
+import type { PartnerProfileExtra } from "@/lib/marketplaceExtras";
 
 const roles = ["supplier", "reseller", "integration", "cofounder"] as const;
 
 type Me = { id: string; role: "user" | "admin" };
+
+type ServiceRow = { title: string; note: string };
 
 type PartnerDetail = {
   id: string;
@@ -20,6 +23,7 @@ type PartnerDetail = {
   industry: string;
   description: string;
   author: { id: string };
+  profileExtra?: PartnerProfileExtra | null;
 };
 
 export default function EditPartnerPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,6 +40,17 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
   const [role, setRole] = useState<(typeof roles)[number]>("supplier");
   const [industry, setIndustry] = useState(allowedCategories[0]?.value ?? "SaaS");
   const [description, setDescription] = useState("");
+
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerType, setPartnerType] = useState("");
+  const [services, setServices] = useState<ServiceRow[]>([
+    { title: "", note: "" },
+    { title: "", note: "" },
+    { title: "", note: "" },
+    { title: "", note: "" },
+  ]);
+  const [fitForRaw, setFitForRaw] = useState("");
+  const [ctaText, setCtaText] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -70,6 +85,16 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
         setRole((data.role as any) ?? "supplier");
         setIndustry(asAllowedCategory(data.industry ?? (allowedCategories[0]?.value ?? "SaaS")));
         setDescription(data.description ?? "");
+
+        const pe = data.profileExtra ?? null;
+        setPartnerName(pe?.partnerName ?? "");
+        setPartnerType(pe?.partnerType ?? "");
+        const incoming = (pe?.services ?? []).slice(0, 4);
+        const next: ServiceRow[] = [...incoming.map((s) => ({ title: s.title, note: s.note ?? "" }))];
+        while (next.length < 4) next.push({ title: "", note: "" });
+        setServices(next);
+        setFitForRaw((pe?.fitFor ?? []).join("\n"));
+        setCtaText(pe?.ctaText ?? "Стать партнёром / Получить условия");
       } catch {
         if (!cancelled) setErr("Сетевая ошибка");
       } finally {
@@ -93,7 +118,7 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <Card className="p-6 md:p-10">
-        <h1 className="text-2xl font-semibold text-white">Редактировать запрос партнёра</h1>
+        <h1 className="text-2xl font-semibold text-white">Редактировать карточку партнёра</h1>
 
         {loading ? (
           <div className="mt-6 text-[rgba(234,240,255,0.72)]">Загрузка…</div>
@@ -111,6 +136,15 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
               setSaving(true);
               setErr(null);
               try {
+                const fitFor = fitForRaw
+                  .split("\n")
+                  .map((s) => s.replace(/^\s*•\s*/, "").trim())
+                  .filter(Boolean)
+                  .slice(0, 24);
+                const svc = services
+                  .map((s) => ({ title: s.title.trim(), note: s.note.trim() || undefined }))
+                  .filter((s) => s.title.length > 0);
+
                 const r = await fetch(`/api/v1/partners/${id}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
@@ -119,6 +153,13 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
                     role,
                     industry,
                     description,
+                    profileExtra: {
+                      partnerName: partnerName.trim() || "Партнёр",
+                      partnerType: partnerType.trim() || undefined,
+                      services: svc.length ? svc : undefined,
+                      fitFor: fitFor.length ? fitFor : undefined,
+                      ctaText: ctaText.trim() || undefined,
+                    },
                   }),
                 });
                 const j = await r.json().catch(() => null);
@@ -135,7 +176,7 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
             }}
           >
             <label className="flex flex-col gap-2">
-              <div className="text-xs text-[rgba(234,240,255,0.72)]">Роль</div>
+              <div className="text-xs text-[rgba(234,240,255,0.72)]">Роль (внутренняя)</div>
               <select
                 className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
                 value={role}
@@ -147,6 +188,23 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label>
+              <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Название</div>
+              <input
+                className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm text-white"
+                value={partnerName}
+                onChange={(e) => setPartnerName(e.target.value)}
+              />
+            </label>
+            <label>
+              <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Тип партнёрства</div>
+              <input
+                className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm text-white"
+                value={partnerType}
+                onChange={(e) => setPartnerType(e.target.value)}
+              />
             </label>
 
             <label>
@@ -167,14 +225,51 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
             <div>
               <textarea
                 className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[130px]"
-                placeholder="Описание запроса"
+                placeholder="Чем помогаете стартапам"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
-              <div className="mt-1 text-[10px] text-[rgba(234,240,255,0.55)]">
-                Что за проект/задача, кого ищете, условия.
-              </div>
             </div>
+
+            <div className="text-sm font-semibold text-white">Услуги</div>
+            {services.map((row, idx) => (
+              <div key={idx} className="grid gap-2 md:grid-cols-2">
+                <input
+                  className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm text-white"
+                  placeholder="Название"
+                  value={row.title}
+                  onChange={(e) =>
+                    setServices((prev) => prev.map((s, i) => (i === idx ? { ...s, title: e.target.value } : s)))
+                  }
+                />
+                <input
+                  className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm text-white"
+                  placeholder="Примечание"
+                  value={row.note}
+                  onChange={(e) =>
+                    setServices((prev) => prev.map((s, i) => (i === idx ? { ...s, note: e.target.value } : s)))
+                  }
+                />
+              </div>
+            ))}
+
+            <label>
+              <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Для кого (строки)</div>
+              <textarea
+                className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[110px]"
+                value={fitForRaw}
+                onChange={(e) => setFitForRaw(e.target.value)}
+              />
+            </label>
+
+            <label>
+              <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Текст кнопки</div>
+              <input
+                className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm text-white"
+                value={ctaText}
+                onChange={(e) => setCtaText(e.target.value)}
+              />
+            </label>
 
             {err ? <div className="text-sm text-red-300">{err}</div> : null}
             <Button type="submit" disabled={saving} className="h-11">
@@ -186,4 +281,3 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
     </div>
   );
 }
-

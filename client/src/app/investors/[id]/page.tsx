@@ -1,13 +1,13 @@
 "use client";
 
-import React, { use as useReact, useEffect, useState } from "react";
+import React, { use as useReact, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { Badge } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
-import { DeleteResourceButton } from "@/components/DeleteResourceButton";
 import { Button } from "@/components/ui/Button";
+import { DeleteResourceButton } from "@/components/DeleteResourceButton";
+import { formatCheckRangeRub, type InvestorProfileExtra } from "@/lib/marketplaceExtras";
+import { stageLabelsByLang } from "@/lib/labelMaps";
 
 type Me = { id: string; role: "user" | "admin" };
 
@@ -27,7 +27,15 @@ type InvestorDetail = {
     size: number | null;
     createdAt: string;
   }>;
+  profileExtra?: InvestorProfileExtra | null;
 };
+
+function initials(name: string) {
+  const p = name.trim().split(/\s+/).filter(Boolean);
+  const a = p[0]?.[0] ?? "?";
+  const b = p[1]?.[0] ?? "";
+  return (a + b).toUpperCase();
+}
 
 export default function InvestorDetailPage({
   params,
@@ -78,94 +86,142 @@ export default function InvestorDetailPage({
     };
   }, [id]);
 
+  const display = useMemo(() => {
+    if (!item) return null;
+    const pe = item.profileExtra ?? null;
+    const name = (pe?.investorName?.trim() || item.author.name || "Инвестор").trim();
+    const title = (pe?.investorTitle?.trim() || item.industry).trim();
+    const check = formatCheckRangeRub(pe, item.amount);
+    const stages = (pe?.stages ?? []).map((s) => stageLabelsByLang.ru?.[s] ?? s);
+    const interests = pe?.interests ?? [];
+    return { name, title, check, stages, interests, pe };
+  }, [item]);
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/marketplace?tab=investors" className="text-[var(--accent)] hover:text-white text-sm font-medium">
-          ← Назад к запросам инвестиций
-        </Link>
-        <div className="flex items-center gap-2">
-          {me && item && (me.role === "admin" || me.id === item.author.id) ? (
-            <Link href={`/investors/${id}/edit`}>
-              <Button variant="secondary" className="h-10">
-                Редактировать
-              </Button>
-            </Link>
-          ) : null}
-          {me && item && (me.role === "admin" || me.id === item.author.id) ? (
-            <DeleteResourceButton
-              apiUrl={`/api/v1/investors/${id}`}
-              onDeleted={() => router.push("/marketplace?tab=investors")}
-            />
-          ) : null}
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="text-[rgba(234,240,255,0.72)]">Загрузка…</div>
-      ) : dbError ? (
-        <div className="text-[rgba(234,240,255,0.72)]">База данных недоступна.</div>
-      ) : !item ? (
-        <div className="text-[rgba(234,240,255,0.72)]">Запрос не найден.</div>
-      ) : (
-        <Card className="p-6 md:p-10">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge>{item.industry}</Badge>
-              </div>
-              <h1 className="mt-3 text-3xl font-semibold text-white leading-tight">Запрос инвестиций</h1>
-              <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)]">
-                Статус: <b className="text-white">{item.status}</b>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-[rgba(234,240,255,0.72)]">Сумма</div>
-              <div className="text-2xl font-semibold text-white">{item.amount.toLocaleString("ru-RU")} ₽</div>
-            </div>
+    <div className="min-h-screen bg-[#0A0A0F] text-white">
+      <div className="mx-auto max-w-7xl px-6 pb-20 pt-10">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <Link href="/marketplace?tab=investors" className="text-sm text-gray-400 transition hover:text-white">
+            ← Назад в маркетплейс
+          </Link>
+          <div className="flex items-center gap-2">
+            {me && item && (me.role === "admin" || me.id === item.author.id) ? (
+              <Link href={`/investors/${id}/edit`}>
+                <Button variant="secondary" className="h-10">
+                  Редактировать
+                </Button>
+              </Link>
+            ) : null}
+            {me && item && (me.role === "admin" || me.id === item.author.id) ? (
+              <DeleteResourceButton apiUrl={`/api/v1/investors/${id}`} onDeleted={() => router.push("/marketplace?tab=investors")} />
+            ) : null}
           </div>
+        </div>
 
-          <div className="mt-6 flex items-center gap-4">
-            <div className="h-14 w-14 rounded-3xl bg-white/5 border border-[rgba(255,255,255,0.12)] overflow-hidden">
-              {item.author.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.author.avatarUrl} alt={item.author.name} className="h-full w-full object-cover" />
+        {loading ? (
+          <div className="text-gray-400">Загрузка…</div>
+        ) : dbError ? (
+          <div className="text-gray-400">База данных недоступна.</div>
+        ) : !item || !display ? (
+          <div className="text-gray-400">Профиль не найден.</div>
+        ) : (
+          <div className="grid gap-12 lg:grid-cols-12">
+            <div className="space-y-12 lg:col-span-8">
+              <div>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 text-4xl font-bold">
+                    {initials(display.name)}
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{display.name}</h1>
+                    <p className="mt-2 text-2xl text-emerald-400">{display.title}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="mb-5 text-3xl font-semibold">Обо мне</h2>
+                <p className="text-lg leading-relaxed text-gray-300">{item.description}</p>
+              </div>
+
+              <div>
+                <h2 className="mb-5 text-3xl font-semibold">Инвестиционные критерии</h2>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="rounded-3xl bg-[#12121A] p-6">
+                    <div className="text-sm text-gray-400">Чек</div>
+                    <div className="mt-2 text-2xl font-semibold">{display.check}</div>
+                  </div>
+                  <div className="rounded-3xl bg-[#12121A] p-6">
+                    <div className="text-sm text-gray-400">Стадии</div>
+                    <div className="mt-2 text-2xl font-semibold">{display.stages.length ? display.stages.join(" · ") : "—"}</div>
+                  </div>
+                  <div className="rounded-3xl bg-[#12121A] p-6">
+                    <div className="text-sm text-gray-400">Количество сделок</div>
+                    <div className="mt-2 text-2xl font-semibold">
+                      {display.pe?.dealsCount != null ? String(display.pe.dealsCount) : "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-3xl bg-[#12121A] p-6">
+                    <div className="text-sm text-gray-400">Успешных выходов</div>
+                    <div className="mt-2 text-2xl font-semibold">
+                      {display.pe?.exitsCount != null ? String(display.pe.exitsCount) : "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {display.interests.length ? (
+                <div>
+                  <h2 className="mb-5 text-3xl font-semibold">Интересы</h2>
+                  <div className="flex flex-wrap gap-3">
+                    {display.interests.map((t) => (
+                      <span key={t} className="rounded-3xl bg-white/10 px-6 py-3">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {item.attachments && item.attachments.length ? (
+                <div>
+                  <h2 className="mb-5 text-3xl font-semibold">Файлы</h2>
+                  <div className="grid gap-2">
+                    {item.attachments.map((a) => (
+                      <a
+                        key={a.id}
+                        href={a.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-3xl border border-white/10 bg-[#12121A] p-4 text-sm text-white/90 transition hover:border-emerald-500/40"
+                      >
+                        {a.filename}
+                      </a>
+                    ))}
+                  </div>
+                </div>
               ) : null}
             </div>
-            <div>
-              <div className="text-sm font-semibold text-white">{item.author.name}</div>
-              <div className="text-xs text-[rgba(234,240,255,0.72)]">
-                Создан: {new Date(item.createdAt).toLocaleString("ru-RU")}
+
+            <div className="lg:col-span-4">
+              <div className="sticky top-24 rounded-3xl border border-white/10 bg-[#12121A] p-8">
+                <h3 className="mb-6 text-xl font-semibold">Готов инвестировать</h3>
+                <Button type="button" className="mb-4 w-full rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 py-6 text-lg font-semibold hover:brightness-110">
+                  Написать инвестору
+                </Button>
+                <Button type="button" variant="secondary" className="w-full rounded-3xl border border-white/30 py-6 text-base hover:bg-white/10">
+                  Добавить в избранное
+                </Button>
+                <div className="mt-10 text-center text-xs text-gray-500">
+                  Статус: <span className="text-white/80">{item.status}</span>
+                  <br />
+                  Опубликовано: {new Date(item.createdAt).toLocaleString("ru-RU")}
+                </div>
               </div>
             </div>
           </div>
-
-          <div className="mt-6">
-            <div className="text-sm font-semibold text-white">Описание</div>
-            <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">{item.description}</div>
-          </div>
-
-          {item.attachments && item.attachments.length ? (
-            <div className="mt-6">
-              <div className="text-sm font-semibold text-white">Файлы</div>
-              <div className="mt-3 grid grid-cols-1 gap-2">
-                {item.attachments.map((a) => (
-                  <a
-                    key={a.id}
-                    href={a.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)] hover:border-[rgba(110,168,255,0.35)] transition text-sm text-white/90"
-                  >
-                    {a.filename}
-                  </a>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </Card>
-      )}
+        )}
+      </div>
     </div>
   );
 }
-

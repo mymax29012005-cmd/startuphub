@@ -18,6 +18,24 @@ const createPartnerSchema = z.object({
       message: "Недопустимая категория",
     }),
   description: z.string().min(10).max(2000),
+  profileExtra: z
+    .object({
+      partnerName: z.string().min(1).max(120),
+      partnerType: z.string().min(0).max(120).optional(),
+      helpText: z.string().min(0).max(4000).optional(),
+      services: z
+        .array(
+          z.object({
+            title: z.string().min(1).max(140),
+            note: z.string().min(0).max(200).optional(),
+          }),
+        )
+        .max(24)
+        .optional(),
+      fitFor: z.array(z.string().min(1).max(80)).max(24).optional(),
+      ctaText: z.string().min(0).max(80).optional(),
+    })
+    .optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
 });
 
@@ -32,6 +50,24 @@ const updatePartnerSchema = z.object({
     })
     .optional(),
   description: z.string().min(10).max(2000).optional(),
+  profileExtra: z
+    .object({
+      partnerName: z.string().min(1).max(120).optional(),
+      partnerType: z.string().min(0).max(120).optional(),
+      helpText: z.string().min(0).max(4000).optional(),
+      services: z
+        .array(
+          z.object({
+            title: z.string().min(1).max(140),
+            note: z.string().min(0).max(200).optional(),
+          }),
+        )
+        .max(24)
+        .optional(),
+      fitFor: z.array(z.string().min(1).max(80)).max(24).optional(),
+      ctaText: z.string().min(0).max(80).optional(),
+    })
+    .optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
 });
 
@@ -51,6 +87,7 @@ partnersRouter.get("/", async (_req, res) => {
         description: it.description,
         authorId: it.authorId,
         author: it.author,
+        profileExtra: (it as any).profileExtra ?? null,
       })),
     );
   } catch (_e) {
@@ -92,6 +129,7 @@ partnersRouter.post("/", requireAuth, async (req, res) => {
         industry: parsed.data.industry,
         description: parsed.data.description,
         authorId: req.user!.userId,
+        ...(parsed.data.profileExtra ? { profileExtra: parsed.data.profileExtra as any } : {}),
       },
       select: { id: true },
     });
@@ -152,6 +190,7 @@ partnersRouter.put("/:requestId", requireAuth, async (req, res) => {
         ...(data.role !== undefined ? { role: data.role as any } : {}),
         ...(data.industry !== undefined ? { industry: data.industry } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.profileExtra !== undefined ? { profileExtra: data.profileExtra as any } : {}),
       },
       select: { id: true },
     });
