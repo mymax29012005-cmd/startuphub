@@ -36,7 +36,7 @@ test -f "$APP_DIR/client/.next/BUILD_ID" || {
   exit 1
 }
 
-echo "Готово. PM2: сначала pm2 list, потом pm2 restart с твоим id или именем процесса."
+echo "Готово. PM2: pm2 list, затем pm2 restart 0 (или другое число/имя из таблицы). В bash не вводи угловые скобки < > — из-за них бывает «syntax error near unexpected token»."
 
 if command -v curl >/dev/null 2>&1; then
   echo ">>> проверка локального фронта (Nginx часто проксирует на :3000)"
