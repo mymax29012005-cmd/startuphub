@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # На VPS: подтянуть репозиторий, зависимости, миграции, сборка, перезапуск процессов.
 #
-# На сервере: export APP_DIR=/var/www/startuphub при необходимости, затем ./scripts/vps-update.sh
+# Корень репо берётся из расположения скрипта (не из $HOME). При необходимости: export APP_DIR=/путь/к/клону
 # Если «Permission denied»: chmod +x scripts/vps-update.sh (или git pull после коммита с правом +x на файл)
 #
 # Перед первым запуском задай .env в корне репозитория (DATABASE_URL, JWT_SECRET, NODE_ENV=production, CORS_ORIGIN и т.д.).
 
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-$HOME/StartupHUB}"
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+APP_DIR="${APP_DIR:-$(cd "$_SCRIPT_DIR/.." && pwd)}"
 cd "$APP_DIR"
 
 echo ">>> git pull"
