@@ -36,4 +36,10 @@ test -f "$APP_DIR/client/.next/BUILD_ID" || {
   exit 1
 }
 
-echo "Готово. PM2: сначала pm2 list, потом pm2 restart 0 или pm2 restart имя_процесса (подставь свой id/имя, не копируй многоточие)."
+echo "Готово. PM2: сначала pm2 list, потом pm2 restart с твоим id или именем процесса."
+
+if command -v curl >/dev/null 2>&1; then
+  echo ">>> проверка локального фронта (Nginx часто проксирует на :3000)"
+  _code="$(curl -sS --max-time 3 -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000" 2>/dev/null)" || _code="000"
+  echo "    127.0.0.1:3000 -> HTTP ${_code} (000 = нет процесса — перезапусти PM2 для Next из client/; в nginx смотри свой proxy_pass)"
+fi
