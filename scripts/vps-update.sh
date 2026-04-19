@@ -30,16 +30,21 @@ echo ">>> prisma generate (cwd: database/)"
 echo ">>> build server"
 npm --prefix server run build
 
-echo ">>> build client"
+echo ">>> build client (артефакты в client/.next — PM2 должен запускать web из каталога client/)"
 npm --prefix client run build
+test -f "$APP_DIR/client/.next/BUILD_ID" || {
+  echo "Ошибка: нет client/.next после сборки. Проверь логи выше."
+  exit 1
+}
 
-echo ">>> перезапуск приложений (настрой под себя)"
-# Примеры — раскомментируй и подставь свои имена из `pm2 list`:
-# pm2 restart startuphub-api
-# pm2 restart startuphub-client
+echo ">>> перезапуск приложений"
+# Рекомендуется PM2 из корня репо (cwd в ecosystem — server/ и client/):
+#   pm2 start ecosystem.config.cjs    # первый раз
+#   pm2 restart ecosystem.config.cjs
+# Или вручную: pm2 restart startuphub-api startuphub-web
 #
-# Если без pm2 — перезапусти systemd-сервисы или screen/tmux вручную:
+# Если без pm2:
 # NODE_ENV=production node server/dist/index.js
-# npm --prefix client run start
+# cd client && NODE_ENV=production npm run start
 
 echo "Готово."
