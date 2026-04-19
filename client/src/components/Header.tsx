@@ -69,7 +69,7 @@ export function Header() {
           <div className="flex items-center gap-2 md:hidden">
             {loading ? null : user ? (
               <Link href="/profile">
-                <span className="inline-flex h-10 max-w-[7rem] items-center justify-center truncate rounded-2xl bg-gradient-to-r from-[#7c3aed] to-[#e11d48] px-3 text-xs font-semibold text-white">
+                <span className="inline-flex h-10 max-w-[7rem] items-center justify-center truncate rounded-2xl bg-gradient-to-r from-[#8E54E9] to-[#E73C7E] px-3 text-xs font-semibold text-white shadow-[0_0_20px_rgba(142,84,233,0.2)]">
                   {t("nav.profile")}
                 </span>
               </Link>
@@ -98,7 +98,7 @@ export function Header() {
           <div className="hidden md:block">
             {loading ? null : user ? (
               <Link href="/profile">
-                <Button className="h-11 rounded-2xl bg-gradient-to-r from-[#7c3aed] to-[#e11d48] px-6 text-white hover:opacity-90">
+                <Button variant="brand" className="h-11 rounded-2xl px-6">
                   {t("nav.profile")}
                 </Button>
               </Link>
@@ -158,7 +158,7 @@ export function Header() {
             {loading ? null : user ? (
               <Link
                 href="/profile"
-                className="rounded-full border border-[#7c3aed]/35 bg-[#7c3aed]/10 px-3 py-2 text-xs text-white"
+                className="rounded-full bg-gradient-to-r from-[#8E54E9] to-[#E73C7E] px-3 py-2 text-xs font-semibold text-white shadow-[0_0_18px_rgba(142,84,233,0.2)]"
               >
                 {t("nav.profile")}
               </Link>

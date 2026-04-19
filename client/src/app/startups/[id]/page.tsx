@@ -53,6 +53,19 @@ type StartupDetail = {
 
 type Me = { id: string; role: "user" | "admin" };
 
+function milestoneBulletLines(raw: string): string[] {
+  const t = raw.trim();
+  if (!t) return [];
+  const byNl = t.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  if (byNl.length > 1) return byNl;
+  const one = byNl[0] ?? "";
+  if (one.includes("•")) return one.split("•").map((s) => s.trim()).filter(Boolean);
+  if (one.includes(";")) return one.split(";").map((s) => s.trim()).filter(Boolean);
+  return [one];
+}
+
+const kpiValueTone = ["text-teal-400", "text-violet-400", "text-amber-300"] as const;
+
 export default function StartupDetailPage({
   params,
 }: {
@@ -166,7 +179,7 @@ export default function StartupDetailPage({
         <div>
           <Link
             href={`/users/${startup.owner.id}`}
-            className="text-sm font-semibold text-white hover:text-[var(--accent)]"
+            className="text-sm font-semibold text-white hover:text-violet-300"
           >
             {startup.owner.name}
           </Link>
@@ -183,9 +196,9 @@ export default function StartupDetailPage({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-10">
+    <div className="mx-auto max-w-7xl px-6 py-10 text-[#eaf0ff]">
       <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/marketplace?tab=startups" className="text-[var(--accent)] hover:text-white text-sm font-medium">
+        <Link href="/marketplace?tab=startups" className="text-sm font-medium text-violet-300/90 hover:text-white">
           ← Назад к стартапам
         </Link>
         <div className="flex items-center gap-2">
@@ -242,7 +255,7 @@ export default function StartupDetailPage({
                 }
               }}
             >
-              <span className={favorited ? "text-[var(--accent-strong)]" : "text-[var(--muted)]"}>
+              <span className={favorited ? "text-fuchsia-400" : "text-[var(--muted)]"}>
                 {favorited ? "♥" : "♡"}
               </span>
             </Button>
@@ -415,87 +428,104 @@ export default function StartupDetailPage({
           </div>
 
           <div className="grid gap-10 lg:grid-cols-12">
-            <div className="space-y-12 lg:col-span-8">
-              <div>
-                <h2 className="mb-6 text-3xl font-semibold text-white">О проекте</h2>
-                <p className="text-lg leading-relaxed text-gray-300">{startup.description}</p>
-              </div>
+            <div className="space-y-10 lg:col-span-8">
+              <section className="rounded-2xl border border-white/[0.06] bg-[#161618] p-6 sm:p-8">
+                <h2 className="mb-4 text-2xl font-semibold tracking-tight text-white">О проекте</h2>
+                <p className="text-base leading-relaxed text-[#a1a1a1] sm:text-lg">{startup.description}</p>
+              </section>
 
               {startup.profileExtra &&
               (startup.profileExtra.valuationPreMoney != null ||
                 startup.profileExtra.equityOfferedPct != null) ? (
-                <div>
-                  <h2 className="mb-4 text-2xl font-semibold text-white">Инвестиционные условия</h2>
+                <section className="rounded-2xl border border-white/[0.06] bg-[#161618] p-6 sm:p-8">
+                  <h2 className="mb-5 text-2xl font-semibold tracking-tight text-white">Инвестиционные условия</h2>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {startup.profileExtra.valuationPreMoney != null ? (
-                      <div className="rounded-2xl border border-white/10 bg-[#1A1A24] p-5">
-                        <div className="text-xs text-gray-500">Оценка (pre-money)</div>
-                        <div className="mt-1 text-lg font-semibold text-white">
+                      <div className="rounded-xl border border-white/[0.08] bg-[#0d0d0f] p-5">
+                        <div className="text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">Оценка (pre-money)</div>
+                        <div className="mt-2 text-xl font-semibold tabular-nums text-white sm:text-2xl">
                           {Math.round(Number(startup.profileExtra.valuationPreMoney)).toLocaleString("ru-RU")} ₽
                         </div>
                       </div>
                     ) : null}
                     {startup.profileExtra.equityOfferedPct != null ? (
-                      <div className="rounded-2xl border border-white/10 bg-[#1A1A24] p-5">
-                        <div className="text-xs text-gray-500">Доля к инвестору</div>
-                        <div className="mt-1 text-lg font-semibold text-rose-300">
+                      <div className="rounded-xl border border-white/[0.08] bg-[#0d0d0f] p-5">
+                        <div className="text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">Доля к инвестору</div>
+                        <div className="mt-2 text-xl font-semibold tabular-nums text-[#f472b6] sm:text-2xl">
                           {Math.round(Number(startup.profileExtra.equityOfferedPct))}%
                         </div>
                       </div>
                     ) : null}
                   </div>
-                </div>
+                </section>
               ) : null}
 
               {startup.profileExtra?.kpis?.length ? (
-                <div>
-                  <h2 className="mb-4 text-2xl font-semibold text-white">Ключевые показатели</h2>
+                <section className="rounded-2xl border border-white/[0.06] bg-[#161618] p-6 sm:p-8">
+                  <h2 className="mb-5 text-2xl font-semibold tracking-tight text-white">Ключевые показатели</h2>
                   <div className="grid gap-4 sm:grid-cols-3">
                     {startup.profileExtra.kpis.map((k, i) =>
                       k.value || k.label ? (
-                        <div key={i} className="rounded-2xl border border-white/10 bg-[#1A1A24] p-4">
-                          <div className="text-lg font-semibold text-white">{k.value || "—"}</div>
-                          <div className="mt-1 text-sm text-gray-400">{k.label || ""}</div>
+                        <div
+                          key={i}
+                          className="rounded-xl border border-white/[0.08] bg-[#0d0d0f] p-5 text-center sm:text-left"
+                        >
+                          <div className={`text-2xl font-bold tabular-nums sm:text-3xl ${kpiValueTone[i % 3]}`}>
+                            {k.value || "—"}
+                          </div>
+                          <div className="mt-2 text-sm leading-snug text-[#a1a1a1]">{k.label || ""}</div>
                         </div>
                       ) : null,
                     )}
                   </div>
-                </div>
+                </section>
               ) : null}
 
               {startup.profileExtra?.milestones?.trim() ? (
-                <div>
-                  <h2 className="mb-4 text-2xl font-semibold text-white">Что уже сделано</h2>
-                  <p className="text-lg leading-relaxed text-gray-300">{startup.profileExtra.milestones}</p>
-                </div>
+                <section className="rounded-2xl border border-white/[0.06] bg-[#161618] p-6 sm:p-8">
+                  <h2 className="mb-5 text-2xl font-semibold tracking-tight text-white">Что уже сделано</h2>
+                  <ul className="space-y-3">
+                    {milestoneBulletLines(startup.profileExtra.milestones).map((line, i) => (
+                      <li key={i} className="flex gap-3 text-base leading-relaxed text-[#a1a1a1]">
+                        <span className="mt-0.5 shrink-0 text-emerald-400" aria-hidden>
+                          ✓
+                        </span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ) : null}
 
               {startup.profileExtra?.team?.length ? (
-                <div>
-                  <h2 className="mb-4 text-2xl font-semibold text-white">Команда</h2>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                <section className="rounded-2xl border border-white/[0.06] bg-[#161618] p-6 sm:p-8">
+                  <h2 className="mb-5 text-2xl font-semibold tracking-tight text-white">Команда</h2>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {startup.profileExtra.team.map((m, i) => (
-                      <div key={i} className="rounded-2xl border border-white/10 bg-[#1A1A24] px-4 py-3">
-                        <div className="font-medium text-white">{m.name}</div>
-                        <div className="text-sm text-gray-400">{m.role}</div>
+                      <div
+                        key={i}
+                        className="rounded-xl border border-white/[0.08] bg-[#0d0d0f] px-4 py-4 transition hover:border-violet-500/30"
+                      >
+                        <div className="font-semibold text-white">{m.name}</div>
+                        <div className="mt-1 text-sm text-[#a1a1a1]">{m.role}</div>
                       </div>
                     ))}
                   </div>
-                </div>
+                </section>
               ) : null}
 
               {startup.profileExtra?.videoPitchUrl?.trim() ? (
-                <div>
-                  <h2 className="mb-2 text-2xl font-semibold text-white">Видео-питч</h2>
+                <section className="rounded-2xl border border-white/[0.06] bg-[#161618] p-6 sm:p-8">
+                  <h2 className="mb-3 text-2xl font-semibold tracking-tight text-white">Видео-питч</h2>
                   <a
                     href={startup.profileExtra.videoPitchUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[var(--accent)] hover:text-white"
+                    className="text-sm font-medium text-violet-300 underline-offset-4 hover:text-fuchsia-300 hover:underline"
                   >
                     {startup.profileExtra.videoPitchUrl}
                   </a>
-                </div>
+                </section>
               ) : null}
 
           {startup.analysis ? (
@@ -516,10 +546,7 @@ export default function StartupDetailPage({
                   >
                     {analysisExpanded ? "Свернуть полный отчёт" : "Показать полный отчёт"}
                   </Button>
-                  <Link
-                    href="/startup-analyzer"
-                    className="text-[var(--accent)] hover:text-white text-sm font-medium"
-                  >
+                  <Link href="/startup-analyzer" className="text-sm font-medium text-violet-300 hover:text-fuchsia-300">
                     Открыть анализатор
                   </Link>
                 </div>
@@ -660,11 +687,11 @@ export default function StartupDetailPage({
                     href={a.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="upload-box flex min-h-[120px] flex-col justify-center rounded-2xl border border-dashed border-[rgba(255,255,255,0.18)] bg-[#1A1A24] p-5 text-white transition hover:border-[rgba(110,168,255,0.45)]"
+                    className="upload-box flex min-h-[120px] flex-col justify-center rounded-2xl border border-dashed border-white/15 bg-[#0d0d0f] p-5 text-white transition hover:border-violet-500/50"
                   >
-                    <div className="text-xs uppercase tracking-wide text-[rgba(234,240,255,0.55)]">Файл</div>
+                    <div className="text-xs uppercase tracking-wide text-[#a1a1a1]">Файл</div>
                     <div className="mt-2 text-sm font-semibold text-white/95">{a.filename}</div>
-                    <div className="mt-2 text-xs text-[var(--accent)]">Скачать →</div>
+                    <div className="mt-2 text-xs font-medium text-violet-300">Скачать →</div>
                   </a>
                 ))}
                 {startup.analysis ? (
@@ -682,7 +709,7 @@ export default function StartupDetailPage({
                     <div className="mt-1 text-xs text-[rgba(234,240,255,0.72)]">
                       {new Date(startup.analysis.createdAt).toLocaleString("ru-RU")}
                     </div>
-                    <div className="mt-2 text-xs text-[var(--accent)]">Развернуть отчёт ↑</div>
+                    <div className="mt-2 text-xs font-medium text-violet-300">Развернуть отчёт ↑</div>
                   </button>
                 ) : null}
               </div>
@@ -691,39 +718,80 @@ export default function StartupDetailPage({
             </div>
 
             <aside className="lg:col-span-4">
-              <div className="sticky top-[calc(var(--site-header-height)+1.5rem)] rounded-3xl border border-[rgba(255,255,255,0.10)] bg-[#12121A] p-8">
-                <div className="text-xs font-medium uppercase tracking-wide text-[rgba(234,240,255,0.55)]">Инвестиции</div>
-                <div className="mt-2 text-4xl font-semibold text-white">{startup.price.toLocaleString("ru-RU")} ₽</div>
-                <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)]">цель привлечения</div>
-                <div className="mt-6 space-y-2 border-t border-white/10 pt-6 text-sm text-[rgba(234,240,255,0.85)]">
+              <div className="sticky top-[calc(var(--site-header-height)+1.5rem)] rounded-2xl border border-white/[0.08] bg-[#161618] p-6 sm:p-8">
+                <h3 className="text-lg font-semibold tracking-tight text-white">Инвестиционные условия</h3>
+                <div className="mt-1 text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">Цель привлечения</div>
+                <div className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-white sm:text-4xl">
+                  {startup.price.toLocaleString("ru-RU")} ₽
+                </div>
+                {startup.profileExtra?.valuationPreMoney != null ? (
+                  <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <span className="text-[#a1a1a1]">Pre-money</span>
+                      <span className="font-medium text-white">
+                        {Math.round(Number(startup.profileExtra.valuationPreMoney)).toLocaleString("ru-RU")} ₽
+                      </span>
+                    </div>
+                    {startup.profileExtra.equityOfferedPct != null ? (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-[#a1a1a1]">Доля</span>
+                        <span className="font-medium text-[#f472b6]">{Math.round(Number(startup.profileExtra.equityOfferedPct))}%</span>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+                {startup.profileExtra?.equityOfferedPct != null && startup.profileExtra?.valuationPreMoney == null ? (
+                  <div className="mt-4 border-t border-white/10 pt-4">
+                    <div className="flex justify-between gap-3 text-sm">
+                      <span className="text-[#a1a1a1]">Доля к инвестору</span>
+                      <span className="font-medium text-[#f472b6]">{Math.round(Number(startup.profileExtra.equityOfferedPct))}%</span>
+                    </div>
+                  </div>
+                ) : null}
+                <div className="mt-5">
+                  <div className="mb-1.5 text-xs text-[#a1a1a1]">Интерес к раунду</div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-white/5">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#8E54E9] to-[#E73C7E]"
+                      style={{
+                        width: `${Math.min(100, Math.max(12, startup.profileExtra?.equityOfferedPct != null ? Number(startup.profileExtra.equityOfferedPct) * 2.2 : 38))}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-6 space-y-2.5 border-t border-white/10 pt-6 text-sm">
                   <div className="flex justify-between gap-3">
-                    <span className="text-[rgba(234,240,255,0.55)]">Стадия</span>
+                    <span className="text-[#a1a1a1]">Стадия</span>
                     <span className="font-medium text-white">{stageLabelsByLang[lang]?.[startup.stage] ?? startup.stage}</span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-[rgba(234,240,255,0.55)]">Формат</span>
+                    <span className="text-[#a1a1a1]">Формат</span>
                     <span className="font-medium text-white">{formatLabelsByLang[lang]?.[startup.format] ?? startup.format}</span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-[rgba(234,240,255,0.55)]">Локация</span>
+                    <span className="text-[#a1a1a1]">Локация</span>
                     <span className="font-medium text-white">
                       {startup.isOnline ? formatLabelsByLang[lang]?.online : formatLabelsByLang[lang]?.offline}
                     </span>
                   </div>
                 </div>
                 <div className="mt-6 border-t border-white/10 pt-6">
-                  <div className="text-xs font-medium uppercase tracking-wide text-[rgba(234,240,255,0.55)]">Основатель</div>
+                  <div className="text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">Основатель</div>
                   <div className="mt-3">{ownerBlock}</div>
                 </div>
                 <Link
                   href={`/users/${startup.owner.id}`}
-                  className="mt-6 flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-sm font-semibold text-white transition hover:opacity-95"
+                  className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#8E54E9] to-[#E73C7E] text-sm font-semibold text-white shadow-[0_0_24px_rgba(142,84,233,0.2)] transition hover:brightness-110"
                 >
-                  Связаться
+                  Связаться с основателем
                 </Link>
-                <Link href="/startup-analyzer" className="mt-3 block text-center text-sm text-[var(--accent)] hover:text-white">
+                <Link
+                  href="/startup-analyzer"
+                  className="mt-3 block rounded-full border border-white/20 py-2.5 text-center text-sm font-medium text-white/90 transition hover:border-violet-400/40 hover:bg-white/5"
+                >
                   Открыть анализатор
                 </Link>
+                <p className="mt-5 text-center text-[11px] leading-relaxed text-[#6b6b6b]">Проект в маркетплейсе StartupHub</p>
               </div>
             </aside>
           </div>
