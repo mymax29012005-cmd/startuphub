@@ -25,8 +25,10 @@ git pull --ff-only
 
 echo ">>> npm ci (database, server, client)"
 npm ci --prefix database
-npm ci --prefix server
-npm ci --prefix client
+# На VPS часто NODE_ENV=production — тогда npm ci без флага не ставит devDependencies,
+# а server/build вызывает tsc из typescript (devDependency) → «tsc: not found» и обрыв скрипта до client build.
+npm ci --prefix server --include=dev
+npm ci --prefix client --include=dev
 
 echo ">>> prisma migrate deploy (cwd: database/)"
 ( cd "$APP_DIR/database" && npx prisma migrate deploy )
