@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # На VPS: подтянуть репозиторий, зависимости, миграции, сборка, перезапуск процессов.
 #
-# Один раз на сервере:
-#   chmod +x scripts/vps-update.sh
-#   export APP_DIR=/home/USER/StartupHUB   # путь к клону репозитория
-#   ./scripts/vps-update.sh
+# На сервере: export APP_DIR=/var/www/startuphub при необходимости, затем ./scripts/vps-update.sh
+# Если «Permission denied»: chmod +x scripts/vps-update.sh (или git pull после коммита с правом +x на файл)
 #
 # Перед первым запуском задай .env в корне репозитория (DATABASE_URL, JWT_SECRET, NODE_ENV=production, CORS_ORIGIN и т.д.).
 
@@ -37,4 +35,4 @@ test -f "$APP_DIR/client/.next/BUILD_ID" || {
   exit 1
 }
 
-echo "Готово. Перезапусти свои процессы (как у тебя уже настроено), например: pm2 restart <id или имя из pm2 list>"
+echo "Готово. PM2: сначала pm2 list, потом pm2 restart 0 или pm2 restart имя_процесса (подставь свой id/имя, не копируй многоточие)."
