@@ -94,6 +94,7 @@ function MarketplaceInner() {
   /** Пустой набор = не фильтровать. Иначе — карточка должна совпадать по формату (как при создании). */
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set());
   const [selectedPartnerRoles, setSelectedPartnerRoles] = useState<Set<string>>(new Set());
+  const [postModalOpen, setPostModalOpen] = useState(false);
 
   const [startups, setStartups] = useState<StartupItem[] | null>(null);
   const [ideas, setIdeas] = useState<IdeaItem[] | null>(null);
@@ -150,6 +151,15 @@ function MarketplaceInner() {
     void ensureLoaded(activeTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!postModalOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setPostModalOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [postModalOpen]);
 
   const totalCount = (startups?.length ?? 0) + (ideas?.length ?? 0) + (investors?.length ?? 0) + (partners?.length ?? 0);
 
@@ -312,24 +322,95 @@ function MarketplaceInner() {
         </div>
       </div>
 
-      <div className="mt-8 flex items-center gap-8 overflow-x-auto border-b border-white/10 pb-4">
-        {tabs.map((t) => {
-          const active = t.key === activeTab;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => selectTab(t.key)}
-              className={[
-                "whitespace-nowrap px-6 py-3 text-lg transition",
-                active ? "border-b-[3px] border-[#7C3AED] font-semibold text-white" : "text-gray-400 hover:text-white",
-              ].join(" ")}
-            >
-              {t.label}
-            </button>
-          );
-        })}
+      <div className="mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="flex min-w-0 flex-1 items-center gap-6 overflow-x-auto md:gap-8">
+          {tabs.map((t) => {
+            const active = t.key === activeTab;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => selectTab(t.key)}
+                className={[
+                  "whitespace-nowrap px-6 py-3 text-lg transition",
+                  active ? "border-b-[3px] border-[#7C3AED] font-semibold text-white" : "text-gray-400 hover:text-white",
+                ].join(" ")}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={() => setPostModalOpen(true)}
+          className="shrink-0 rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 md:px-8 md:text-base"
+        >
+          Разместить
+        </button>
       </div>
+
+      {postModalOpen ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 px-4 py-8"
+          role="presentation"
+          onClick={() => setPostModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="post-modal-title"
+            className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-[#12121A] p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-4 top-4 rounded-xl px-3 py-1 text-sm text-gray-400 transition hover:bg-white/10 hover:text-white"
+              onClick={() => setPostModalOpen(false)}
+            >
+              ✕
+            </button>
+            <h2 id="post-modal-title" className="pr-10 text-2xl font-bold text-white">
+              Что разместить?
+            </h2>
+            <p className="mt-2 text-sm text-gray-400">Выберите тип карточки — откроется форма создания.</p>
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Link
+                href="/add-startup"
+                onClick={() => setPostModalOpen(false)}
+                className="rounded-2xl border border-white/10 bg-[#1A1A24] px-5 py-4 text-left transition hover:border-violet-500/50 hover:bg-white/5"
+              >
+                <div className="font-semibold text-white">Стартап</div>
+                <div className="mt-1 text-xs text-gray-500">Проект и привлечение инвестиций</div>
+              </Link>
+              <Link
+                href="/add-idea"
+                onClick={() => setPostModalOpen(false)}
+                className="rounded-2xl border border-white/10 bg-[#1A1A24] px-5 py-4 text-left transition hover:border-violet-500/50 hover:bg-white/5"
+              >
+                <div className="font-semibold text-white">Идея</div>
+                <div className="mt-1 text-xs text-gray-500">Концепт до продукта</div>
+              </Link>
+              <Link
+                href="/add-investor"
+                onClick={() => setPostModalOpen(false)}
+                className="rounded-2xl border border-white/10 bg-[#1A1A24] px-5 py-4 text-left transition hover:border-violet-500/50 hover:bg-white/5"
+              >
+                <div className="font-semibold text-white">Инвестор</div>
+                <div className="mt-1 text-xs text-gray-500">Запрос на инвестиции</div>
+              </Link>
+              <Link
+                href="/add-partner"
+                onClick={() => setPostModalOpen(false)}
+                className="rounded-2xl border border-white/10 bg-[#1A1A24] px-5 py-4 text-left transition hover:border-violet-500/50 hover:bg-white/5"
+              >
+                <div className="font-semibold text-white">Партнёр</div>
+                <div className="mt-1 text-xs text-gray-500">Поиск партнёра по роли</div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex gap-8 pt-8">
         <div

@@ -3,9 +3,8 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Card } from "@/components/ui/Card";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
@@ -139,222 +138,200 @@ function AddIdeaInner() {
     }
   }
 
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <Card className="p-6 md:p-10">
-        <h1 className="text-2xl font-semibold text-white">Разместить идею</h1>
+  const fc = addListingFieldClass;
 
+  return (
+    <AddListingPageChrome
+      backHref="/marketplace?tab=ideas"
+      title="Разместить идею"
+      subtitle="Оформление как у карточки стартапа — те же поля и визуальная иерархия"
+    >
+      <form onSubmit={onSubmit} className="space-y-16 rounded-3xl border border-white/10 bg-[#12121A] p-8 md:p-10">
         {analysisId ? (
-          <div className="mt-4 glass rounded-3xl p-4 border border-[rgba(110,168,255,0.25)]">
+          <div className="rounded-3xl border border-violet-500/30 bg-violet-500/10 p-5">
             <div className="text-sm font-semibold text-white">Прикреплён анализатор</div>
-            <div className="mt-1 text-xs text-[rgba(234,240,255,0.72)]">
-              ID: <span className="text-[rgba(234,240,255,0.92)]">{analysisId}</span>
-              {analysisInfo?.createdAt ? (
-                <>
-                  {" "}
-                  · {new Date(analysisInfo.createdAt).toLocaleString("ru-RU")}
-                </>
-              ) : null}
+            <div className="mt-1 text-xs text-gray-400">
+              ID: <span className="text-white/90">{analysisId}</span>
+              {analysisInfo?.createdAt ? <> · {new Date(analysisInfo.createdAt).toLocaleString("ru-RU")}</> : null}
             </div>
           </div>
         ) : null}
 
-        <form className="mt-7 flex flex-col gap-4" onSubmit={onSubmit}>
-          <div>
-            <Input placeholder="Название" value={title} onChange={(e) => setTitle(e.target.value)} />
-            <div className="mt-1 text-[10px] text-[rgba(234,240,255,0.55)]">
-              Коротко и понятно: что за идея и для кого (например: “приложение для учёта лекарств”).
+        <div>
+          <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+            <span className="text-violet-400">1</span> Основная информация
+          </h2>
+          <div className="space-y-8">
+            <div>
+              <label className="mb-2 block text-sm text-gray-400">Название</label>
+              <input className={fc} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Например: приложение для учёта лекарств" />
+              <p className="mt-2 text-sm text-gray-500">Коротко: что за идея и для кого.</p>
             </div>
-          </div>
-
-          <label>
-            <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Категория</div>
-            <select
-              className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
-              value={category}
-              onChange={(e) => setCategory(asAllowedCategory(e.target.value))}
-            >
-              {allowedCategories.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-            <div className="mt-1 text-[10px] text-[rgba(234,240,255,0.55)]">
-              Выбери из списка — так идеи проще искать и сравнивать.
-            </div>
-          </label>
-          <Input
-            placeholder="Цена (в ₽)"
-            value={formatDigitsWithSpaces(price)}
-            onChange={(e) => setPrice(stripNonDigits(e.target.value))}
-            inputMode="numeric"
-          />
-          <div className="text-[10px] text-[rgba(234,240,255,0.55)] -mt-3">
-            Если цена пока неизвестна — поставь ориентир (потом можно отредактировать).
-          </div>
-
-          <div>
-            <textarea
-              className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[110px]"
-              placeholder="Описание"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-            <div className="mt-1 text-[10px] text-[rgba(234,240,255,0.55)]">
-              3–6 предложений: в чём суть идеи, какая проблема, для кого, почему сейчас, и что ты хочешь (инвестор/партнёр/продажа).
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <label className="flex-1">
-              <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Стадия</div>
-              <select
-                className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
-                value={stage}
-                onChange={(e) => setStage(e.target.value as any)}
-              >
-                {stages.map((s) => (
-                  <option key={s} value={s}>
-                    {stageLabelsByLang[lang]?.[s] ?? s}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex-1">
-              <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Формат</div>
-              <select
-                className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
-                value={format}
-                onChange={(e) => setFormat(e.target.value as any)}
-              >
-                {formats.map((f) => (
-                  <option key={f} value={f}>
-                    {formatLabelsByLang[lang]?.[f] ?? f}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-11"
-            onClick={() => {
-              try {
-                localStorage.setItem(
-                  draftKey,
-                  JSON.stringify({
-                    title,
-                    description,
-                    category,
-                    price,
-                    stage,
-                    format,
-                    problem,
-                    solution,
-                    market,
-                    attachments,
-                  }),
-                );
-              } catch {
-                // ignore
-              }
-              router.push(`/startup-analyzer?mode=idea&returnTo=/add-idea`);
-            }}
-          >
-            Создать отчёт анализатора
-          </Button>
-
-          <div>
-            <textarea
-              className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[90px]"
-              placeholder="Проблема (опционально)"
-              value={problem}
-              onChange={(e) => setProblem(e.target.value)}
-            />
-            <div className="mt-1 text-[10px] text-[rgba(234,240,255,0.55)]">
-              Одно-два предложения: какая боль у пользователя и как часто она возникает.
-            </div>
-          </div>
-          <textarea
-            className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[90px]"
-            placeholder="Решение (опционально)"
-            value={solution}
-            onChange={(e) => setSolution(e.target.value)}
-          />
-          <div className="text-[10px] text-[rgba(234,240,255,0.55)] -mt-3">
-            Как именно ты решаешь проблему (без воды): фичи, процесс, почему это работает.
-          </div>
-          <textarea
-            className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[90px]"
-            placeholder="Рынок (опционально)"
-            value={market}
-            onChange={(e) => setMarket(e.target.value)}
-          />
-          <div className="text-[10px] text-[rgba(234,240,255,0.55)] -mt-3">
-            Кто покупатель/пользователь, примерный размер рынка или хотя бы “сколько таких компаний/людей”.
-          </div>
-
-          <div className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)]">
-            <div className="text-sm font-semibold text-white">Файлы (опционально)</div>
-            <div className="mt-2 text-xs text-[rgba(234,240,255,0.72)]">
-              Можно прикрепить презентацию, PDF, таблицу и т.д.
-            </div>
-            <div className="mt-3 flex flex-col gap-2">
-              <input
-                type="file"
-                multiple
-                onChange={async (e) => {
-                  if (!e.target.files || e.target.files.length === 0) return;
-                  setUploading(true);
-                  setError(null);
-                  try {
-                    const uploaded = await uploadFiles(e.target.files);
-                    setAttachments((prev) => [...uploaded, ...prev]);
-                    e.target.value = "";
-                  } catch (err: any) {
-                    setError(err?.message ?? "Не удалось загрузить файлы");
-                  } finally {
-                    setUploading(false);
-                  }
-                }}
-                className="text-sm text-[rgba(234,240,255,0.72)]"
+            <div>
+              <label className="mb-2 block text-sm text-gray-400">Описание</label>
+              <textarea
+                className={`${fc} min-h-[140px] rounded-3xl`}
+                placeholder="Суть, проблема, аудитория, что ищешь на платформе…"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={5}
               />
-              {uploading ? <div className="text-xs text-[rgba(234,240,255,0.72)]">Загрузка…</div> : null}
-              {attachments.length ? (
-                <div className="mt-2 flex flex-col gap-2">
-                  {attachments.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-[rgba(255,255,255,0.12)] bg-white/[0.03] px-3 py-2"
-                    >
-                      <a href={a.url} target="_blank" rel="noreferrer" className="text-xs text-white/90 truncate">
-                        {a.filename}
-                      </a>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-8 px-3 text-xs"
-                        onClick={() => setAttachments((prev) => prev.filter((x) => x.id !== a.id))}
-                      >
-                        Убрать
-                      </Button>
-                    </div>
+            </div>
+            <div className="grid gap-8 md:grid-cols-2">
+              <label>
+                <div className="mb-2 block text-sm text-gray-400">Категория</div>
+                <select className={fc} value={category} onChange={(e) => setCategory(asAllowedCategory(e.target.value))}>
+                  {allowedCategories.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
                   ))}
-                </div>
-              ) : null}
+                </select>
+              </label>
+              <label>
+                <div className="mb-2 block text-sm text-gray-400">Цена (ориентир, ₽)</div>
+                <input
+                  className={fc}
+                  value={formatDigitsWithSpaces(price)}
+                  onChange={(e) => setPrice(stripNonDigits(e.target.value))}
+                  inputMode="numeric"
+                  placeholder="0"
+                />
+              </label>
+            </div>
+            <div className="grid gap-8 md:grid-cols-2">
+              <label>
+                <div className="mb-2 block text-sm text-gray-400">Стадия</div>
+                <select className={fc} value={stage} onChange={(e) => setStage(e.target.value as (typeof stages)[number])}>
+                  {stages.map((s) => (
+                    <option key={s} value={s}>
+                      {stageLabelsByLang[lang]?.[s] ?? s}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <div className="mb-2 block text-sm text-gray-400">Формат</div>
+                <select className={fc} value={format} onChange={(e) => setFormat(e.target.value as (typeof formats)[number])}>
+                  {formats.map((f) => (
+                    <option key={f} value={f}>
+                      {formatLabelsByLang[lang]?.[f] ?? f}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
+        </div>
 
-          {error ? <div className="text-sm text-red-300">{error}</div> : null}
-          <Button type="submit" disabled={loading} className="h-11">
-            {loading ? "…" : "Создать"}
+        <div>
+          <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+            <span className="text-rose-400">2</span> Детали и анализатор
+          </h2>
+          <div className="space-y-8">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full rounded-2xl py-4 text-base"
+              onClick={() => {
+                try {
+                  localStorage.setItem(
+                    draftKey,
+                    JSON.stringify({
+                      title,
+                      description,
+                      category,
+                      price,
+                      stage,
+                      format,
+                      problem,
+                      solution,
+                      market,
+                      attachments,
+                    }),
+                  );
+                } catch {
+                  // ignore
+                }
+                router.push(`/startup-analyzer?mode=idea&returnTo=/add-idea`);
+              }}
+            >
+              Создать отчёт анализатора
+            </Button>
+            <div>
+              <label className="mb-2 block text-sm text-gray-400">Проблема (опционально)</label>
+              <textarea className={`${fc} min-h-[100px] rounded-3xl`} placeholder="Боль пользователя…" value={problem} onChange={(e) => setProblem(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm text-gray-400">Решение (опционально)</label>
+              <textarea className={`${fc} min-h-[100px] rounded-3xl`} placeholder="Как решаешь проблему…" value={solution} onChange={(e) => setSolution(e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm text-gray-400">Рынок (опционально)</label>
+              <textarea className={`${fc} min-h-[100px] rounded-3xl`} placeholder="Аудитория, размер рынка…" value={market} onChange={(e) => setMarket(e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+            <span className="text-emerald-400">3</span> Файлы
+          </h2>
+          <div className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
+            <p className="text-sm text-gray-400">Презентация, PDF, таблицы — по желанию.</p>
+            <input
+              type="file"
+              multiple
+              className="mt-4 text-sm text-gray-400"
+              onChange={async (e) => {
+                if (!e.target.files || e.target.files.length === 0) return;
+                setUploading(true);
+                setError(null);
+                try {
+                  const uploaded = await uploadFiles(e.target.files);
+                  setAttachments((prev) => [...uploaded, ...prev]);
+                  e.target.value = "";
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : "Не удалось загрузить файлы");
+                } finally {
+                  setUploading(false);
+                }
+              }}
+            />
+            {uploading ? <div className="mt-2 text-xs text-gray-500">Загрузка…</div> : null}
+            {attachments.length ? (
+              <div className="mt-4 space-y-2">
+                {attachments.map((a) => (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#12121A] px-3 py-2 text-sm text-white/90"
+                  >
+                    <a href={a.url} target="_blank" rel="noreferrer" className="truncate">
+                      {a.filename}
+                    </a>
+                    <Button type="button" variant="ghost" className="h-8 shrink-0 px-2 text-xs" onClick={() => setAttachments((prev) => prev.filter((x) => x.id !== a.id))}>
+                      Убрать
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {error ? <div className="text-sm text-red-300">{error}</div> : null}
+
+        <div className="border-t border-white/10 pt-10">
+          <Button
+            type="submit"
+            disabled={loading || uploading}
+            className="w-full rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 py-7 text-xl font-semibold text-white hover:brightness-110 disabled:opacity-60"
+          >
+            {loading ? "…" : "Опубликовать идею"}
           </Button>
-        </form>
-      </Card>
-    </div>
+        </div>
+      </form>
+    </AddListingPageChrome>
   );
 }
 

@@ -3,15 +3,15 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Card } from "@/components/ui/Card";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
 import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 export default function AddInvestorPage() {
   const router = useRouter();
+  const fc = addListingFieldClass;
 
   const [industry, setIndustry] = useState(allowedCategories[0]?.value ?? "SaaS");
   const [description, setDescription] = useState("");
@@ -27,7 +27,7 @@ export default function AddInvestorPage() {
     setLoading(true);
     setError(null);
 
-    const amountNum = amount === "" ? undefined : Number(amount);
+    const amountNum = amount === "" ? undefined : Number(stripNonDigits(amount));
     if (amountNum !== undefined && !Number.isFinite(amountNum)) {
       setError("Сумма должна быть числом");
       setLoading(false);
@@ -60,105 +60,109 @@ export default function AddInvestorPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <Card className="p-6 md:p-10">
-        <h1 className="text-2xl font-semibold text-white">Разместить запрос инвестиций</h1>
-
-        <form className="mt-7 flex flex-col gap-4" onSubmit={onSubmit}>
-          <label>
-            <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Индустрия</div>
-            <select
-              className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
-              value={industry}
-              onChange={(e) => setIndustry(asAllowedCategory(e.target.value))}
-            >
-              {allowedCategories.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-            <div className="mt-1 text-[10px] text-[rgba(234,240,255,0.55)]">
-              Выбирай из списка — так инвесторам проще фильтровать запросы.
-            </div>
-          </label>
-          <Input
-            placeholder="Сумма (в ₽)"
-            value={formatDigitsWithSpaces(amount)}
-            onChange={(e) => setAmount(stripNonDigits(e.target.value))}
-            inputMode="numeric"
-          />
-          <div className="text-[10px] text-[rgba(234,240,255,0.55)] -mt-3">
-            Сколько денег нужно привлечь (без копеек).
-          </div>
-          <textarea
-            className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[130px]"
-            placeholder="Описание запроса"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <div className="text-[10px] text-[rgba(234,240,255,0.55)] -mt-3">
-            Что за проект, на что нужны деньги, какая стадия, какие условия/предложение.
-          </div>
-
-          <div className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)]">
-            <div className="text-sm font-semibold text-white">Файлы (опционально)</div>
-            <div className="mt-2 text-xs text-[rgba(234,240,255,0.72)]">
-              Можно прикрепить презентацию, PDF, таблицу и т.д.
-            </div>
-            <div className="mt-3 flex flex-col gap-2">
+    <AddListingPageChrome
+      backHref="/marketplace?tab=investors"
+      title="Запрос инвестиций"
+      subtitle="Тот же стиль оформления, что и при создании стартапа"
+    >
+      <form onSubmit={onSubmit} className="space-y-16 rounded-3xl border border-white/10 bg-[#12121A] p-8 md:p-10">
+        <div>
+          <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+            <span className="text-violet-400">1</span> Основная информация
+          </h2>
+          <div className="space-y-8">
+            <label>
+              <div className="mb-2 block text-sm text-gray-400">Категория / отрасль</div>
+              <select className={fc} value={industry} onChange={(e) => setIndustry(asAllowedCategory(e.target.value))}>
+                {allowedCategories.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-sm text-gray-500">Тот же список категорий, что у стартапов и идей.</p>
+            </label>
+            <label>
+              <div className="mb-2 block text-sm text-gray-400">Сумма к привлечению (₽)</div>
               <input
-                type="file"
-                multiple
-                onChange={async (e) => {
-                  if (!e.target.files || e.target.files.length === 0) return;
-                  setUploading(true);
-                  setError(null);
-                  try {
-                    const uploaded = await uploadFiles(e.target.files);
-                    setAttachments((prev) => [...uploaded, ...prev]);
-                    e.target.value = "";
-                  } catch (err: any) {
-                    setError(err?.message ?? "Не удалось загрузить файлы");
-                  } finally {
-                    setUploading(false);
-                  }
-                }}
-                className="text-sm text-[rgba(234,240,255,0.72)]"
+                className={fc}
+                value={formatDigitsWithSpaces(amount)}
+                onChange={(e) => setAmount(stripNonDigits(e.target.value))}
+                inputMode="numeric"
+                placeholder="Например: 5 000 000"
               />
-              {uploading ? <div className="text-xs text-[rgba(234,240,255,0.72)]">Загрузка…</div> : null}
-              {attachments.length ? (
-                <div className="mt-2 flex flex-col gap-2">
-                  {attachments.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-[rgba(255,255,255,0.12)] bg-white/[0.03] px-3 py-2"
-                    >
-                      <a href={a.url} target="_blank" rel="noreferrer" className="text-xs text-white/90 truncate">
-                        {a.filename}
-                      </a>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-8 px-3 text-xs"
-                        onClick={() => setAttachments((prev) => prev.filter((x) => x.id !== a.id))}
-                      >
-                        Убрать
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
+            </label>
+            <label>
+              <div className="mb-2 block text-sm text-gray-400">Описание запроса</div>
+              <textarea
+                className={`${fc} min-h-[160px] rounded-3xl`}
+                placeholder="Проект, стадия, на что нужны деньги, предложение инвестору…"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={6}
+              />
+            </label>
           </div>
-          {error ? <div className="text-sm text-red-300">{error}</div> : null}
-          <Button type="submit" disabled={loading} className="h-11">
-            {loading ? "…" : "Опубликовать"}
+        </div>
+
+        <div>
+          <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+            <span className="text-emerald-400">2</span> Файлы
+          </h2>
+          <div className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
+            <p className="text-sm text-gray-400">Презентация, финмодель, PDF — по желанию.</p>
+            <input
+              type="file"
+              multiple
+              className="mt-4 text-sm text-gray-400"
+              onChange={async (e) => {
+                if (!e.target.files || e.target.files.length === 0) return;
+                setUploading(true);
+                setError(null);
+                try {
+                  const uploaded = await uploadFiles(e.target.files);
+                  setAttachments((prev) => [...uploaded, ...prev]);
+                  e.target.value = "";
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : "Не удалось загрузить файлы");
+                } finally {
+                  setUploading(false);
+                }
+              }}
+            />
+            {uploading ? <div className="mt-2 text-xs text-gray-500">Загрузка…</div> : null}
+            {attachments.length ? (
+              <div className="mt-4 space-y-2">
+                {attachments.map((a) => (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#12121A] px-3 py-2 text-sm text-white/90"
+                  >
+                    <a href={a.url} target="_blank" rel="noreferrer" className="truncate">
+                      {a.filename}
+                    </a>
+                    <Button type="button" variant="ghost" className="h-8 shrink-0 px-2 text-xs" onClick={() => setAttachments((prev) => prev.filter((x) => x.id !== a.id))}>
+                      Убрать
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {error ? <div className="text-sm text-red-300">{error}</div> : null}
+
+        <div className="border-t border-white/10 pt-10">
+          <Button
+            type="submit"
+            disabled={loading || uploading}
+            className="w-full rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 py-7 text-xl font-semibold text-white hover:brightness-110 disabled:opacity-60"
+          >
+            {loading ? "…" : "Опубликовать запрос"}
           </Button>
-        </form>
-      </Card>
-    </div>
+        </div>
+      </form>
+    </AddListingPageChrome>
   );
 }
-
-

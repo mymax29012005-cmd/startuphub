@@ -11,6 +11,7 @@ import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
 import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
+import { addListingFieldClass } from "@/components/forms/addListingFormShell";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
 const formats = ["online", "offline", "hybrid"] as const;
@@ -324,8 +325,7 @@ function AddStartupInner() {
     }
   }
 
-  const fieldClass =
-    "focus-ring w-full rounded-2xl border border-white/10 bg-[#1A1A24] px-7 py-5 text-base text-white outline-none placeholder:text-gray-500 focus:border-violet-500 [color-scheme:dark]";
+  const fieldClass = addListingFieldClass;
 
   function slotFileList(slot: MaterialSlot) {
     const list = materialSlots[slot];
