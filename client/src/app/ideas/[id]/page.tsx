@@ -237,6 +237,13 @@ export default function IdeaDetailPage({
                   <p className="text-lg leading-relaxed text-gray-300">{idea.description}</p>
                 </div>
 
+                {idea.problem?.trim() ? (
+                  <div>
+                    <h2 className="mb-6 text-3xl font-semibold">Проблема</h2>
+                    <p className="text-lg leading-relaxed text-gray-300 whitespace-pre-wrap">{idea.problem}</p>
+                  </div>
+                ) : null}
+
                 <div>
                   <h2 className="mb-6 text-3xl font-semibold">Что уже сделано</h2>
                   {(() => {
@@ -267,7 +274,7 @@ export default function IdeaDetailPage({
                 <div>
                   <h2 className="mb-6 text-3xl font-semibold">Что нужно для реализации</h2>
                   <p className="text-lg leading-relaxed text-gray-300">
-                    {idea.profileExtra?.needsText?.trim() || idea.problem?.trim() || "—"}
+                    {idea.profileExtra?.needsText?.trim() || "—"}
                   </p>
                 </div>
 
