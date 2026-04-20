@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { use as useReact, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { accountTypeLabelsByLang } from "@/lib/labelMaps";
@@ -73,6 +74,7 @@ function formatListTime(iso: string) {
 
 export default function ChatThreadPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId: otherUserId } = useReact(params);
+  const searchParams = useSearchParams();
   const { t, lang } = useI18n();
 
   const [me, setMe] = useState<Me | null | undefined>(undefined);
@@ -102,6 +104,21 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
     const data = (await r.json()) as ConversationRow[];
     setRows(data);
   }, []);
+
+  useEffect(() => {
+    const raw = searchParams.get("prefill");
+    if (!raw) return;
+    // don't clobber user's typing
+    if (draft.trim()) return;
+    try {
+      const decoded = decodeURIComponent(raw);
+      const safe = decoded.length > 1200 ? decoded.slice(0, 1200) : decoded;
+      setDraft(safe);
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     let c = false;

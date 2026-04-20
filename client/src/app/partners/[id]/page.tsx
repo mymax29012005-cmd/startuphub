@@ -89,7 +89,10 @@ export default function PartnerDetailPage({
     if (!item) return null;
     const pe = item.profileExtra ?? null;
     const name = (pe?.partnerName?.trim() || item.author.name || "Партнёр").trim();
-    const sub = (pe?.partnerType?.trim() || partnerRoleLabelsByLang[lang]?.[item.role as any] || item.role).trim();
+    const roleLabel =
+      (partnerRoleLabelsByLang as Record<string, Record<string, string> | undefined>)[lang]?.[String(item.role)] ??
+      String(item.role);
+    const sub = (pe?.partnerType?.trim() || roleLabel).trim();
     const services: PartnerService[] = (pe?.services ?? []).filter((s) => s.title?.trim());
     const fitFor = pe?.fitFor ?? [];
     const cta = (pe?.ctaText?.trim() || "Стать партнёром / Получить условия").trim();
@@ -188,7 +191,21 @@ export default function PartnerDetailPage({
                 ) : (
                   <p className="text-sm text-gray-500">Список можно добавить при создании карточки.</p>
                 )}
-                <Button type="button" className="mt-10 w-full rounded-3xl bg-gradient-to-r from-blue-500 to-cyan-500 py-6 text-lg font-semibold hover:brightness-110">
+                <Button
+                  type="button"
+                  className="mt-10 w-full rounded-3xl bg-gradient-to-r from-blue-500 to-cyan-500 py-6 text-lg font-semibold hover:brightness-110"
+                  onClick={() => {
+                    if (!item) return;
+                    if (!me) {
+                      router.push("/login");
+                      return;
+                    }
+                    const origin = typeof window !== "undefined" ? window.location.origin : "";
+                    const link = origin ? `${origin}/partners/${item.id}` : `/partners/${item.id}`;
+                    const prefill = `Здравствуйте! Пишу по вашей карточке партнёра: ${link}\n`;
+                    router.push(`/chat/${item.author.id}?prefill=${encodeURIComponent(prefill)}`);
+                  }}
+                >
                   {display.cta}
                 </Button>
                 <div className="mt-8 text-center text-xs text-gray-500">Опубликовано: {new Date(item.createdAt).toLocaleString("ru-RU")}</div>

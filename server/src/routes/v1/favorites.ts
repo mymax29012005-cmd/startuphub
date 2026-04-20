@@ -7,7 +7,7 @@ import { requireAuth } from "../../middleware/auth";
 export const favoritesRouter = Router();
 
 const toggleSchema = z.object({
-  type: z.enum(["startup", "idea"]),
+  type: z.enum(["startup", "idea", "investor", "partner"]),
   id: z.string().min(1),
 });
 
@@ -27,18 +27,21 @@ favoritesRouter.post("/toggle", requireAuth, async (req, res) => {
     const existing =
       type === "startup"
         ? await prisma.favorite.findFirst({ where: { userId, startupId: id } })
-        : await prisma.favorite.findFirst({ where: { userId, ideaId: id } });
+        : type === "idea"
+          ? await prisma.favorite.findFirst({ where: { userId, ideaId: id } })
+          : type === "investor"
+            ? await prisma.favorite.findFirst({ where: { userId, investorRequestId: id } })
+            : await prisma.favorite.findFirst({ where: { userId, partnerRequestId: id } });
 
     if (existing) {
       await prisma.favorite.delete({ where: { id: existing.id } });
       return res.json({ favorited: false });
     }
 
-    if (type === "startup") {
-      await prisma.favorite.create({ data: { userId, startupId: id } });
-    } else {
-      await prisma.favorite.create({ data: { userId, ideaId: id } });
-    }
+    if (type === "startup") await prisma.favorite.create({ data: { userId, startupId: id } });
+    else if (type === "idea") await prisma.favorite.create({ data: { userId, ideaId: id } });
+    else if (type === "investor") await prisma.favorite.create({ data: { userId, investorRequestId: id } });
+    else await prisma.favorite.create({ data: { userId, partnerRequestId: id } });
     return res.json({ favorited: true });
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
@@ -86,6 +89,29 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
             problem: true,
           },
         },
+        investorRequest: {
+          select: {
+            id: true,
+            industry: true,
+            description: true,
+            amount: true,
+            status: true,
+            authorId: true,
+            author: { select: { id: true, name: true, avatarUrl: true, role: true, accountType: true } },
+            profileExtra: true,
+          },
+        },
+        partnerRequest: {
+          select: {
+            id: true,
+            role: true,
+            industry: true,
+            description: true,
+            authorId: true,
+            author: { select: { id: true, name: true, avatarUrl: true, role: true, accountType: true } },
+            profileExtra: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -94,7 +120,17 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
     const ownerIds = Array.from(
       new Set(
         favorites
-          .map((f) => (f.startup ? f.startup.ownerId : f.idea ? f.idea.ownerId : null))
+          .map((f) =>
+            f.startup
+              ? f.startup.ownerId
+              : f.idea
+                ? f.idea.ownerId
+                : f.investorRequest
+                  ? f.investorRequest.authorId
+                  : f.partnerRequest
+                    ? f.partnerRequest.authorId
+                    : null,
+          )
           .filter(Boolean) as string[],
       ),
     );
@@ -114,7 +150,7 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
     return res.json(
       favorites.map((f) => ({
         id: f.id,
-        type: f.startupId ? "startup" : "idea",
+        type: f.startupId ? "startup" : f.ideaId ? "idea" : f.investorRequestId ? "investor" : "partner",
         startup:
           f.startupId && f.startup
             ? {
@@ -165,6 +201,43 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
                   rating: ratingByUser.get(f.idea.ownerId) ?? 0,
                 },
                 problem: f.idea.problem,
+              }
+            : null,
+        investor:
+          f.investorRequestId && f.investorRequest
+            ? {
+                id: f.investorRequest.id,
+                industry: f.investorRequest.industry,
+                description: f.investorRequest.description,
+                amount: Number(f.investorRequest.amount),
+                status: f.investorRequest.status,
+                author: {
+                  id: f.investorRequest.author.id,
+                  name: f.investorRequest.author.name,
+                  avatarUrl: f.investorRequest.author.avatarUrl,
+                  role: f.investorRequest.author.role,
+                  accountType: f.investorRequest.author.accountType,
+                  rating: ratingByUser.get(f.investorRequest.authorId) ?? 0,
+                },
+                profileExtra: (f.investorRequest as any).profileExtra ?? null,
+              }
+            : null,
+        partner:
+          f.partnerRequestId && f.partnerRequest
+            ? {
+                id: f.partnerRequest.id,
+                role: f.partnerRequest.role,
+                industry: f.partnerRequest.industry,
+                description: f.partnerRequest.description,
+                author: {
+                  id: f.partnerRequest.author.id,
+                  name: f.partnerRequest.author.name,
+                  avatarUrl: f.partnerRequest.author.avatarUrl,
+                  role: f.partnerRequest.author.role,
+                  accountType: f.partnerRequest.author.accountType,
+                  rating: ratingByUser.get(f.partnerRequest.authorId) ?? 0,
+                },
+                profileExtra: (f.partnerRequest as any).profileExtra ?? null,
               }
             : null,
       })),

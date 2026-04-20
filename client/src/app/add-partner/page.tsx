@@ -26,12 +26,7 @@ export default function AddPartnerPage() {
   const [partnerType, setPartnerType] = useState("");
   const [description, setDescription] = useState("");
 
-  const [services, setServices] = useState<ServiceRow[]>([
-    { title: "", note: "" },
-    { title: "", note: "" },
-    { title: "", note: "" },
-    { title: "", note: "" },
-  ]);
+  const [services, setServices] = useState<ServiceRow[]>([{ title: "", note: "" }]);
   const [fitForRaw, setFitForRaw] = useState("");
   const [ctaText, setCtaText] = useState("Стать партнёром / Получить условия");
 
@@ -145,12 +140,24 @@ export default function AddPartnerPage() {
 
         <div>
           <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
-            <span className="text-cyan-400">2</span> Доступные услуги (до 4 блоков)
+            <span className="text-cyan-400">2</span> Доступные услуги
           </h2>
           <div className="space-y-6">
             {services.map((row, idx) => (
               <div key={idx} className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
-                <div className="mb-4 text-sm font-semibold text-white/90">Услуга {idx + 1}</div>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="text-sm font-semibold text-white/90">Услуга {idx + 1}</div>
+                  {idx > 0 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-8 px-3 text-xs"
+                      onClick={() => setServices((prev) => prev.filter((_, i) => i !== idx))}
+                    >
+                      Удалить
+                    </Button>
+                  ) : null}
+                </div>
                 <div className="grid gap-6 md:grid-cols-2">
                   <label>
                     <div className="mb-2 block text-xs text-gray-400">Название</div>
@@ -177,6 +184,20 @@ export default function AddPartnerPage() {
                 </div>
               </div>
             ))}
+            <div className="pt-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full rounded-2xl py-4 text-base"
+                onClick={() => setServices((prev) => [...prev, { title: "", note: "" }])}
+                disabled={services.length >= 20}
+              >
+                Добавить услугу
+              </Button>
+              <div className="mt-2 text-xs text-gray-500">
+                Добавляйте столько услуг, сколько нужно (до 20).
+              </div>
+            </div>
           </div>
         </div>
 

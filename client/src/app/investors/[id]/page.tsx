@@ -48,6 +48,8 @@ export default function InvestorDetailPage({
   const [item, setItem] = useState<InvestorDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState(false);
+  const [favorited, setFavorited] = useState(false);
+  const [loadingFav, setLoadingFav] = useState(false);
 
   useEffect(() => {
     let c = false;
@@ -85,6 +87,37 @@ export default function InvestorDetailPage({
       cancelled = true;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!me || !item) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/favorites", { credentials: "include" });
+        if (!r.ok) return;
+        const data: unknown = await r.json();
+        const isFav =
+          Array.isArray(data) &&
+          data.some((f) => {
+            if (!f || typeof f !== "object") return false;
+            const rec = f as Record<string, unknown>;
+            if (rec.type !== "investor") return false;
+            const inv = rec.investor;
+            if (inv && typeof inv === "object") {
+              const invId = (inv as Record<string, unknown>).id;
+              if (invId === item.id) return true;
+            }
+            return rec.investorRequestId === item.id;
+          });
+        if (!cancelled) setFavorited(Boolean(isFav));
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [me, item]);
 
   const display = useMemo(() => {
     if (!item) return null;
@@ -206,11 +239,52 @@ export default function InvestorDetailPage({
             <div className="lg:col-span-4">
               <div className="sticky top-24 rounded-3xl border border-white/10 bg-[#12121A] p-8">
                 <h3 className="mb-6 text-xl font-semibold">Готов инвестировать</h3>
-                <Button type="button" className="mb-4 w-full rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 py-6 text-lg font-semibold hover:brightness-110">
+                <Button
+                  type="button"
+                  className="mb-4 w-full rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 py-6 text-lg font-semibold hover:brightness-110"
+                  onClick={() => {
+                    if (!item) return;
+                    if (!me) {
+                      router.push("/login");
+                      return;
+                    }
+                    const origin = typeof window !== "undefined" ? window.location.origin : "";
+                    const link = origin ? `${origin}/investors/${item.id}` : `/investors/${item.id}`;
+                    const prefill = `Здравствуйте! Пишу по вашему профилю инвестора: ${link}\n`;
+                    router.push(`/chat/${item.author.id}?prefill=${encodeURIComponent(prefill)}`);
+                  }}
+                >
                   Написать инвестору
                 </Button>
-                <Button type="button" variant="secondary" className="w-full rounded-3xl border border-white/30 py-6 text-base hover:bg-white/10">
-                  Добавить в избранное
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full rounded-3xl border border-white/30 py-6 text-base hover:bg-white/10"
+                  disabled={loadingFav}
+                  onClick={async () => {
+                    if (!item) return;
+                    if (!me) {
+                      router.push("/login");
+                      return;
+                    }
+                    setLoadingFav(true);
+                    try {
+                      const r = await fetch("/api/v1/favorites/toggle", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({ type: "investor", id: item.id }),
+                      });
+                      if (!r.ok) return;
+                      const j = await r.json().catch(() => null);
+                      if (j && typeof j.favorited === "boolean") setFavorited(j.favorited);
+                      else setFavorited((v) => !v);
+                    } finally {
+                      setLoadingFav(false);
+                    }
+                  }}
+                >
+                  {favorited ? "Убрать из избранного" : "Добавить в избранное"}
                 </Button>
                 <div className="mt-10 text-center text-xs text-gray-500">
                   Статус: <span className="text-white/80">{item.status}</span>

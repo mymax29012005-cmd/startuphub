@@ -330,10 +330,18 @@ model Favorite {
   ideaId    String?
   idea      Idea?    @relation(fields: [ideaId], references: [id], onDelete: Cascade)
 
+  investorRequestId String?
+  investorRequest   InvestorRequest? @relation(fields: [investorRequestId], references: [id], onDelete: Cascade)
+
+  partnerRequestId String?
+  partnerRequest   PartnerRequest? @relation(fields: [partnerRequestId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
 
   @@index([userId, startupId])
   @@index([userId, ideaId])
+  @@index([userId, investorRequestId])
+  @@index([userId, partnerRequestId])
 }
 
 model Review {

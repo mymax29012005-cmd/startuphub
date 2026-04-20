@@ -1,15 +1,13 @@
 "use client";
 
 import React, { use as useReact, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
 import { useI18n } from "@/i18n/I18nProvider";
-import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
+import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
 import type { IdeaProfileExtra } from "@/lib/marketplaceExtras";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
@@ -18,7 +16,6 @@ const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as con
 const formats = ["online", "offline", "hybrid"] as const;
 
 type Me = { id: string; role: "user" | "admin" };
-
 type IdeaDetail = {
   id: string;
   title: string;
@@ -43,32 +40,37 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
   const { id } = useReact(params);
 
   const analysisIdFromUrl = searchParams.get("analysisId");
+  const draftKey = `draft:edit-idea:${id}`;
 
   const [me, setMe] = useState<Me | null>(null);
   const [item, setItem] = useState<IdeaDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [loadingPage, setLoadingPage] = useState(true);
 
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState(allowedCategories[0]?.value ?? "SaaS");
-  const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState(allowedCategories[0]?.value ?? "SaaS");
+  const [price, setPrice] = useState<string>("");
   const [stage, setStage] = useState<(typeof stages)[number]>("idea");
   const [format, setFormat] = useState<(typeof formats)[number]>("online");
+
   const [problem, setProblem] = useState("");
   const [solution, setSolution] = useState("");
   const [market, setMarket] = useState("");
+
   const [city, setCity] = useState("");
   const [doneItemsRaw, setDoneItemsRaw] = useState("");
   const [needsText, setNeedsText] = useState("");
   const [helpTagsRaw, setHelpTagsRaw] = useState("");
   const [coverGradient, setCoverGradient] = useState<"default" | "emerald" | "violet" | "blue">("default");
+
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  const draftKey = `draft:edit-idea:${id}`;
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const fc = addListingFieldClass;
 
   useEffect(() => {
     let cancelled = false;
@@ -87,43 +89,42 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
 
   useEffect(() => {
     let cancelled = false;
-    async function run() {
-      setLoading(true);
-      setErr(null);
+    (async () => {
+      setLoadingPage(true);
+      setError(null);
       try {
         const r = await fetch(`/api/v1/ideas/${id}`, { cache: "no-store", credentials: "include" });
         if (!r.ok) {
           const j = await r.json().catch(() => null);
-          setErr(j?.error ?? "Не удалось загрузить");
+          setError(j?.error ?? "Не удалось загрузить");
           return;
         }
         const data = (await r.json()) as IdeaDetail;
         if (cancelled) return;
         setItem(data);
         setTitle(data.title ?? "");
+        setDescription(data.description ?? "");
         setCategory(asAllowedCategory(data.category ?? (allowedCategories[0]?.value ?? "SaaS")));
         setPrice(String(data.price ?? ""));
-        setDescription(data.description ?? "");
         setStage((data.stage as any) ?? "idea");
         setFormat((data.format as any) ?? "online");
         setProblem(data.problem ?? "");
         setSolution(data.solution ?? "");
         setMarket(data.market ?? "");
+        setAnalysisId((data.analysisId as any) ?? null);
+        setAttachments((data.attachments as any) ?? []);
         const pe = data.profileExtra ?? null;
         setCity(pe?.city ?? "");
         setDoneItemsRaw((pe?.doneItems ?? []).join("\n"));
         setNeedsText(pe?.needsText ?? "");
         setHelpTagsRaw((pe?.helpTags ?? []).join(", "));
         setCoverGradient((pe?.coverGradient as any) ?? "default");
-        setAnalysisId((data.analysisId as any) ?? null);
-        setAttachments((data.attachments as any) ?? []);
       } catch {
-        if (!cancelled) setErr("Сетевая ошибка");
+        setError("Сетевая ошибка");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setLoadingPage(false);
       }
-    }
-    run();
+    })();
     return () => {
       cancelled = true;
     };
@@ -134,7 +135,6 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
   }, [analysisIdFromUrl]);
 
   useEffect(() => {
-    // Restore draft after returning from analyzer.
     try {
       const raw = localStorage.getItem(draftKey);
       if (!raw) return;
@@ -163,320 +163,278 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
 
   const canEdit = me && item && (me.role === "admin" || me.id === item.owner.id);
 
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!item) return;
+    setSaving(true);
+    setError(null);
+
+    const priceNum = price === "" ? undefined : Number(stripNonDigits(price));
+    if (priceNum !== undefined && !Number.isFinite(priceNum)) {
+      setError("Цена должна быть числом");
+      setSaving(false);
+      return;
+    }
+
+    const doneItems = doneItemsRaw
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 24);
+    const helpTags = helpTagsRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 24);
+
+    try {
+      const r = await fetch(`/api/v1/ideas/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title,
+          description,
+          category,
+          price: priceNum,
+          stage,
+          format,
+          analysisId,
+          attachmentIds: attachments.map((a) => a.id),
+          problem: problem || null,
+          solution: solution || null,
+          market: market || null,
+          profileExtra: {
+            city: city.trim() || null,
+            doneItems: doneItems.length ? doneItems : [],
+            needsText: needsText.trim() || null,
+            helpTags: helpTags.length ? helpTags : [],
+            coverGradient: coverGradient === "default" ? null : coverGradient,
+          },
+        }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setError((data?.error as string) ?? "Ошибка при сохранении");
+        return;
+      }
+      router.push(`/ideas/${id}`);
+    } catch {
+      setError("Сетевая ошибка");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href={`/ideas/${id}`} className="text-[var(--accent)] hover:text-white text-sm font-medium">
-          ← Назад
-        </Link>
-      </div>
-
-      <Card className="p-6 md:p-10">
-        <h1 className="text-2xl font-semibold text-white">Редактировать идею</h1>
-
-        {loading ? (
-          <div className="mt-6 text-[rgba(234,240,255,0.72)]">Загрузка…</div>
-        ) : err ? (
-          <div className="mt-6 text-sm text-red-300">{err}</div>
-        ) : !item ? (
-          <div className="mt-6 text-[rgba(234,240,255,0.72)]">Не найдено.</div>
-        ) : !canEdit ? (
-          <div className="mt-6 text-[rgba(234,240,255,0.72)]">Нет прав на редактирование.</div>
-        ) : (
-          <form
-            className="mt-7 flex flex-col gap-4"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setSaving(true);
-              setErr(null);
-              try {
-                const priceNum = price === "" ? undefined : Number(price);
-                const doneItems = doneItemsRaw
-                  .split("\n")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-                  .slice(0, 24);
-                const helpTags = helpTagsRaw
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-                  .slice(0, 24);
-                const r = await fetch(`/api/v1/ideas/${id}`, {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: "include",
-                  body: JSON.stringify({
-                    title,
-                    description,
-                    category,
-                    price: priceNum,
-                    stage,
-                    format,
-                    analysisId,
-                    attachmentIds: attachments.map((a) => a.id),
-                    problem: problem || null,
-                    solution: solution || null,
-                    market: market || null,
-                    profileExtra: {
-                      city: city.trim() || null,
-                      doneItems: doneItems.length ? doneItems : [],
-                      needsText: needsText.trim() || null,
-                      helpTags: helpTags.length ? helpTags : [],
-                      coverGradient: coverGradient === "default" ? null : coverGradient,
-                    },
-                  }),
-                });
-                const j = await r.json().catch(() => null);
-                if (!r.ok) {
-                  setErr(j?.error ?? "Не удалось сохранить");
-                  return;
-                }
-                router.push(`/ideas/${id}`);
-              } catch {
-                setErr("Сетевая ошибка");
-              } finally {
-                setSaving(false);
-              }
-            }}
-          >
-            <div>
-              <Input placeholder="Название" value={title} onChange={(e) => setTitle(e.target.value)} />
-              <div className="mt-1 text-[10px] text-[rgba(234,240,255,0.55)]">Коротко и понятно: что за идея и для кого.</div>
-            </div>
-
-            <label>
-              <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Категория</div>
-              <select
-                className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
-                value={category}
-                onChange={(e) => setCategory(asAllowedCategory(e.target.value))}
-              >
-                {allowedCategories.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div>
-              <Input
-                placeholder="Цена (в ₽)"
-                value={formatDigitsWithSpaces(price)}
-                onChange={(e) => setPrice(stripNonDigits(e.target.value))}
-                inputMode="numeric"
-              />
-              <div className="mt-1 text-[10px] text-[rgba(234,240,255,0.55)]">Если цена неточная — укажи ориентир.</div>
-            </div>
-
-            <div>
-              <textarea
-                className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[110px]"
-                placeholder="Описание"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-              <div className="mt-1 text-[10px] text-[rgba(234,240,255,0.55)]">В чём суть идеи, для кого и что хочешь получить.</div>
-            </div>
-
-            <div className="flex gap-3">
-              <label className="flex-1">
-                <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Стадия</div>
-                <select
-                  className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
-                  value={stage}
-                  onChange={(e) => setStage(e.target.value as any)}
-                >
-                  {stages.map((s) => (
-                    <option key={s} value={s}>
-                      {stageLabelsByLang[lang]?.[s] ?? s}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex-1">
-                <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Формат</div>
-                <select
-                  className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value as any)}
-                >
-                  {formats.map((f) => (
-                    <option key={f} value={f}>
-                      {formatLabelsByLang[lang]?.[f] ?? f}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <textarea
-              className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[90px]"
-              placeholder="Проблема (опционально)"
-              value={problem}
-              onChange={(e) => setProblem(e.target.value)}
-            />
-            <textarea
-              className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[90px]"
-              placeholder="Решение (опционально)"
-              value={solution}
-              onChange={(e) => setSolution(e.target.value)}
-            />
-            <textarea
-              className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[90px]"
-              placeholder="Рынок (опционально)"
-              value={market}
-              onChange={(e) => setMarket(e.target.value)}
-            />
-
-            <div className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)]">
-              <div className="text-sm font-semibold text-white">Карточка в маркетплейсе</div>
-              <div className="mt-4 space-y-3">
-                <Input placeholder="Город" value={city} onChange={(e) => setCity(e.target.value)} />
-                <textarea
-                  className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[90px]"
-                  placeholder="Что уже сделано (каждая строка — пункт)"
-                  value={doneItemsRaw}
-                  onChange={(e) => setDoneItemsRaw(e.target.value)}
-                />
-                <textarea
-                  className="focus-ring w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm placeholder:text-[rgba(234,240,255,0.45)] min-h-[70px]"
-                  placeholder="Что нужно для реализации"
-                  value={needsText}
-                  onChange={(e) => setNeedsText(e.target.value)}
-                />
-                <Input
-                  placeholder="Нужна помощь (теги через запятую)"
-                  value={helpTagsRaw}
-                  onChange={(e) => setHelpTagsRaw(e.target.value)}
-                />
-                <label className="block">
-                  <div className="text-xs text-[rgba(234,240,255,0.72)] mb-1">Градиент шапки</div>
-                  <select
-                    className="focus-ring [color-scheme:dark] text-white w-full rounded-2xl border border-[rgba(255,255,255,0.14)] bg-white/5 px-4 py-2 text-sm"
-                    value={coverGradient}
-                    onChange={(e) => setCoverGradient(e.target.value as any)}
-                  >
-                    <option value="default">Тёплый</option>
-                    <option value="emerald">Изумруд</option>
-                    <option value="violet">Фиолет</option>
-                    <option value="blue">Синий</option>
+    <AddListingPageChrome backHref={`/ideas/${id}`} title="Редактировать идею" subtitle="Тот же дизайн, что и при создании">
+      {loadingPage ? (
+        <div className="text-gray-400">Загрузка…</div>
+      ) : error && !item ? (
+        <div className="text-red-300">{error}</div>
+      ) : !item ? (
+        <div className="text-gray-400">Не найдено.</div>
+      ) : !canEdit ? (
+        <div className="rounded-3xl border border-white/10 bg-[#12121A] p-8 text-gray-300">Нет прав на редактирование.</div>
+      ) : (
+        <form onSubmit={onSubmit} className="space-y-16 rounded-3xl border border-white/10 bg-[#12121A] p-8 md:p-10">
+          <div>
+            <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+              <span className="text-violet-400">1</span> Основная информация
+            </h2>
+            <div className="space-y-8">
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">Название</label>
+                <input className={fc} value={title} onChange={(e) => setTitle(e.target.value)} />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">Описание</label>
+                <textarea className={`${fc} min-h-[140px] rounded-3xl`} value={description} onChange={(e) => setDescription(e.target.value)} rows={5} />
+              </div>
+              <div className="grid gap-8 md:grid-cols-2">
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Категория</div>
+                  <select className={fc} value={category} onChange={(e) => setCategory(asAllowedCategory(e.target.value))}>
+                    {allowedCategories.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Цена (ориентир, ₽)</div>
+                  <input className={fc} value={formatDigitsWithSpaces(price)} onChange={(e) => setPrice(stripNonDigits(e.target.value))} inputMode="numeric" />
+                </label>
+              </div>
+              <div className="grid gap-8 md:grid-cols-2">
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Стадия</div>
+                  <select className={fc} value={stage} onChange={(e) => setStage(e.target.value as any)}>
+                    {stages.map((s) => (
+                      <option key={s} value={s}>
+                        {stageLabelsByLang[lang]?.[s] ?? s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Формат</div>
+                  <select className={fc} value={format} onChange={(e) => setFormat(e.target.value as any)}>
+                    {formats.map((f) => (
+                      <option key={f} value={f}>
+                        {formatLabelsByLang[lang]?.[f] ?? f}
+                      </option>
+                    ))}
                   </select>
                 </label>
               </div>
-            </div>
 
-            <div className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)]">
-              <div className="text-sm font-semibold text-white">Отчёт анализатора</div>
-              <div className="mt-2 text-xs text-[rgba(234,240,255,0.72)]">
-                Сейчас:{" "}
-                <span className="text-white/90">{analysisId ? "прикреплён" : "не прикреплён"}</span>
+              <div className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
+                <div className="text-sm font-semibold text-white">Поля карточки (как в превью)</div>
+                <div className="mt-6 space-y-6">
+                  <label>
+                    <div className="mb-2 block text-sm text-gray-400">Город</div>
+                    <input className={fc} value={city} onChange={(e) => setCity(e.target.value)} />
+                  </label>
+                  <label>
+                    <div className="mb-2 block text-sm text-gray-400">Что уже сделано (каждая строка — пункт)</div>
+                    <textarea className={`${fc} min-h-[120px] rounded-3xl`} value={doneItemsRaw} onChange={(e) => setDoneItemsRaw(e.target.value)} rows={5} />
+                  </label>
+                  <label>
+                    <div className="mb-2 block text-sm text-gray-400">Что нужно для реализации</div>
+                    <textarea className={`${fc} min-h-[100px] rounded-3xl`} value={needsText} onChange={(e) => setNeedsText(e.target.value)} rows={4} />
+                  </label>
+                  <label>
+                    <div className="mb-2 block text-sm text-gray-400">Нужна помощь (теги через запятую)</div>
+                    <input className={fc} value={helpTagsRaw} onChange={(e) => setHelpTagsRaw(e.target.value)} />
+                  </label>
+                  <label>
+                    <div className="mb-2 block text-sm text-gray-400">Градиент шапки</div>
+                    <select className={fc} value={coverGradient} onChange={(e) => setCoverGradient(e.target.value as any)}>
+                      <option value="default">Тёплый (янтарь → оранж)</option>
+                      <option value="emerald">Изумруд → бирюза</option>
+                      <option value="violet">Фиолет → роза</option>
+                      <option value="blue">Синий → циан</option>
+                    </select>
+                  </label>
+                </div>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="h-10"
-                  onClick={() => {
-                    try {
-                      localStorage.setItem(
-                        draftKey,
-                        JSON.stringify({
-                          title,
-                          description,
-                          category,
-                          price,
-                          stage,
-                          format,
-                          problem,
-                          solution,
-                          market,
-                          city,
-                          doneItemsRaw,
-                          needsText,
-                          helpTagsRaw,
-                          coverGradient,
-                          attachments,
-                        }),
-                      );
-                    } catch {
-                      // ignore
-                    }
-                    router.push(`/startup-analyzer?mode=idea&returnTo=/ideas/${id}/edit`);
-                  }}
-                >
-                  {analysisId ? "Заменить отчёт" : "Создать и прикрепить отчёт"}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+              <span className="text-rose-400">2</span> Детали и анализатор
+            </h2>
+            <div className="space-y-8">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full rounded-2xl py-4 text-base"
+                onClick={() => {
+                  try {
+                    localStorage.setItem(
+                      draftKey,
+                      JSON.stringify({
+                        title,
+                        description,
+                        category,
+                        price,
+                        stage,
+                        format,
+                        problem,
+                        solution,
+                        market,
+                        city,
+                        doneItemsRaw,
+                        needsText,
+                        helpTagsRaw,
+                        coverGradient,
+                        attachments,
+                      }),
+                    );
+                  } catch {
+                    // ignore
+                  }
+                  router.push(`/startup-analyzer?mode=idea&returnTo=/ideas/${id}/edit`);
+                }}
+              >
+                {analysisId ? "Заменить отчёт анализатора" : "Создать отчёт анализатора"}
+              </Button>
+              {analysisId ? (
+                <Button type="button" variant="ghost" className="w-full rounded-2xl py-4 text-base" onClick={() => setAnalysisId(null)}>
+                  Убрать отчёт
                 </Button>
-                {analysisId ? (
-                  <Button type="button" variant="ghost" className="h-10" onClick={() => setAnalysisId(null)}>
-                    Убрать отчёт
-                  </Button>
-                ) : null}
+              ) : null}
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">Проблема (опционально)</label>
+                <textarea className={`${fc} min-h-[100px] rounded-3xl`} value={problem} onChange={(e) => setProblem(e.target.value)} />
               </div>
-              <div className="mt-2 text-[10px] text-[rgba(234,240,255,0.55)]">
-                Изменение отчёта сохраняется после нажатия “Сохранить”.
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">Решение (опционально)</label>
+                <textarea className={`${fc} min-h-[100px] rounded-3xl`} value={solution} onChange={(e) => setSolution(e.target.value)} />
               </div>
-            </div>
-
-            <div className="glass rounded-3xl p-4 border border-[rgba(255,255,255,0.12)]">
-              <div className="text-sm font-semibold text-white">Файлы</div>
-              <div className="mt-2 text-xs text-[rgba(234,240,255,0.72)]">
-                Можно добавлять/убирать вложения.
-              </div>
-              <div className="mt-3 flex flex-col gap-2">
-                <input
-                  type="file"
-                  multiple
-                  onChange={async (e) => {
-                    if (!e.target.files || e.target.files.length === 0) return;
-                    setUploading(true);
-                    setErr(null);
-                    try {
-                      const uploaded = await uploadFiles(e.target.files);
-                      setAttachments((prev) => [...uploaded, ...prev]);
-                      e.target.value = "";
-                    } catch (err: any) {
-                      setErr(err?.message ?? "Не удалось загрузить файлы");
-                    } finally {
-                      setUploading(false);
-                    }
-                  }}
-                  className="text-sm text-[rgba(234,240,255,0.72)]"
-                />
-                {uploading ? <div className="text-xs text-[rgba(234,240,255,0.72)]">Загрузка…</div> : null}
-                {attachments.length ? (
-                  <div className="mt-2 flex flex-col gap-2">
-                    {attachments.map((a) => (
-                      <div
-                        key={a.id}
-                        className="flex items-center justify-between gap-3 rounded-2xl border border-[rgba(255,255,255,0.12)] bg-white/[0.03] px-3 py-2"
-                      >
-                        <a href={a.url} target="_blank" rel="noreferrer" className="text-xs text-white/90 truncate">
-                          {a.filename}
-                        </a>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="h-8 px-3 text-xs"
-                          onClick={() => setAttachments((prev) => prev.filter((x) => x.id !== a.id))}
-                        >
-                          Убрать
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">Рынок (опционально)</label>
+                <textarea className={`${fc} min-h-[100px] rounded-3xl`} value={market} onChange={(e) => setMarket(e.target.value)} />
               </div>
             </div>
+          </div>
 
-            {err ? <div className="text-sm text-red-300">{err}</div> : null}
-            <Button type="submit" disabled={saving} className="h-11">
-              {saving ? "…" : "Сохранить"}
+          <div>
+            <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
+              <span className="text-emerald-400">3</span> Файлы
+            </h2>
+            <div className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
+              <p className="text-sm text-gray-400">Презентация, PDF, таблицы — по желанию.</p>
+              <input
+                type="file"
+                multiple
+                className="mt-4 text-sm text-gray-400"
+                onChange={async (e) => {
+                  if (!e.target.files || e.target.files.length === 0) return;
+                  setUploading(true);
+                  setError(null);
+                  try {
+                    const uploaded = await uploadFiles(e.target.files);
+                    setAttachments((prev) => [...uploaded, ...prev]);
+                    e.target.value = "";
+                  } catch (err: unknown) {
+                    setError(err instanceof Error ? err.message : "Не удалось загрузить файлы");
+                  } finally {
+                    setUploading(false);
+                  }
+                }}
+              />
+              {uploading ? <div className="mt-2 text-xs text-gray-500">Загрузка…</div> : null}
+              {attachments.length ? (
+                <div className="mt-4 space-y-2">
+                  {attachments.map((a) => (
+                    <div key={a.id} className="flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#12121A] px-3 py-2 text-sm text-white/90">
+                      <a href={a.url} target="_blank" rel="noreferrer" className="truncate">
+                        {a.filename}
+                      </a>
+                      <Button type="button" variant="ghost" className="h-8 shrink-0 px-2 text-xs" onClick={() => setAttachments((prev) => prev.filter((x) => x.id !== a.id))}>
+                        Убрать
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {error ? <div className="text-sm text-red-300">{error}</div> : null}
+
+          <div className="border-t border-white/10 pt-10">
+            <Button type="submit" disabled={saving || uploading} className="w-full rounded-3xl bg-gradient-to-r from-emerald-500 to-teal-500 py-7 text-xl font-semibold text-white hover:brightness-110 disabled:opacity-60">
+              {saving ? "…" : "Сохранить изменения"}
             </Button>
-          </form>
-        )}
-      </Card>
-    </div>
+          </div>
+        </form>
+      )}
+    </AddListingPageChrome>
   );
 }
 
