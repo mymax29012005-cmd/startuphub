@@ -87,6 +87,14 @@ function MarketplaceInner() {
   const activeTab = useMemo(() => tabFromSearchParams(searchParams), [searchParams]);
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.add("marketplace-cosmic-bg");
+    return () => {
+      document.body.classList.remove("marketplace-cosmic-bg");
+    };
+  }, []);
+
+  useEffect(() => {
     if (searchParams.get("tab") === "auctions") {
       router.replace("/auction");
     }

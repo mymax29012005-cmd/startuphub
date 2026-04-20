@@ -15,6 +15,8 @@ type Stats = {
   startupsCount: number;
   ideasCount: number;
   activeAuctions: number;
+  investorsCount: number;
+  partnersCount: number;
 };
 
 export default function Home() {
@@ -24,10 +26,10 @@ export default function Home() {
   const [spotStartup, setSpotStartup] = useState<SpotlightStartup | null>(null);
   const [spotIdea, setSpotIdea] = useState<SpotlightIdea | null>(null);
   const [spotInvestor, setSpotInvestor] = useState<SpotlightInvestor | null>(null);
-  const [counters, setCounters] = useState<{ projects: number; auctions: number; deals: number }>({
-    projects: 0,
-    auctions: 0,
-    deals: 0,
+  const [counters, setCounters] = useState<{ activeProjects: number; projectsTotal: number; investorsPartners: number }>({
+    activeProjects: 0,
+    projectsTotal: 0,
+    investorsPartners: 0,
   });
 
   useEffect(() => {
@@ -85,9 +87,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const targetProjects = Math.max(0, (stats?.startupsCount ?? 0) + (stats?.ideasCount ?? 0));
-    const targetAuctions = Math.max(0, stats?.activeAuctions ?? 0);
-    const targetDeals = 0; // пока метрики нет в API — оставляем 0, но красиво анимируем
+    const targetActiveProjects = Math.max(0, stats?.startupsCount ?? 0);
+    const targetProjectsTotal = Math.max(0, (stats?.startupsCount ?? 0) + (stats?.ideasCount ?? 0));
+    const targetInvestorsPartners = Math.max(0, (stats?.investorsCount ?? 0) + (stats?.partnersCount ?? 0));
 
     let raf = 0;
     const start = performance.now();
@@ -97,9 +99,9 @@ export default function Home() {
       const t = Math.min(1, (now - start) / ms);
       const ease = 1 - Math.pow(1 - t, 3);
       const next = {
-        projects: Math.round(from.projects + (targetProjects - from.projects) * ease),
-        auctions: Math.round(from.auctions + (targetAuctions - from.auctions) * ease),
-        deals: Math.round(from.deals + (targetDeals - from.deals) * ease),
+        activeProjects: Math.round(from.activeProjects + (targetActiveProjects - from.activeProjects) * ease),
+        projectsTotal: Math.round(from.projectsTotal + (targetProjectsTotal - from.projectsTotal) * ease),
+        investorsPartners: Math.round(from.investorsPartners + (targetInvestorsPartners - from.investorsPartners) * ease),
       };
       setCounters(next);
       if (t < 1) raf = requestAnimationFrame(tick);
@@ -110,7 +112,7 @@ export default function Home() {
       cancelAnimationFrame(raf);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stats?.startupsCount, stats?.ideasCount, stats?.activeAuctions]);
+  }, [stats?.startupsCount, stats?.ideasCount, stats?.investorsCount, stats?.partnersCount]);
 
   function fmtMoney(v: number) {
     return Number(v || 0).toLocaleString("ru-RU");
@@ -178,10 +180,16 @@ export default function Home() {
                   </div>
                 )
               ) : null}
-              <h1 className="text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl lg:text-7xl lg:leading-[1.05]">
-                Запусти стартап.
-                <span className="gradient-text block">Найди инвестиции.</span>
-                Продай долю.
+              <h1 className="hero-title text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl lg:text-7xl lg:leading-[1.05]">
+                <span className="hero-shine" data-text="Запусти стартап.">
+                  Запусти стартап.
+                </span>
+                <span className="hero-shine gradient-text block" data-text="Найди инвестиции.">
+                  Найди инвестиции.
+                </span>
+                <span className="hero-shine" data-text="Продай долю.">
+                  Продай долю.
+                </span>
               </h1>
               <p className="max-w-xl text-lg leading-relaxed text-white/80 md:text-xl">
                 Платформа для стартаперов, инвесторов и покупателей бизнеса. Находи идеи, финансирование и партнёров в одном
@@ -210,25 +218,25 @@ export default function Home() {
                   <div>
                     <div className="text-white/60 text-sm">Активных проектов</div>
                     <div className="counter text-3xl font-bold text-white">
-                      {loading && !stats ? "—" : counters.projects.toLocaleString("ru-RU")}
+                      {loading && !stats ? "—" : counters.activeProjects.toLocaleString("ru-RU")}
                     </div>
                   </div>
                   <div className="w-3 h-3 bg-[#00f5d4] rounded-full shadow-[0_0_20px_rgba(0,245,212,0.8)]" />
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="text-white/60 text-sm">Аукционов сейчас</div>
+                    <div className="text-white/60 text-sm">Количество проектов</div>
                     <div className="counter text-3xl font-bold text-white">
-                      {loading && !stats ? "—" : counters.auctions.toLocaleString("ru-RU")}
+                      {loading && !stats ? "—" : counters.projectsTotal.toLocaleString("ru-RU")}
                     </div>
                   </div>
                   <div className="w-3 h-3 bg-[#e11d48] rounded-full shadow-[0_0_20px_rgba(225,29,72,0.75)]" />
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="text-white/60 text-sm">Сделок на этой неделе</div>
+                    <div className="text-white/60 text-sm">Инвесторы и партнёры</div>
                     <div className="counter text-3xl font-bold text-white">
-                      {loading && !stats ? "—" : counters.deals.toLocaleString("ru-RU")}
+                      {loading && !stats ? "—" : counters.investorsPartners.toLocaleString("ru-RU")}
                     </div>
                   </div>
                   <div className="w-3 h-3 bg-[#7c3aed] rounded-full shadow-[0_0_20px_rgba(124,58,237,0.75)]" />
