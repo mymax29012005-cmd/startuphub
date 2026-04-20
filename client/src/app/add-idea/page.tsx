@@ -123,6 +123,40 @@ function AddIdeaInner() {
       .filter(Boolean)
       .slice(0, 24);
 
+    // Friendly client-side validation mirroring server limits (see server/src/routes/v1/ideas.ts)
+    if (title.trim().length > 120) {
+      setError("Название слишком длинное (макс. 120 символов)");
+      setLoading(false);
+      return;
+    }
+    if (description.trim().length < 10) {
+      setError("Описание слишком короткое (минимум 10 символов)");
+      setLoading(false);
+      return;
+    }
+    if (description.trim().length > 2000) {
+      setError("Описание слишком длинное (макс. 2000 символов)");
+      setLoading(false);
+      return;
+    }
+    const tooLongDone = doneItems.find((x) => x.length > 120);
+    if (tooLongDone) {
+      setError("В блоке «Что уже сделано» каждый пункт должен быть короче 120 символов (сделай пункты по строкам).");
+      setLoading(false);
+      return;
+    }
+    if (needsText.trim().length > 2000) {
+      setError("Поле «Что нужно для реализации» слишком длинное (макс. 2000 символов)");
+      setLoading(false);
+      return;
+    }
+    const tooLongTag = helpTags.find((x) => x.length > 40);
+    if (tooLongTag) {
+      setError("Теги помощи слишком длинные (каждый тег до 40 символов).");
+      setLoading(false);
+      return;
+    }
+
     try {
       const r = await fetch("/api/v1/ideas", {
         method: "POST",
@@ -151,7 +185,12 @@ function AddIdeaInner() {
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) {
-        setError((data?.error as string) ?? "Ошибка при создании");
+        const base = (data?.error as string) ?? "Ошибка при создании";
+        const details = (data as any)?.details;
+        const fieldErrors: Record<string, string[] | undefined> | undefined = details?.fieldErrors;
+        const firstField = fieldErrors ? Object.keys(fieldErrors).find((k) => (fieldErrors[k]?.length ?? 0) > 0) : undefined;
+        const firstMsg = firstField ? fieldErrors?.[firstField]?.[0] : undefined;
+        setError(firstMsg ? `${base}: ${firstMsg}` : base);
         return;
       }
       try {
