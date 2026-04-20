@@ -202,6 +202,7 @@ model InvestorRequest {
   author      User      @relation("InvestorRequestAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   attachments Attachment[]
+  favorites   Favorite[]
 
   /// JSON: investorName, investorTitle, checkMin, checkMax, stages[], dealsCount, exitsCount, interests[], …
   profileExtra Json?
@@ -222,6 +223,7 @@ model PartnerRequest {
   author      User      @relation("PartnerRequestAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   attachments Attachment[]
+  favorites   Favorite[]
 
   /// JSON: partnerName, partnerType, helpText, services[{title, note}], fitFor[], …
   profileExtra Json?
