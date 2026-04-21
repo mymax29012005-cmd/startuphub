@@ -24,7 +24,11 @@ export function useSessionAndUnread() {
     async function loadMe() {
       if (!cancelled) setLoading(true);
       try {
-        const r = await fetch("/api/v1/auth/me", { credentials: "include" });
+        const r = await fetch("/api/v1/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-store" },
+        });
         if (!r.ok) {
           if (!cancelled) setUser(null);
           return;
@@ -47,7 +51,11 @@ export function useSessionAndUnread() {
     let cancelled = false;
     async function loadUnread() {
       try {
-        const r = await fetch("/api/v1/chats/unread-count", { credentials: "include" });
+        const r = await fetch("/api/v1/chats/unread-count", {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-store" },
+        });
         if (!r.ok) {
           if (!cancelled) setUnreadChats(0);
           return;
@@ -68,7 +76,7 @@ export function useSessionAndUnread() {
     const tmr = window.setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       void loadUnread();
-    }, 20000);
+    }, 60000);
     return () => {
       cancelled = true;
       window.clearInterval(tmr);

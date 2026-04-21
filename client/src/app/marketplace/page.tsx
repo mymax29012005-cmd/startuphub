@@ -192,7 +192,7 @@ function MarketplaceInner() {
     let cancelled = false;
     async function loadMe() {
       try {
-        const r = await fetch("/api/v1/auth/me", { credentials: "include" });
+        const r = await fetch("/api/v1/auth/me", { credentials: "include", cache: "no-store", headers: { "Cache-Control": "no-store" } });
         if (!r.ok) return;
         const data = (await r.json()) as { id: string; role: "user" | "admin" };
         if (!cancelled) setMe({ id: data.id, role: data.role });
@@ -211,6 +211,7 @@ function MarketplaceInner() {
     let cancelled = false;
     async function tick() {
       try {
+        if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
         const r = await fetch("/api/v1/moderation/queue/count", { credentials: "include", cache: "no-store" });
         if (!r.ok) return;
         const data = (await r.json()) as { total?: number };
@@ -219,19 +220,23 @@ function MarketplaceInner() {
         // ignore
       }
     }
+    // Only poll frequently while admin is on moderation tab. Otherwise, keep it light.
     void tick();
-    const t = window.setInterval(() => void tick(), 30000);
+    const period = activeTab === "moderation" ? 30000 : 120000;
+    const t = window.setInterval(() => void tick(), period);
     return () => {
       cancelled = true;
       window.clearInterval(t);
     };
-  }, [me?.role]);
+  }, [me?.role, activeTab]);
 
   useEffect(() => {
     if (!me?.id) return;
     let cancelled = false;
     async function tick() {
       try {
+        if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+        if (activeTab !== "my" && activeTab !== "moderation") return;
         const r = await fetch("/api/v1/notifications/unread-count", { credentials: "include", cache: "no-store" });
         if (!r.ok) return;
         const data = (await r.json()) as { unread?: number };
@@ -241,12 +246,12 @@ function MarketplaceInner() {
       }
     }
     void tick();
-    const t = window.setInterval(() => void tick(), 30000);
+    const t = window.setInterval(() => void tick(), 60000);
     return () => {
       cancelled = true;
       window.clearInterval(t);
     };
-  }, [me?.id]);
+  }, [me?.id, activeTab]);
 
   async function ensureLoaded(tab: TabKey) {
     setDbError(false);
