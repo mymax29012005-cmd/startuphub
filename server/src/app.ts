@@ -10,6 +10,9 @@ import { apiV1Router } from "./routes";
 export function createApp() {
   const app = express();
 
+  // API responses should not be cached with ETags (304 breaks client flows expecting JSON body).
+  app.set("etag", false);
+
   app.use(helmet());
   app.use(morgan("dev"));
   app.use(express.json({ limit: "20mb" }));

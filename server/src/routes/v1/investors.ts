@@ -17,7 +17,7 @@ const createInvestorSchema = z.object({
       message: "Недопустимая категория",
     }),
   description: z.string().min(10).max(2000),
-  amount: z.coerce.number().positive(),
+  amount: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
   profileExtra: z
     .object({
       investorName: z.string().min(1).max(90),
@@ -44,7 +44,7 @@ const updateInvestorSchema = z.object({
     })
     .optional(),
   description: z.string().min(10).max(2000).optional(),
-  amount: z.coerce.number().positive().optional(),
+  amount: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число").optional(),
   status: z.enum(["active", "paused", "closed"]).optional(),
   profileExtra: z
     .object({

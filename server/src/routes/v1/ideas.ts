@@ -18,7 +18,7 @@ const createIdeaSchema = z.object({
     .refine((v) => (allowedCategories as readonly string[]).includes(v), {
       message: "Недопустимая категория",
     }),
-  price: z.coerce.number().positive(),
+  price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
   stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]),
   format: z.enum(["online", "offline", "hybrid"]),
   analysisId: z.string().uuid().optional(),
@@ -49,7 +49,7 @@ const updateIdeaSchema = z.object({
       message: "Недопустимая категория",
     })
     .optional(),
-  price: z.coerce.number().positive().optional(),
+  price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число").optional(),
   stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]).optional(),
   format: z.enum(["online", "offline", "hybrid"]).optional(),
   analysisId: z.string().uuid().nullable().optional(),

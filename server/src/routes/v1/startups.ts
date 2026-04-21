@@ -74,7 +74,7 @@ const createStartupSchema = z.object({
     .refine((v) => (allowedCategories as readonly string[]).includes(v), {
       message: "Недопустимая категория",
     }),
-  price: z.coerce.number().positive(),
+  price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
 
   stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]),
   format: z.enum(["online", "offline", "hybrid"]),
@@ -87,7 +87,7 @@ const createStartupSchema = z.object({
 
   auction: z
     .object({
-      currentPrice: z.coerce.number().positive(),
+      currentPrice: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
       endsAt: z.coerce.date(),
     })
     .optional(),
@@ -105,7 +105,7 @@ const updateStartupSchema = z.object({
       message: "Недопустимая категория",
     })
     .optional(),
-  price: z.coerce.number().positive().optional(),
+  price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число").optional(),
   stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]).optional(),
   format: z.enum(["online", "offline", "hybrid"]).optional(),
   isOnline: z.boolean().optional(),
