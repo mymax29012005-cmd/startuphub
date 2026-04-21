@@ -3,6 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { City, Country } from "country-state-city";
 
 import { accountTypeLabelsByLang } from "@/lib/labelMaps";
 import { composeBio, parseBioMeta } from "@/lib/profileBio";
@@ -25,8 +26,10 @@ export default function ProfileSettingsPage() {
   const [me, setMe] = useState<Me | null>(null);
 
   const [name, setName] = useState("");
+  const [countryIso, setCountryIso] = useState("RU");
   const [country, setCountry] = useState("Россия");
   const [city, setCity] = useState("");
+  const [cityQuery, setCityQuery] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   const [telegram, setTelegram] = useState("");
@@ -46,6 +49,33 @@ export default function ProfileSettingsPage() {
       label: accountTypeLabelsByLang[lang]?.[x] ?? x,
     }));
   }, [lang]);
+
+  const countries = useMemo(() => {
+    const list = Country.getAllCountries()
+      .map((c) => ({ isoCode: c.isoCode, name: c.name }))
+      .filter((c) => c.isoCode && c.name)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    return list;
+  }, []);
+
+  const cities = useMemo(() => {
+    const list = (City.getCitiesOfCountry(countryIso) ?? [])
+      .map((c) => c.name)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+    return Array.from(new Set(list));
+  }, [countryIso]);
+
+  const filteredCities = useMemo(() => {
+    const q = cityQuery.trim().toLowerCase();
+    if (!q) return cities;
+    return cities.filter((c) => c.toLowerCase().includes(q));
+  }, [cities, cityQuery]);
+
+  useEffect(() => {
+    const found = countries.find((c) => c.isoCode === countryIso);
+    setCountry(found?.name ?? "Россия");
+  }, [countries, countryIso]);
 
   function onAvatarChange(f: File | null) {
     setAvatarFile(f);
@@ -70,6 +100,8 @@ export default function ProfileSettingsPage() {
         setAccountType(data.accountType);
         const parsed = parseBioMeta(data.bio);
         setCountry(parsed.country);
+        const byName = countries.find((c) => c.name.toLowerCase() === parsed.country.trim().toLowerCase());
+        if (byName?.isoCode) setCountryIso(byName.isoCode);
         setCity(parsed.city);
         setTelegram(parsed.telegram);
         setBio(parsed.freeText);
@@ -85,7 +117,12 @@ export default function ProfileSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [countries]);
+
+  useEffect(() => {
+    setCity("");
+    setCityQuery("");
+  }, [countryIso]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -256,13 +293,15 @@ export default function ProfileSettingsPage() {
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">Страна</label>
                     <select
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
+                      value={countryIso}
+                      onChange={(e) => setCountryIso(e.target.value)}
                       className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5"
                     >
-                      <option>Россия</option>
-                      <option>Казахстан</option>
-                      <option>Беларусь</option>
+                      {countries.map((c) => (
+                        <option key={c.isoCode} value={c.isoCode}>
+                          {c.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -270,13 +309,27 @@ export default function ProfileSettingsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">Город</label>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
-                      placeholder="Москва"
-                    />
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={cityQuery}
+                        onChange={(e) => setCityQuery(e.target.value)}
+                        className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-violet-500"
+                        placeholder="Поиск города…"
+                      />
+                      <select
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5"
+                      >
+                        <option value="">Выберите город</option>
+                        {filteredCities.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">Телефон</label>

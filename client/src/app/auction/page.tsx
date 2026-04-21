@@ -18,8 +18,10 @@ export default function AuctionPage() {
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.body.classList.add("cosmic-bg");
+    document.documentElement.classList.add("cosmic-bg");
     return () => {
       document.body.classList.remove("cosmic-bg");
+      document.documentElement.classList.remove("cosmic-bg");
     };
   }, []);
 
@@ -50,7 +52,7 @@ export default function AuctionPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="min-h-screen mx-auto max-w-6xl px-4 py-10 text-white">
       <div className="flex items-end justify-between gap-4 mb-5">
         <div>
           <div className="text-[rgba(234,240,255,0.72)] text-sm">{t("nav.auction")}</div>

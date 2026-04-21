@@ -186,17 +186,17 @@ export default function ProfilePage() {
               <p className="text-gray-400 mt-1">{locationLine ? locationLine : "Профиль StartupHub"}</p>
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row justify-center md:justify-start gap-3 sm:gap-4 md:-ml-3">
+            <div className="mt-8 flex flex-col sm:flex-row justify-center md:justify-start gap-3 sm:gap-4">
               <Link
                 href="/profile/settings"
-                className="w-full sm:flex-1 md:flex-none px-7 py-4 bg-white/10 hover:bg-white/20 rounded-3xl font-medium flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 md:w-auto md:flex-none px-7 py-4 bg-white/10 hover:bg-white/20 rounded-3xl font-medium flex items-center justify-center gap-2"
               >
                 ✎ Редактировать
               </Link>
               <button
                 type="button"
                 onClick={() => void onShare()}
-                className="w-full sm:flex-1 md:flex-none px-7 py-4 border border-white/30 hover:bg-white/10 rounded-3xl font-medium"
+                className="w-full sm:flex-1 md:w-auto md:flex-none px-7 py-4 border border-white/30 hover:bg-white/10 rounded-3xl font-medium"
               >
                 Поделиться
               </button>
