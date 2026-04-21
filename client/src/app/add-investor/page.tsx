@@ -55,8 +55,19 @@ export default function AddInvestorPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    const ok = window.confirm(
+      [
+        "Перед отправкой на модерацию проверь:",
+        "— чек и стадии указаны корректно",
+        "— без рекламных обещаний и капса",
+        "— описание отражает реальный запрос",
+        "",
+        "Отправить карточку на модерацию?",
+      ].join("\n"),
+    );
+    if (!ok) return;
+    setLoading(true);
 
     const minN = checkMin === "" ? undefined : Number(stripNonDigits(checkMin));
     const maxN = checkMax === "" ? undefined : Number(stripNonDigits(checkMax));

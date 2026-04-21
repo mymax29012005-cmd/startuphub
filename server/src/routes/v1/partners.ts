@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
 import { allowedCategories } from "../../lib/categories";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, tryAuth } from "../../middleware/auth";
 
 export const partnersRouter = Router();
 
@@ -37,6 +37,7 @@ const createPartnerSchema = z.object({
     })
     .optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
+  submitMode: z.enum(["draft", "submit"]).optional(),
 });
 
 const updatePartnerSchema = z.object({
@@ -69,12 +70,20 @@ const updatePartnerSchema = z.object({
     })
     .optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
+  submitForModeration: z.boolean().optional(),
 });
 
-partnersRouter.get("/", async (_req, res) => {
+partnersRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   try {
+    const viewer = req.user;
     const items = await prisma.partnerRequest.findMany({
+      where:
+        viewer?.role === "admin"
+          ? undefined
+          : {
+              moderationStatus: "published",
+            },
       orderBy: { createdAt: "desc" },
       take: 50,
       include: { author: { select: { name: true, avatarUrl: true } } },
@@ -95,11 +104,12 @@ partnersRouter.get("/", async (_req, res) => {
   }
 });
 
-partnersRouter.get("/:requestId", async (req, res) => {
+partnersRouter.get("/:requestId", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   const requestId =
     typeof req.params.requestId === "string" ? req.params.requestId : req.params.requestId[0];
   try {
+    const viewer = req.user;
     const item = await prisma.partnerRequest.findUnique({
       where: { id: requestId },
       include: {
@@ -108,6 +118,16 @@ partnersRouter.get("/:requestId", async (req, res) => {
       },
     });
     if (!item) return res.status(404).json({ error: "Запрос не найден" });
+    if (item.moderationStatus !== "published") {
+      if (!viewer) return res.status(404).json({ error: "Запрос не найден" });
+      const canSee = viewer.role === "admin" || viewer.userId === item.authorId;
+      if (!canSee) return res.status(404).json({ error: "Запрос не найден" });
+      if (viewer.role === "admin") {
+        await prisma.moderationEvent.create({
+          data: { entityType: "partner", entityId: item.id, action: "viewed", actorId: viewer.userId },
+        });
+      }
+    }
     return res.json(item);
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
@@ -123,12 +143,14 @@ partnersRouter.post("/", requireAuth, async (req, res) => {
       .json({ error: "Неверные данные", details: parsed.error.flatten() });
   }
   try {
+    const nextStatus = parsed.data.submitMode === "draft" ? "draft" : "pending_moderation";
     const created = await prisma.partnerRequest.create({
       data: {
         role: parsed.data.role,
         industry: parsed.data.industry,
         description: parsed.data.description,
         authorId: req.user!.userId,
+        moderationStatus: nextStatus as any,
         ...(parsed.data.profileExtra ? { profileExtra: parsed.data.profileExtra as any } : {}),
       },
       select: { id: true },
@@ -138,6 +160,20 @@ partnersRouter.post("/", requireAuth, async (req, res) => {
         where: { id: { in: parsed.data.attachmentIds }, ownerId: req.user!.userId },
         data: { partnerRequestId: created.id },
       });
+    }
+    if (nextStatus !== "draft") {
+      await prisma.moderationEvent.create({
+        data: { entityType: "partner", entityId: created.id, action: "submitted", actorId: req.user!.userId },
+      });
+      const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+      await Promise.all(
+        admins.map((a) =>
+          prisma.notification.create({
+            data: { userId: a.id, type: "moderation_new", payload: { entityType: "partner", entityId: created.id } },
+            select: { id: true },
+          }),
+        ),
+      );
     }
     res.status(201).json(created);
   } catch (_e) {
@@ -176,7 +212,7 @@ partnersRouter.put("/:requestId", requireAuth, async (req, res) => {
   try {
     const row = await prisma.partnerRequest.findUnique({
       where: { id: requestId },
-      select: { id: true, authorId: true },
+      select: { id: true, authorId: true, moderationStatus: true },
     });
     if (!row) return res.status(404).json({ error: "Запрос не найден" });
     if (!canEditAsOwnerOrAdmin(req.user!, row.authorId)) {
@@ -184,6 +220,7 @@ partnersRouter.put("/:requestId", requireAuth, async (req, res) => {
     }
 
     const data = parsed.data;
+    const resubmit = data.submitForModeration === true && req.user!.role !== "admin";
     const updated = await prisma.partnerRequest.update({
       where: { id: row.id },
       data: {
@@ -191,6 +228,14 @@ partnersRouter.put("/:requestId", requireAuth, async (req, res) => {
         ...(data.industry !== undefined ? { industry: data.industry } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
         ...(data.profileExtra !== undefined ? { profileExtra: data.profileExtra as any } : {}),
+        ...(resubmit
+          ? {
+              moderationStatus: "pending_moderation",
+              adminComment: null,
+              revisionDate: null,
+              rejectedReason: null,
+            }
+          : {}),
       },
       select: { id: true },
     });
@@ -208,6 +253,20 @@ partnersRouter.put("/:requestId", requireAuth, async (req, res) => {
       }
     }
 
+    if (resubmit) {
+      await prisma.moderationEvent.create({
+        data: { entityType: "partner", entityId: updated.id, action: "submitted", actorId: req.user!.userId },
+      });
+      const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+      await Promise.all(
+        admins.map((a) =>
+          prisma.notification.create({
+            data: { userId: a.id, type: "moderation_new", payload: { entityType: "partner", entityId: updated.id } },
+            select: { id: true },
+          }),
+        ),
+      );
+    }
     return res.status(200).json(updated);
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });

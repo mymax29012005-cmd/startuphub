@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin } from "../../lib/authz";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, tryAuth } from "../../middleware/auth";
 
 export const auctionsRouter = Router();
 
@@ -12,13 +12,15 @@ function ensureStatus(now: Date, auction: { status: string; startsAt: Date; isAc
   return auction.status;
 }
 
-auctionsRouter.get("/", async (_req, res) => {
+auctionsRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   try {
     const now = new Date();
+    const viewer = req.user;
     const auctions = await prisma.auction.findMany({
       where: {
         isActive: true,
+        ...(viewer?.role === "admin" ? {} : { moderationStatus: "published" }),
       },
       orderBy: { startsAt: "asc" },
       take: 50,
@@ -90,11 +92,12 @@ auctionsRouter.get("/", async (_req, res) => {
   }
 });
 
-auctionsRouter.get("/:auctionId", async (req, res) => {
+auctionsRouter.get("/:auctionId", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   const auctionId =
     typeof req.params.auctionId === "string" ? req.params.auctionId : req.params.auctionId[0];
   try {
+    const viewer = req.user;
     const now = new Date();
     const latestBid = await prisma.bid.findFirst({
       where: { auctionId },
@@ -134,6 +137,16 @@ auctionsRouter.get("/:auctionId", async (req, res) => {
     });
 
     if (!auction) return res.status(404).json({ error: "Аукцион не найден" });
+    if ((auction as any).moderationStatus !== "published") {
+      if (!viewer) return res.status(404).json({ error: "Аукцион не найден" });
+      const canSee = viewer.role === "admin" || viewer.userId === auction.startup.ownerId;
+      if (!canSee) return res.status(404).json({ error: "Аукцион не найден" });
+      if (viewer.role === "admin") {
+        await prisma.moderationEvent.create({
+          data: { entityType: "auction", entityId: auction.id, action: "viewed", actorId: viewer.userId },
+        });
+      }
+    }
 
     // status transitions
     if (auction.status === "planned" && now >= auction.startsAt) {

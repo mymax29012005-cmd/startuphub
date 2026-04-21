@@ -22,7 +22,7 @@ function hintForStartupDbError(e: unknown): string | undefined {
 }
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
 import { allowedCategories } from "../../lib/categories";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, tryAuth } from "../../middleware/auth";
 
 export const startupsRouter = Router();
 
@@ -91,6 +91,7 @@ const createStartupSchema = z.object({
       endsAt: z.coerce.date(),
     })
     .optional(),
+  submitMode: z.enum(["draft", "submit"]).optional(),
 });
 
 const updateStartupSchema = z.object({
@@ -111,14 +112,23 @@ const updateStartupSchema = z.object({
   analysisId: z.string().uuid().nullable().optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
   profileExtra: profileExtraSchema.nullable().optional(),
+  submitForModeration: z.boolean().optional(),
 });
 
-startupsRouter.get("/", async (req, res) => {
+startupsRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   const ownerId = typeof req.query.ownerId === "string" ? req.query.ownerId : undefined;
   try {
+    const viewer = req.user;
+    const canSeeAllForOwner = ownerId && viewer && (viewer.role === "admin" || viewer.userId === ownerId);
     const startups = await prisma.startup.findMany({
-      where: ownerId ? { ownerId } : undefined,
+      where: canSeeAllForOwner
+        ? { ownerId }
+        : ownerId
+          ? { ownerId, moderationStatus: "published" }
+          : viewer?.role === "admin"
+            ? undefined
+            : { moderationStatus: "published" },
       orderBy: { createdAt: "desc" },
       take: 50,
       include: {
@@ -181,10 +191,11 @@ startupsRouter.get("/", async (req, res) => {
   }
 });
 
-startupsRouter.get("/:startupId", async (req, res) => {
+startupsRouter.get("/:startupId", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   const startupId = typeof req.params.startupId === "string" ? req.params.startupId : req.params.startupId[0];
   try {
+    const viewer = req.user;
     const startup = await prisma.startup.findUnique({
       where: { id: startupId },
       include: {
@@ -196,6 +207,16 @@ startupsRouter.get("/:startupId", async (req, res) => {
     });
 
     if (!startup) return res.status(404).json({ error: "Стартап не найден" });
+    if ((startup as any).moderationStatus !== "published") {
+      if (!viewer) return res.status(404).json({ error: "Стартап не найден" });
+      const canSee = viewer.role === "admin" || viewer.userId === startup.ownerId;
+      if (!canSee) return res.status(404).json({ error: "Стартап не найден" });
+      if (viewer.role === "admin") {
+        await prisma.moderationEvent.create({
+          data: { entityType: "startup", entityId: startup.id, action: "viewed", actorId: viewer.userId },
+        });
+      }
+    }
 
     const agg = await prisma.review.aggregate({
       where: { targetUserId: startup.ownerId },
@@ -256,6 +277,7 @@ startupsRouter.post("/", requireAuth, async (req, res) => {
       if (a.userId !== req.user!.userId) return res.status(403).json({ error: "Доступ запрещен" });
     }
 
+    const nextStatus = data.submitMode === "draft" ? "draft" : "pending_moderation";
     const created = await prisma.startup.create({
       data: {
         title: data.title,
@@ -268,6 +290,7 @@ startupsRouter.post("/", requireAuth, async (req, res) => {
         profileExtra: data.profileExtra ? (data.profileExtra as any) : undefined,
         ownerId: req.user!.userId,
         analysisId: data.analysisId ?? null,
+        moderationStatus: nextStatus as any,
         auction: data.auction
           ? {
               create: {
@@ -277,6 +300,7 @@ startupsRouter.post("/", requireAuth, async (req, res) => {
                 startsAt: data.auction.endsAt,
                 registrationEndsAt: data.auction.endsAt,
                 endsAt: data.auction.endsAt,
+                moderationStatus: nextStatus as any,
               },
             }
           : undefined,
@@ -291,6 +315,20 @@ startupsRouter.post("/", requireAuth, async (req, res) => {
       });
     }
 
+    if (nextStatus !== "draft") {
+      await prisma.moderationEvent.create({
+        data: { entityType: "startup", entityId: created.id, action: "submitted", actorId: req.user!.userId },
+      });
+      const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+      await Promise.all(
+        admins.map((a) =>
+          prisma.notification.create({
+            data: { userId: a.id, type: "moderation_new", payload: { entityType: "startup", entityId: created.id } },
+            select: { id: true },
+          }),
+        ),
+      );
+    }
     res.status(201).json(created);
   } catch (e) {
     // eslint-disable-next-line no-console
@@ -339,6 +377,7 @@ startupsRouter.put("/:startupId", requireAuth, async (req, res) => {
     }
 
     const data = parsed.data;
+    const resubmit = data.submitForModeration === true && req.user!.role !== "admin";
 
     if (data.analysisId !== undefined && data.analysisId !== null) {
       const a = await prisma.startupAnalysis.findUnique({
@@ -362,6 +401,14 @@ startupsRouter.put("/:startupId", requireAuth, async (req, res) => {
       ...(data.analysisId !== undefined ? { analysisId: data.analysisId } : {}),
       ...(data.profileExtra !== undefined
         ? { profileExtra: data.profileExtra === null ? null : (data.profileExtra as object) }
+        : {}),
+      ...(resubmit
+        ? {
+            moderationStatus: "pending_moderation",
+            adminComment: null,
+            revisionDate: null,
+            rejectedReason: null,
+          }
         : {}),
     };
 
@@ -390,6 +437,20 @@ startupsRouter.put("/:startupId", requireAuth, async (req, res) => {
       }
     }
 
+    if (resubmit) {
+      await prisma.moderationEvent.create({
+        data: { entityType: "startup", entityId: updated.id, action: "submitted", actorId: req.user!.userId },
+      });
+      const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+      await Promise.all(
+        admins.map((a) =>
+          prisma.notification.create({
+            data: { userId: a.id, type: "moderation_new", payload: { entityType: "startup", entityId: updated.id } },
+            select: { id: true },
+          }),
+        ),
+      );
+    }
     return res.status(200).json(updated);
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
@@ -434,9 +495,23 @@ startupsRouter.post("/:startupId/auction", requireAuth, async (req, res) => {
         startsAt,
         registrationEndsAt,
         endsAt: null,
+        moderationStatus: "pending_moderation",
       },
       select: { id: true },
     });
+
+    await prisma.moderationEvent.create({
+      data: { entityType: "auction", entityId: created.id, action: "submitted", actorId: req.user!.userId },
+    });
+    const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+    await Promise.all(
+      admins.map((a) =>
+        prisma.notification.create({
+          data: { userId: a.id, type: "moderation_new", payload: { entityType: "auction", entityId: created.id } },
+          select: { id: true },
+        }),
+      ),
+    );
 
     return res.status(201).json({ id: created.id });
   } catch (_e) {

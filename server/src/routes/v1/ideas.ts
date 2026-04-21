@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
 import { allowedCategories } from "../../lib/categories";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, tryAuth } from "../../middleware/auth";
 
 export const ideasRouter = Router();
 
@@ -35,6 +35,7 @@ const createIdeaSchema = z.object({
       coverGradient: z.string().min(1).max(80).optional(),
     })
     .optional(),
+  submitMode: z.enum(["draft", "submit"]).optional(),
 });
 
 const updateIdeaSchema = z.object({
@@ -65,14 +66,23 @@ const updateIdeaSchema = z.object({
       coverGradient: z.string().min(1).max(80).optional().nullable(),
     })
     .optional(),
+  submitForModeration: z.boolean().optional(),
 });
 
-ideasRouter.get("/", async (req, res) => {
+ideasRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   const ownerId = typeof req.query.ownerId === "string" ? req.query.ownerId : undefined;
   try {
+    const viewer = req.user;
+    const canSeeAllForOwner = ownerId && viewer && (viewer.role === "admin" || viewer.userId === ownerId);
     const ideas = await prisma.idea.findMany({
-      where: ownerId ? { ownerId } : undefined,
+      where: canSeeAllForOwner
+        ? { ownerId }
+        : ownerId
+          ? { ownerId, moderationStatus: "published" }
+          : viewer?.role === "admin"
+            ? undefined
+            : { moderationStatus: "published" },
       orderBy: { createdAt: "desc" },
       take: 50,
       include: { owner: { select: { name: true, avatarUrl: true, role: true, accountType: true } } },
@@ -120,10 +130,11 @@ ideasRouter.get("/", async (req, res) => {
   }
 });
 
-ideasRouter.get("/:ideaId", async (req, res) => {
+ideasRouter.get("/:ideaId", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   const ideaId = typeof req.params.ideaId === "string" ? req.params.ideaId : req.params.ideaId[0];
   try {
+    const viewer = req.user;
     const idea = await prisma.idea.findUnique({
       where: { id: ideaId },
       include: {
@@ -134,6 +145,16 @@ ideasRouter.get("/:ideaId", async (req, res) => {
     });
 
     if (!idea) return res.status(404).json({ error: "Идея не найдена" });
+    if ((idea as any).moderationStatus !== "published") {
+      if (!viewer) return res.status(404).json({ error: "Идея не найдена" });
+      const canSee = viewer.role === "admin" || viewer.userId === idea.ownerId;
+      if (!canSee) return res.status(404).json({ error: "Идея не найдена" });
+      if (viewer.role === "admin") {
+        await prisma.moderationEvent.create({
+          data: { entityType: "idea", entityId: idea.id, action: "viewed", actorId: viewer.userId },
+        });
+      }
+    }
 
     const agg = await prisma.review.aggregate({
       where: { targetUserId: idea.ownerId },
@@ -192,6 +213,7 @@ ideasRouter.post("/", requireAuth, async (req, res) => {
       if (a.userId !== req.user!.userId) return res.status(403).json({ error: "Доступ запрещен" });
     }
 
+    const nextStatus = data.submitMode === "draft" ? "draft" : "pending_moderation";
     const created = await prisma.idea.create({
       data: {
         title: data.title,
@@ -205,6 +227,7 @@ ideasRouter.post("/", requireAuth, async (req, res) => {
         market: data.market ?? null,
         ownerId: req.user!.userId,
         analysisId: data.analysisId ?? null,
+        moderationStatus: nextStatus as any,
         ...(data.profileExtra ? { profileExtra: data.profileExtra as any } : {}),
       },
       select: { id: true },
@@ -217,6 +240,20 @@ ideasRouter.post("/", requireAuth, async (req, res) => {
       });
     }
 
+    if (nextStatus !== "draft") {
+      await prisma.moderationEvent.create({
+        data: { entityType: "idea", entityId: created.id, action: "submitted", actorId: req.user!.userId },
+      });
+      const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+      await Promise.all(
+        admins.map((a) =>
+          prisma.notification.create({
+            data: { userId: a.id, type: "moderation_new", payload: { entityType: "idea", entityId: created.id } },
+            select: { id: true },
+          }),
+        ),
+      );
+    }
     res.status(201).json(created);
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
@@ -272,6 +309,14 @@ ideasRouter.put("/:ideaId", requireAuth, async (req, res) => {
     const updated = await prisma.idea.update({
       where: { id: row.id },
       data: {
+        ...(data.submitForModeration === true && req.user!.role !== "admin"
+          ? {
+              moderationStatus: "pending_moderation",
+              adminComment: null,
+              revisionDate: null,
+              rejectedReason: null,
+            }
+          : {}),
         ...(data.title !== undefined ? { title: data.title } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
         ...(data.category !== undefined ? { category: data.category } : {}),
@@ -300,6 +345,20 @@ ideasRouter.put("/:ideaId", requireAuth, async (req, res) => {
       }
     }
 
+    if (data.submitForModeration === true && req.user!.role !== "admin") {
+      await prisma.moderationEvent.create({
+        data: { entityType: "idea", entityId: updated.id, action: "submitted", actorId: req.user!.userId },
+      });
+      const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+      await Promise.all(
+        admins.map((a) =>
+          prisma.notification.create({
+            data: { userId: a.id, type: "moderation_new", payload: { entityType: "idea", entityId: updated.id } },
+            select: { id: true },
+          }),
+        ),
+      );
+    }
     return res.status(200).json(updated);
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });

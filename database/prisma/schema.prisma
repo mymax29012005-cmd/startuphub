@@ -57,6 +57,30 @@ enum AuctionStatus {
   finished
 }
 
+enum ModerationStatus {
+  draft
+  pending_moderation
+  needs_revision
+  published
+  rejected
+}
+
+enum ModerationEntityType {
+  startup
+  idea
+  investor
+  partner
+  auction
+}
+
+enum ModerationAction {
+  submitted
+  viewed
+  approved
+  revision_requested
+  rejected
+}
+
 model User {
   id           String       @id @default(uuid())
   role         Role         @default(user)
@@ -87,6 +111,7 @@ model User {
 
   notifications    Notification[]
   analyses         StartupAnalysis[]
+  moderationEvents ModerationEvent[]
 
   chatConversationsA DirectConversation[] @relation("ChatUserA")
   chatConversationsB DirectConversation[] @relation("ChatUserB")
@@ -152,10 +177,16 @@ model Startup {
   /// JSON: tagline, valuationPreMoney, equityOfferedPct, kpis[], milestones, team[], videoPitchUrl, …
   profileExtra Json?
 
+  moderationStatus ModerationStatus @default(published)
+  adminComment     String?
+  revisionDate     DateTime?
+  rejectedReason   String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([category])
+  @@index([moderationStatus, createdAt])
 }
 
 model Idea {
@@ -185,10 +216,16 @@ model Idea {
   /// JSON: city, doneItems[], helpTags[], needsText, coverGradient, …
   profileExtra Json?
 
+  moderationStatus ModerationStatus @default(published)
+  adminComment     String?
+  revisionDate     DateTime?
+  rejectedReason   String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([category])
+  @@index([moderationStatus, createdAt])
 }
 
 model InvestorRequest {
@@ -207,10 +244,16 @@ model InvestorRequest {
   /// JSON: investorName, investorTitle, checkMin, checkMax, stages[], dealsCount, exitsCount, interests[], …
   profileExtra Json?
 
+  moderationStatus ModerationStatus @default(published)
+  adminComment     String?
+  revisionDate     DateTime?
+  rejectedReason   String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([industry])
+  @@index([moderationStatus, createdAt])
 }
 
 model PartnerRequest {
@@ -228,10 +271,33 @@ model PartnerRequest {
   /// JSON: partnerName, partnerType, helpText, services[{title, note}], fitFor[], …
   profileExtra Json?
 
+  moderationStatus ModerationStatus @default(published)
+  adminComment     String?
+  revisionDate     DateTime?
+  rejectedReason   String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([industry])
+  @@index([moderationStatus, createdAt])
+}
+
+model ModerationEvent {
+  id         String               @id @default(uuid())
+  entityType ModerationEntityType
+  entityId   String
+  action     ModerationAction
+
+  actorId    String?
+  actor      User?                @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  comment    String?
+  createdAt  DateTime             @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
+  @@index([actorId, createdAt])
 }
 
 model Attachment {
@@ -278,6 +344,11 @@ model Auction {
   endsAt       DateTime?
   isActive     Boolean    @default(true)
 
+  moderationStatus ModerationStatus @default(published)
+  adminComment     String?
+  revisionDate     DateTime?
+  rejectedReason   String?
+
   winnerUserId String?
   winner       User?      @relation("AuctionWinner", fields: [winnerUserId], references: [id], onDelete: SetNull)
 
@@ -288,6 +359,7 @@ model Auction {
   updatedAt    DateTime @updatedAt
 
   @@index([status, startsAt])
+  @@index([moderationStatus, createdAt])
 }
 
 model AuctionParticipant {

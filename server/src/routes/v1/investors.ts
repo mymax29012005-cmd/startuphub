@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
 import { allowedCategories } from "../../lib/categories";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, tryAuth } from "../../middleware/auth";
 
 export const investorsRouter = Router();
 
@@ -31,6 +31,7 @@ const createInvestorSchema = z.object({
     })
     .optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
+  submitMode: z.enum(["draft", "submit"]).optional(),
 });
 
 const updateInvestorSchema = z.object({
@@ -58,12 +59,20 @@ const updateInvestorSchema = z.object({
     })
     .optional(),
   attachmentIds: z.array(z.string().uuid()).optional(),
+  submitForModeration: z.boolean().optional(),
 });
 
-investorsRouter.get("/", async (_req, res) => {
+investorsRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   try {
+    const viewer = req.user;
     const items = await prisma.investorRequest.findMany({
+      where:
+        viewer?.role === "admin"
+          ? undefined
+          : {
+              moderationStatus: "published",
+            },
       orderBy: { createdAt: "desc" },
       take: 50,
       include: { author: { select: { name: true, avatarUrl: true } } },
@@ -85,11 +94,12 @@ investorsRouter.get("/", async (_req, res) => {
   }
 });
 
-investorsRouter.get("/:requestId", async (req, res) => {
+investorsRouter.get("/:requestId", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   const requestId =
     typeof req.params.requestId === "string" ? req.params.requestId : req.params.requestId[0];
   try {
+    const viewer = req.user;
     const item = await prisma.investorRequest.findUnique({
       where: { id: requestId },
       include: {
@@ -98,6 +108,16 @@ investorsRouter.get("/:requestId", async (req, res) => {
       },
     });
     if (!item) return res.status(404).json({ error: "Запрос не найден" });
+    if (item.moderationStatus !== "published") {
+      if (!viewer) return res.status(404).json({ error: "Запрос не найден" });
+      const canSee = viewer.role === "admin" || viewer.userId === item.authorId;
+      if (!canSee) return res.status(404).json({ error: "Запрос не найден" });
+      if (viewer.role === "admin") {
+        await prisma.moderationEvent.create({
+          data: { entityType: "investor", entityId: item.id, action: "viewed", actorId: viewer.userId },
+        });
+      }
+    }
     return res.json({
       ...item,
       amount: Number(item.amount),
@@ -116,12 +136,14 @@ investorsRouter.post("/", requireAuth, async (req, res) => {
       .json({ error: "Неверные данные", details: parsed.error.flatten() });
   }
   try {
+    const nextStatus = parsed.data.submitMode === "draft" ? "draft" : "pending_moderation";
     const created = await prisma.investorRequest.create({
       data: {
         industry: parsed.data.industry,
         description: parsed.data.description,
         amount: parsed.data.amount,
         authorId: req.user!.userId,
+        moderationStatus: nextStatus as any,
         ...(parsed.data.profileExtra ? { profileExtra: parsed.data.profileExtra as any } : {}),
       },
       select: { id: true },
@@ -131,6 +153,20 @@ investorsRouter.post("/", requireAuth, async (req, res) => {
         where: { id: { in: parsed.data.attachmentIds }, ownerId: req.user!.userId },
         data: { investorRequestId: created.id },
       });
+    }
+    if (nextStatus !== "draft") {
+      await prisma.moderationEvent.create({
+        data: { entityType: "investor", entityId: created.id, action: "submitted", actorId: req.user!.userId },
+      });
+      const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+      await Promise.all(
+        admins.map((a) =>
+          prisma.notification.create({
+            data: { userId: a.id, type: "moderation_new", payload: { entityType: "investor", entityId: created.id } },
+            select: { id: true },
+          }),
+        ),
+      );
     }
     res.status(201).json(created);
   } catch (_e) {
@@ -169,7 +205,7 @@ investorsRouter.put("/:requestId", requireAuth, async (req, res) => {
   try {
     const row = await prisma.investorRequest.findUnique({
       where: { id: requestId },
-      select: { id: true, authorId: true },
+      select: { id: true, authorId: true, moderationStatus: true },
     });
     if (!row) return res.status(404).json({ error: "Запрос не найден" });
     if (!canEditAsOwnerOrAdmin(req.user!, row.authorId)) {
@@ -177,6 +213,7 @@ investorsRouter.put("/:requestId", requireAuth, async (req, res) => {
     }
 
     const data = parsed.data;
+    const resubmit = data.submitForModeration === true && req.user!.role !== "admin";
     const updated = await prisma.investorRequest.update({
       where: { id: row.id },
       data: {
@@ -185,6 +222,14 @@ investorsRouter.put("/:requestId", requireAuth, async (req, res) => {
         ...(data.amount !== undefined ? { amount: data.amount } : {}),
         ...(data.status !== undefined ? { status: data.status as any } : {}),
         ...(data.profileExtra !== undefined ? { profileExtra: data.profileExtra as any } : {}),
+        ...(resubmit
+          ? {
+              moderationStatus: "pending_moderation",
+              adminComment: null,
+              revisionDate: null,
+              rejectedReason: null,
+            }
+          : {}),
       },
       select: { id: true },
     });
@@ -202,6 +247,20 @@ investorsRouter.put("/:requestId", requireAuth, async (req, res) => {
       }
     }
 
+    if (resubmit) {
+      await prisma.moderationEvent.create({
+        data: { entityType: "investor", entityId: updated.id, action: "submitted", actorId: req.user!.userId },
+      });
+      const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+      await Promise.all(
+        admins.map((a) =>
+          prisma.notification.create({
+            data: { userId: a.id, type: "moderation_new", payload: { entityType: "investor", entityId: updated.id } },
+            select: { id: true },
+          }),
+        ),
+      );
+    }
     return res.status(200).json(updated);
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });

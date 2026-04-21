@@ -38,8 +38,19 @@ export default function AddPartnerPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    const ok = window.confirm(
+      [
+        "Перед отправкой на модерацию проверь:",
+        "— услуги описаны конкретно (без рекламных обещаний)",
+        "— без капса и эмодзи",
+        "— понятны условия и кому подходит",
+        "",
+        "Отправить карточку на модерацию?",
+      ].join("\n"),
+    );
+    if (!ok) return;
+    setLoading(true);
 
     const fitFor = fitForRaw
       .split("\n")

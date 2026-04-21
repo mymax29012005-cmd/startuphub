@@ -9,7 +9,7 @@ import { allowedCategories } from "@/lib/categories";
 import { formatLabelsByLang, partnerRoleLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import type { IdeaProfileExtra, InvestorProfileExtra, PartnerProfileExtra } from "@/lib/marketplaceExtras";
 
-type TabKey = "startups" | "ideas" | "investors" | "partners";
+type TabKey = "startups" | "ideas" | "investors" | "partners" | "my" | "moderation";
 
 type StartupItem = {
   id: string;
@@ -64,7 +64,7 @@ type StartupCardVM = {
   location?: string;
 };
 
-const tabs: Array<{ key: TabKey; label: string }> = [
+const baseTabs: Array<{ key: Exclude<TabKey, "my" | "moderation">; label: string }> = [
   { key: "startups", label: "Стартапы" },
   { key: "ideas", label: "Идеи" },
   { key: "investors", label: "Инвесторы" },
@@ -77,9 +77,44 @@ const partnerRoles = ["supplier", "reseller", "integration", "cofounder"] as con
 
 function tabFromSearchParams(sp: URLSearchParams): TabKey {
   const t = sp.get("tab");
-  if (t === "ideas" || t === "investors" || t === "partners" || t === "startups") return t;
+  if (t === "ideas" || t === "investors" || t === "partners" || t === "startups" || t === "my" || t === "moderation") return t;
   return "startups";
 }
+
+type MeBrief = { id: string; role: "user" | "admin" };
+
+type ModerationQueueItem = {
+  type: "startup" | "idea" | "investor" | "partner" | "auction";
+  id: string;
+  status: "pending_moderation" | "needs_revision";
+  title: string;
+  userId: string;
+  userName: string;
+  createdAt: string;
+  updatedAt: string;
+  revisionDate: string | null;
+  adminComment: string | null;
+};
+
+type MySubmissionItem = {
+  type: "startup" | "idea" | "investor" | "partner" | "auction";
+  id: string;
+  title: string;
+  moderationStatus: "draft" | "pending_moderation" | "needs_revision" | "rejected" | "published";
+  adminComment: string | null;
+  revisionDate: string | null;
+  rejectedReason: string | null;
+  updatedAt: string;
+  createdAt: string;
+};
+
+type UiNotification = {
+  id: string;
+  type: string;
+  payload: unknown;
+  isRead: boolean;
+  createdAt: string;
+};
 
 function MarketplaceInner() {
   const router = useRouter();
@@ -118,6 +153,26 @@ function MarketplaceInner() {
   const [investors, setInvestors] = useState<InvestorItem[] | null>(null);
   const [partners, setPartners] = useState<PartnerItem[] | null>(null);
 
+  const [me, setMe] = useState<MeBrief | null>(null);
+  const [moderationCount, setModerationCount] = useState<number>(0);
+  const [queue, setQueue] = useState<ModerationQueueItem[] | null>(null);
+  const [mySubmissions, setMySubmissions] = useState<MySubmissionItem[] | null>(null);
+  const [modBusyId, setModBusyId] = useState<string | null>(null);
+  const [modMsg, setModMsg] = useState<string | null>(null);
+  const [modType, setModType] = useState<"" | ModerationQueueItem["type"]>("");
+  const [modStatus, setModStatus] = useState<"" | "pending_moderation" | "needs_revision">("");
+  const [modUserId, setModUserId] = useState("");
+  const [modSelected, setModSelected] = useState<Set<string>>(new Set());
+  const [notifications, setNotifications] = useState<UiNotification[] | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  const visibleTabs = useMemo(() => {
+    const out: Array<{ key: TabKey; label: string }> = [...baseTabs];
+    if (me?.id) out.push({ key: "my", label: "Ожидают подтверждения" });
+    if (me?.role === "admin") out.push({ key: "moderation", label: "На проверке" });
+    return out;
+  }, [me?.id, me?.role]);
+
   function selectTab(key: TabKey) {
     router.replace(`/marketplace?tab=${key}`, { scroll: false });
   }
@@ -132,6 +187,66 @@ function MarketplaceInner() {
   function fmtMoney(v: number) {
     return Number(v || 0).toLocaleString("ru-RU") + " ₽";
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadMe() {
+      try {
+        const r = await fetch("/api/v1/auth/me", { credentials: "include" });
+        if (!r.ok) return;
+        const data = (await r.json()) as { id: string; role: "user" | "admin" };
+        if (!cancelled) setMe({ id: data.id, role: data.role });
+      } catch {
+        // ignore
+      }
+    }
+    void loadMe();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (me?.role !== "admin") return;
+    let cancelled = false;
+    async function tick() {
+      try {
+        const r = await fetch("/api/v1/moderation/queue/count", { credentials: "include", cache: "no-store" });
+        if (!r.ok) return;
+        const data = (await r.json()) as { total?: number };
+        if (!cancelled) setModerationCount(typeof data.total === "number" ? data.total : 0);
+      } catch {
+        // ignore
+      }
+    }
+    void tick();
+    const t = window.setInterval(() => void tick(), 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+    };
+  }, [me?.role]);
+
+  useEffect(() => {
+    if (!me?.id) return;
+    let cancelled = false;
+    async function tick() {
+      try {
+        const r = await fetch("/api/v1/notifications/unread-count", { credentials: "include", cache: "no-store" });
+        if (!r.ok) return;
+        const data = (await r.json()) as { unread?: number };
+        if (!cancelled) setUnreadCount(typeof data.unread === "number" ? data.unread : 0);
+      } catch {
+        // ignore
+      }
+    }
+    void tick();
+    const t = window.setInterval(() => void tick(), 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+    };
+  }, [me?.id]);
 
   async function ensureLoaded(tab: TabKey) {
     setDbError(false);
@@ -156,6 +271,25 @@ function MarketplaceInner() {
         const r = await fetch("/api/v1/partners", { cache: "no-store" });
         if (!r.ok) throw new Error("db");
         setPartners((await r.json()) as PartnerItem[]);
+      }
+      if (tab === "my" && mySubmissions === null) {
+        const r = await fetch("/api/v1/moderation/my", { credentials: "include", cache: "no-store" });
+        if (!r.ok) throw new Error("db");
+        setMySubmissions((await r.json()) as MySubmissionItem[]);
+      }
+      if ((tab === "my" || tab === "moderation") && notifications === null && me?.id) {
+        const r = await fetch("/api/v1/notifications", { credentials: "include", cache: "no-store" });
+        if (!r.ok) throw new Error("db");
+        setNotifications((await r.json()) as UiNotification[]);
+      }
+      if (tab === "moderation" && queue === null) {
+        const qs = new URLSearchParams();
+        if (modType) qs.set("type", modType);
+        if (modStatus) qs.set("status", modStatus);
+        if (modUserId.trim()) qs.set("userId", modUserId.trim());
+        const r = await fetch(`/api/v1/moderation/queue?${qs.toString()}`, { credentials: "include", cache: "no-store" });
+        if (!r.ok) throw new Error("db");
+        setQueue((await r.json()) as ModerationQueueItem[]);
       }
     } catch {
       setDbError(true);
@@ -315,13 +449,17 @@ function MarketplaceInner() {
   }, [filterCtx, partners]);
 
   const listIsEmpty =
-    activeTab === "startups"
-      ? startupCards.length === 0
-      : activeTab === "ideas"
-        ? filteredIdeas.length === 0
-        : activeTab === "investors"
-          ? filteredInvestors.length === 0
-          : filteredPartners.length === 0;
+    activeTab === "my"
+      ? (mySubmissions?.length ?? 0) === 0
+      : activeTab === "moderation"
+        ? (queue?.length ?? 0) === 0
+        : activeTab === "startups"
+          ? startupCards.length === 0
+          : activeTab === "ideas"
+            ? filteredIdeas.length === 0
+            : activeTab === "investors"
+              ? filteredInvestors.length === 0
+              : filteredPartners.length === 0;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -356,7 +494,7 @@ function MarketplaceInner() {
 
       <div className="mt-6 sm:mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto sm:gap-6 md:gap-8">
-          {tabs.map((t) => {
+          {visibleTabs.map((t) => {
             const active = t.key === activeTab;
             return (
               <button
@@ -364,11 +502,14 @@ function MarketplaceInner() {
                 type="button"
                 onClick={() => selectTab(t.key)}
                 className={[
-                  "whitespace-nowrap px-3 py-2 text-sm transition sm:px-6 sm:py-3 sm:text-lg",
+                  "relative whitespace-nowrap px-3 py-2 text-sm transition sm:px-6 sm:py-3 sm:text-lg",
                   active ? "border-b-[3px] border-[#7C3AED] font-semibold text-white" : "text-gray-400 hover:text-white",
                 ].join(" ")}
               >
                 {t.label}
+                {t.key === "moderation" && moderationCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.65)]" />
+                ) : null}
               </button>
             );
           })}
@@ -445,10 +586,20 @@ function MarketplaceInner() {
       ) : null}
 
       <div className="flex gap-8 pt-8">
-        <div
-          className="sticky top-[calc(var(--site-header-height)+0.75rem)] hidden h-fit min-w-0 w-72 rounded-3xl border border-white/10 bg-[#12121A] p-6 lg:block"
-        >
-          <h3 className="mb-6 flex items-center gap-2 font-semibold">⚙ Фильтры</h3>
+        <div className="sticky top-[calc(var(--site-header-height)+0.75rem)] hidden h-fit min-w-0 w-72 rounded-3xl border border-white/10 bg-[#12121A] p-6 lg:block">
+          {activeTab === "my" || activeTab === "moderation" ? (
+            <div className="text-sm text-gray-300">
+              <div className="font-semibold text-white">{activeTab === "my" ? "Ваши заявки" : "Очередь модерации"}</div>
+              <div className="mt-2 text-gray-400">
+                {activeTab === "my"
+                  ? "Здесь видны черновики и карточки на проверке/доработке."
+                  : "Откройте карточку, чтобы увидеть финальный вид. Одобрите, отправьте на доработку или отклоните."}
+              </div>
+              {modMsg ? <div className="mt-3 text-xs text-emerald-300">{modMsg}</div> : null}
+            </div>
+          ) : (
+            <>
+              <h3 className="mb-6 flex items-center gap-2 font-semibold">⚙ Фильтры</h3>
 
           <div className="mb-6">
             <p className="mb-3 text-sm text-gray-400">Категория (как в карточке)</p>
@@ -578,6 +729,8 @@ function MarketplaceInner() {
               <div className="mt-2 text-xs text-white/40">Ничего не отмечено — все роли.</div>
             </div>
           ) : null}
+            </>
+          )}
         </div>
 
         <div className="flex-1">
@@ -589,6 +742,404 @@ function MarketplaceInner() {
               <div className="col-span-full py-12 text-center text-gray-400">В этой категории пока ничего нет</div>
             ) : (
               <div className="flex flex-col gap-4">
+                {activeTab === "my"
+                  ? (mySubmissions ?? []).map((x) => {
+                      const statusLabel =
+                        x.moderationStatus === "draft"
+                          ? "Черновик"
+                          : x.moderationStatus === "pending_moderation"
+                            ? "На модерации"
+                            : x.moderationStatus === "needs_revision"
+                              ? "Требует доработки"
+                              : x.moderationStatus === "rejected"
+                                ? "Отклонено"
+                                : "Опубликовано";
+
+                      const href =
+                        x.type === "startup"
+                          ? `/startups/${x.id}/edit`
+                          : x.type === "idea"
+                            ? `/ideas/${x.id}/edit`
+                            : x.type === "investor"
+                              ? `/investors/${x.id}/edit`
+                            : x.type === "partner"
+                              ? `/partners/${x.id}/edit`
+                              : `/auction/${x.id}`;
+
+                      const canResubmit = x.moderationStatus === "needs_revision" || x.moderationStatus === "draft";
+                      const note = x.adminComment || x.rejectedReason;
+                      return (
+                        <div key={x.type + ":" + x.id} className="rounded-3xl border border-white/10 bg-[#161618] p-6">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="text-xs text-white/40">{x.type.toUpperCase()}</div>
+                              <div className="mt-1 truncate text-xl font-semibold text-white">{x.title}</div>
+                              <div className="mt-2 text-sm text-gray-300">
+                                Статус:{" "}
+                                <span
+                                  className={[
+                                    "rounded-2xl px-3 py-1 text-xs font-semibold",
+                                    x.moderationStatus === "needs_revision"
+                                      ? "bg-amber-500/20 text-amber-300"
+                                      : x.moderationStatus === "pending_moderation"
+                                        ? "bg-violet-500/20 text-violet-300"
+                                        : x.moderationStatus === "rejected"
+                                          ? "bg-rose-500/20 text-rose-300"
+                                          : "bg-white/10 text-white/70",
+                                  ].join(" ")}
+                                >
+                                  {statusLabel}
+                                </span>
+                              </div>
+                              {note ? <div className="mt-3 text-sm text-gray-400">Комментарий: {note}</div> : null}
+                            </div>
+                            <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                              <Link
+                                href={href}
+                                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+                              >
+                                Редактировать
+                              </Link>
+                              {canResubmit ? (
+                                <button
+                                  type="button"
+                                  disabled={modBusyId === x.id}
+                                  onClick={async () => {
+                                    setModBusyId(x.id);
+                                    setModMsg(null);
+                                    try {
+                                      const r = await fetch("/api/v1/moderation/submit", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        credentials: "include",
+                                        body: JSON.stringify({ type: x.type, id: x.id }),
+                                      });
+                                      const data = (await r.json().catch(() => ({}))) as { error?: string };
+                                      if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                                      setMySubmissions(null);
+                                      await ensureLoaded("my");
+                                      setModMsg("Отправлено на модерацию");
+                                    } catch (e) {
+                                      setModMsg(e instanceof Error ? e.message : "Ошибка");
+                                    } finally {
+                                      setModBusyId(null);
+                                    }
+                                  }}
+                                  className="rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                                >
+                                  {modBusyId === x.id ? "…" : "Отправить повторно"}
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  : null}
+
+                {(activeTab === "my" || activeTab === "moderation") && notifications && notifications.length ? (
+                  <div className="rounded-3xl border border-white/10 bg-[#161618] p-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-lg font-semibold text-white">
+                        Уведомления {unreadCount > 0 ? <span className="text-rose-300">({unreadCount} новых)</span> : null}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={unreadCount === 0}
+                        onClick={async () => {
+                          try {
+                            await fetch("/api/v1/notifications/read-all", { method: "POST", credentials: "include" });
+                            setNotifications((prev) => (prev ? prev.map((x) => ({ ...x, isRead: true })) : prev));
+                            setUnreadCount(0);
+                          } catch {
+                            // ignore
+                          }
+                        }}
+                        className="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/15 disabled:opacity-60"
+                      >
+                        Прочитать все
+                      </button>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      {notifications.slice(0, 12).map((n) => (
+                        <button
+                          key={n.id}
+                          type="button"
+                          onClick={async () => {
+                            if (n.isRead) return;
+                            try {
+                              await fetch("/api/v1/notifications/read", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                credentials: "include",
+                                body: JSON.stringify({ id: n.id }),
+                              });
+                              setNotifications((prev) => (prev ? prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)) : prev));
+                              setUnreadCount((c) => Math.max(0, c - 1));
+                            } catch {
+                              // ignore
+                            }
+                          }}
+                          className={[
+                            "w-full rounded-2xl border px-4 py-3 text-left text-sm transition",
+                            n.isRead ? "border-white/10 bg-white/5 text-gray-300" : "border-rose-500/25 bg-rose-500/10 text-white",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="truncate font-medium">{n.type === "moderation_new" ? "Новая заявка на модерацию" : "Обновление статуса карточки"}</div>
+                            <div className="shrink-0 text-xs text-white/50">{new Date(n.createdAt).toLocaleString("ru-RU")}</div>
+                          </div>
+                          <div className="mt-1 text-xs text-white/60 truncate">{JSON.stringify(n.payload)}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {activeTab === "moderation"
+                  ? (
+                      <>
+                        <div className="rounded-3xl border border-white/10 bg-[#161618] p-5">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                              <div>
+                                <div className="text-xs text-white/40 mb-1">Тип</div>
+                                <select
+                                  value={modType}
+                                  onChange={(e) => {
+                                    setQueue(null);
+                                    setModSelected(new Set());
+                                    setModType(e.target.value as any);
+                                  }}
+                                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm"
+                                >
+                                  <option value="">Все</option>
+                                  <option value="startup">Стартап</option>
+                                  <option value="idea">Идея</option>
+                                  <option value="investor">Инвестор</option>
+                                  <option value="partner">Партнёр</option>
+                                  <option value="auction">Аукцион</option>
+                                </select>
+                              </div>
+                              <div>
+                                <div className="text-xs text-white/40 mb-1">Статус</div>
+                                <select
+                                  value={modStatus}
+                                  onChange={(e) => {
+                                    setQueue(null);
+                                    setModSelected(new Set());
+                                    setModStatus(e.target.value as any);
+                                  }}
+                                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm"
+                                >
+                                  <option value="">Все</option>
+                                  <option value="pending_moderation">На модерации</option>
+                                  <option value="needs_revision">Требует доработки</option>
+                                </select>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs text-white/40 mb-1">User ID (uuid)</div>
+                                <input
+                                  value={modUserId}
+                                  onChange={(e) => setModUserId(e.target.value)}
+                                  className="min-w-0 w-full sm:w-[320px] rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm"
+                                  placeholder="опционально"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQueue(null);
+                                  void ensureLoaded("moderation");
+                                }}
+                                className="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/15"
+                              >
+                                Применить
+                              </button>
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={modSelected.size === 0}
+                              onClick={async () => {
+                                const items = (queue ?? [])
+                                  .filter((x) => modSelected.has(`${x.type}:${x.id}`))
+                                  .map((x) => ({ type: x.type, id: x.id }));
+                                if (!items.length) return;
+                                setModMsg(null);
+                                setModBusyId("bulk");
+                                try {
+                                  const r = await fetch("/api/v1/moderation/approve/bulk", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    credentials: "include",
+                                    body: JSON.stringify({ items }),
+                                  });
+                                  const data = (await r.json().catch(() => ({}))) as { error?: string };
+                                  if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                                  setModSelected(new Set());
+                                  setQueue(null);
+                                  await ensureLoaded("moderation");
+                                  setModMsg("Массовое одобрение выполнено");
+                                } catch (e) {
+                                  setModMsg(e instanceof Error ? e.message : "Ошибка");
+                                } finally {
+                                  setModBusyId(null);
+                                }
+                              }}
+                              className="rounded-2xl bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-60"
+                            >
+                              Одобрить выбранные ({modSelected.size})
+                            </button>
+                          </div>
+                        </div>
+
+                        {(queue ?? []).map((x) => {
+                      const href =
+                        x.type === "startup"
+                          ? `/startups/${x.id}`
+                          : x.type === "idea"
+                            ? `/ideas/${x.id}`
+                            : x.type === "investor"
+                              ? `/investors/${x.id}`
+                              : x.type === "partner"
+                                ? `/partners/${x.id}`
+                                : `/auction/${x.id}`;
+                      const overdue48h = Date.now() - new Date(x.createdAt).getTime() > 48 * 60 * 60 * 1000;
+                      const selKey = `${x.type}:${x.id}`;
+                      const on = modSelected.has(selKey);
+                      return (
+                        <div key={x.type + ":" + x.id} className="rounded-3xl border border-white/10 bg-[#161618] p-6">
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
+                                <label className="flex items-center gap-2 mr-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={on}
+                                    onChange={(e) => {
+                                      const checked = e.target.checked;
+                                      setModSelected((prev) => {
+                                        const next = new Set(prev);
+                                        if (checked) next.add(selKey);
+                                        else next.delete(selKey);
+                                        return next;
+                                      });
+                                    }}
+                                    className="accent-violet-500"
+                                  />
+                                </label>
+                                <span className="rounded-xl bg-white/5 px-2 py-1">{x.type.toUpperCase()}</span>
+                                <span>от {x.userName}</span>
+                                {overdue48h ? (
+                                  <span className="rounded-xl bg-rose-500/20 px-2 py-1 text-rose-300">48ч+</span>
+                                ) : null}
+                              </div>
+                              <Link href={href} className="mt-2 block truncate text-xl font-semibold text-white hover:text-violet-300">
+                                {x.title}
+                              </Link>
+                              {x.adminComment ? <div className="mt-2 text-sm text-gray-400">Комментарий: {x.adminComment}</div> : null}
+                            </div>
+                            <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                              <button
+                                type="button"
+                                disabled={modBusyId === x.id}
+                                onClick={async () => {
+                                  setModBusyId(x.id);
+                                  setModMsg(null);
+                                  try {
+                                    const r = await fetch("/api/v1/moderation/approve", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      credentials: "include",
+                                      body: JSON.stringify({ type: x.type, id: x.id }),
+                                    });
+                                    const data = (await r.json().catch(() => ({}))) as { error?: string };
+                                    if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                                    setQueue(null);
+                                    await ensureLoaded("moderation");
+                                    setModMsg("Одобрено");
+                                  } catch (e) {
+                                    setModMsg(e instanceof Error ? e.message : "Ошибка");
+                                  } finally {
+                                    setModBusyId(null);
+                                  }
+                                }}
+                                className="rounded-2xl bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-60"
+                              >
+                                {modBusyId === x.id ? "…" : "Одобрить"}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={modBusyId === x.id}
+                                onClick={async () => {
+                                  const template = window.prompt(
+                                    "Комментарий (можно вставить шаблон):\n- Добавьте описание traction / команды / рынка\n- Уберите рекламный текст, эмодзи, капс\n- Нужно больше деталей по финансам / MVP\n- Нарушение правил публикации",
+                                    "Добавьте описание traction / команды / рынка",
+                                  );
+                                  if (!template) return;
+                                  setModBusyId(x.id);
+                                  setModMsg(null);
+                                  try {
+                                    const r = await fetch("/api/v1/moderation/revision", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      credentials: "include",
+                                      body: JSON.stringify({ item: { type: x.type, id: x.id }, comment: template }),
+                                    });
+                                    const data = (await r.json().catch(() => ({}))) as { error?: string };
+                                    if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                                    setQueue(null);
+                                    await ensureLoaded("moderation");
+                                    setModMsg("Отправлено на доработку");
+                                  } catch (e) {
+                                    setModMsg(e instanceof Error ? e.message : "Ошибка");
+                                  } finally {
+                                    setModBusyId(null);
+                                  }
+                                }}
+                                className="rounded-2xl bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                              >
+                                На доработку
+                              </button>
+                              <button
+                                type="button"
+                                disabled={modBusyId === x.id}
+                                onClick={async () => {
+                                  const reason = window.prompt("Причина отклонения (обязательно):", "Нарушение правил публикации");
+                                  if (!reason) return;
+                                  setModBusyId(x.id);
+                                  setModMsg(null);
+                                  try {
+                                    const r = await fetch("/api/v1/moderation/reject", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      credentials: "include",
+                                      body: JSON.stringify({ item: { type: x.type, id: x.id }, reason }),
+                                    });
+                                    const data = (await r.json().catch(() => ({}))) as { error?: string };
+                                    if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                                    setQueue(null);
+                                    await ensureLoaded("moderation");
+                                    setModMsg("Отклонено");
+                                  } catch (e) {
+                                    setModMsg(e instanceof Error ? e.message : "Ошибка");
+                                  } finally {
+                                    setModBusyId(null);
+                                  }
+                                }}
+                                className="rounded-2xl bg-rose-500/15 px-4 py-2 text-sm font-semibold text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                              >
+                                Отклонить
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                      </>
+                    ) : null}
+
                 {activeTab === "startups"
                   ? startupCards.map((it) => (
                       <Link

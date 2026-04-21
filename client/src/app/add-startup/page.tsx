@@ -252,8 +252,20 @@ function AddStartupInner() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    const ok = window.confirm(
+      [
+        "Перед отправкой на модерацию проверь:",
+        "— без капса и эмодзи в заголовке",
+        "— без рекламных обещаний и ссылок",
+        "— достаточно деталей по продукту/рынку/команде",
+        "— финансы и условия указаны корректно",
+        "",
+        "Отправить карточку на модерацию?",
+      ].join("\n"),
+    );
+    if (!ok) return;
+    setLoading(true);
 
     const priceNum = price === "" ? undefined : Number(stripNonDigits(price));
     if (priceNum === undefined || !Number.isFinite(priceNum) || priceNum <= 0) {

@@ -102,8 +102,19 @@ function AddIdeaInner() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    const ok = window.confirm(
+      [
+        "Перед отправкой на модерацию проверь:",
+        "— без капса и эмодзи в заголовке",
+        "— без рекламного текста и внешних ссылок",
+        "— проблема/решение/рынок заполнены по сути",
+        "",
+        "Отправить карточку на модерацию?",
+      ].join("\n"),
+    );
+    if (!ok) return;
+    setLoading(true);
 
     const priceNum = price === "" ? undefined : Number(price);
     if (priceNum !== undefined && !Number.isFinite(priceNum)) {
