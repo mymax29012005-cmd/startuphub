@@ -277,42 +277,36 @@ export default function Home() {
               {
                 n: 1,
                 nBg: "bg-[#7c3aed]/20 text-[#a78bfa]",
-                icon: "🚀",
                 title: "Создайте профиль",
                 text: "Расскажите о себе, своём опыте и направлениях деятельности. Профиль помогает участникам платформы быстро понять, с кем они взаимодействуют.",
               },
               {
                 n: 2,
                 nBg: "bg-[#e11d48]/20 text-[#fb7185]",
-                icon: "🧩",
                 title: "Опубликуйте проект",
                 text: "Разместите стартап, идею или действующий продукт. Опишите потенциал проекта, цели и условия сотрудничества.",
               },
               {
                 n: 3,
                 nBg: "bg-[#00f5d4]/15 text-[#00f5d4]",
-                icon: "🤝",
                 title: "Представьте проект сообществу",
                 text: "Ваш проект становится доступен предпринимателям, инвесторам и специалистам, которые ищут новые возможности и перспективные идеи.",
               },
               {
                 n: 4,
                 nBg: "bg-[#f59e0b]/20 text-[#fbbf24]",
-                icon: "📈",
                 title: "Получайте предложения",
                 text: "Участники платформы могут предложить инвестиции, партнёрство или участие в развитии проекта.",
               },
               {
                 n: 5,
                 nBg: "bg-[#ef4444]/20 text-[#fca5a5]",
-                icon: "🧾",
                 title: "Заключайте договорённости",
                 text: "Обсуждайте условия сотрудничества и находите решения, которые помогут вашему проекту расти.",
               },
               {
                 n: 6,
                 nBg: "bg-[#3b82f6]/20 text-[#93c5fd]",
-                icon: "🌐",
                 title: "Развивайте бизнес",
                 text: "Используйте платформу как точку взаимодействия с людьми, которые могут ускорить развитие вашего стартапа.",
               },
@@ -326,7 +320,6 @@ export default function Home() {
                 ].join(" ")}
               >
                 <div className="flex items-center gap-3">
-                  <div className="text-2xl">{s.icon}</div>
                   <div className={`inline-flex items-center justify-center w-11 h-11 rounded-2xl font-bold ${s.nBg}`}>{s.n}</div>
                 </div>
                 <div className="mt-6 text-2xl font-bold text-white">{s.title}</div>
@@ -348,7 +341,7 @@ export default function Home() {
       />
 
       <section className="hero-bg">
-        <div className="relative mx-auto max-w-6xl px-4 py-28 md:py-36 text-center">
+        <div className="relative mx-auto max-w-6xl px-4 py-36 md:py-44 text-center">
           <div className="text-4xl font-bold text-white mb-2">Готов запустить свой проект</div>
           <div className="text-4xl font-bold text-white mb-6">или найти инвестицию?</div>
           <div className="text-xl text-white/70 mb-10">Присоединяйся к тысячам основателей и инвесторов уже сегодня</div>

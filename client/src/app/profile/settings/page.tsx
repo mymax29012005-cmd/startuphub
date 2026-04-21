@@ -30,6 +30,8 @@ export default function ProfileSettingsPage() {
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   const [telegram, setTelegram] = useState("");
+  const [skillsRaw, setSkillsRaw] = useState("");
+  const [lookingForRaw, setLookingForRaw] = useState("");
   const [accountType, setAccountType] = useState<Me["accountType"]>("founder");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
@@ -71,6 +73,8 @@ export default function ProfileSettingsPage() {
         setCity(parsed.city);
         setTelegram(parsed.telegram);
         setBio(parsed.freeText);
+        setSkillsRaw(parsed.skills.join(", "));
+        setLookingForRaw(parsed.lookingFor.join(", "));
       } catch {
         // ignore
       } finally {
@@ -88,7 +92,25 @@ export default function ProfileSettingsPage() {
     setSaving(true);
     setError(null);
     try {
-      const composedBio = composeBio({ country, city, telegram, freeText: bio });
+      const skills = skillsRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 30);
+      const lookingFor = lookingForRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 30);
+
+      const composedBio = composeBio({
+        country,
+        city,
+        telegram,
+        skills: skills.length ? skills : undefined,
+        lookingFor: lookingFor.length ? lookingFor : undefined,
+        freeText: bio,
+      });
 
       const form = new FormData();
       form.append("name", name.trim());
@@ -267,6 +289,28 @@ export default function ProfileSettingsPage() {
                     onChange={(e) => setTelegram(e.target.value)}
                     className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
                     placeholder="@username"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Навыки и экспертиза (через запятую)</label>
+                  <input
+                    type="text"
+                    value={skillsRaw}
+                    onChange={(e) => setSkillsRaw(e.target.value)}
+                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                    placeholder="Например: Основатель, Product, Маркетинг"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Ищу (через запятую)</label>
+                  <input
+                    type="text"
+                    value={lookingForRaw}
+                    onChange={(e) => setLookingForRaw(e.target.value)}
+                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                    placeholder="Инвестора, партнёра, консультацию"
                   />
                 </div>
               </div>

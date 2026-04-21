@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import { UserActivityFeed, type PublicUserActivity } from "@/components/profile/PublicUserProfile";
 import { accountTypeLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
-import { extractLinkedIn, extractTelegram, stripMetaLines } from "@/lib/profileBio";
+import { extractTelegram, parseBioMeta, stripMetaLines } from "@/lib/profileBio";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type Me = {
@@ -135,7 +135,7 @@ export default function ProfilePage() {
   }
 
   const tg = extractTelegram(me.bio);
-  const li = extractLinkedIn(me.bio);
+  const meta = parseBioMeta(me.bio);
   const bioText = stripMetaLines(me.bio);
 
   return (
@@ -185,17 +185,17 @@ export default function ProfilePage() {
               <p className="text-gray-400 mt-1">Профиль StartupHub</p>
             </div>
 
-            <div className="mt-8 flex justify-center md:justify-start gap-4">
+            <div className="mt-8 flex justify-center md:justify-start gap-4 md:-ml-3">
               <Link
                 href="/profile/settings"
-                className="flex-1 md:flex-none px-8 py-4 bg-white/10 hover:bg-white/20 rounded-3xl font-medium flex items-center justify-center gap-2"
+                className="flex-1 md:flex-none px-7 py-4 bg-white/10 hover:bg-white/20 rounded-3xl font-medium flex items-center justify-center gap-2"
               >
                 ✎ Редактировать
               </Link>
               <button
                 type="button"
                 onClick={() => void onShare()}
-                className="flex-1 md:flex-none px-8 py-4 border border-white/30 hover:bg-white/10 rounded-3xl font-medium"
+                className="flex-1 md:flex-none px-7 py-4 border border-white/30 hover:bg-white/10 rounded-3xl font-medium"
               >
                 Поделиться
               </button>
@@ -278,33 +278,32 @@ export default function ProfilePage() {
 
         <div className="mt-16 grid md:grid-cols-3 gap-8">
           <div className="bg-[#12121A] border border-white/10 rounded-3xl p-8">
-            <h3 className="font-semibold mb-6 flex items-center gap-2">
-              <span>💻</span> Навыки и экспертиза
-            </h3>
+            <h3 className="font-semibold mb-6">Навыки и экспертиза</h3>
             <div className="flex flex-wrap gap-3">
-              <span className="bg-white/10 px-5 py-2 rounded-3xl text-sm">{accountTypeLabelsByLang[lang]?.[me.accountType] ?? me.accountType}</span>
-              <span className="bg-white/10 px-5 py-2 rounded-3xl text-sm">StartupHub</span>
-              <span className="bg-white/10 px-5 py-2 rounded-3xl text-sm">Профиль</span>
+              {(meta.skills.length ? meta.skills : [accountTypeLabelsByLang[lang]?.[me.accountType] ?? me.accountType]).map((x) => (
+                <span key={x} className="bg-white/10 px-5 py-2 rounded-3xl text-sm">
+                  {x}
+                </span>
+              ))}
             </div>
           </div>
 
           <div className="bg-[#12121A] border border-white/10 rounded-3xl p-8">
-            <h3 className="font-semibold mb-6 flex items-center gap-2">
-              <span>🔎</span> Ищу
-            </h3>
+            <h3 className="font-semibold mb-6">Ищу</h3>
             <ul className="space-y-4 text-gray-300">
-              <li className="flex items-start gap-3">
-                <span className="text-violet-400 mt-1">→</span>
-                <span>Инвестиции и партнёров — через карточки и маркетплейс</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-violet-400 mt-1">→</span>
-                <span>Обратную связь по стартапу/идее</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-violet-400 mt-1">→</span>
-                <span>Сделки и переговоры (в рамках правил платформы)</span>
-              </li>
+              {(meta.lookingFor.length
+                ? meta.lookingFor
+                : [
+                    "Инвестиции и партнёров — через карточки и маркетплейс",
+                    "Обратную связь по стартапу/идее",
+                    "Сделки и переговоры (в рамках правил платформы)",
+                  ]
+              ).map((line) => (
+                <li key={line} className="flex items-start gap-3">
+                  <span className="text-violet-400 mt-1">→</span>
+                  <span>{line}</span>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -330,13 +329,6 @@ export default function ProfilePage() {
                 <div className="min-w-0">
                   <div className="text-sm text-gray-400">Telegram</div>
                   <div className="truncate">{tg ?? "—"}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-xl text-gray-400">in</div>
-                <div className="min-w-0">
-                  <div className="text-sm text-gray-400">LinkedIn</div>
-                  <div className="truncate">{li ?? "—"}</div>
                 </div>
               </div>
             </div>

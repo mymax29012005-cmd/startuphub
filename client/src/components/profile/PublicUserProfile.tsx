@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { accountTypeLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
-import { extractLinkedIn, extractTelegram, stripMetaLines } from "@/lib/profileBio";
+import { extractTelegram, stripMetaLines } from "@/lib/profileBio";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { Lang } from "@/i18n/dictionaries";
 
@@ -171,7 +171,6 @@ export function PublicUserProfile({ userId, viewerId }: Props) {
 
   const bioText = useMemo(() => stripMetaLines(user?.bio ?? null), [user?.bio]);
   const tg = extractTelegram(user?.bio ?? null);
-  const li = extractLinkedIn(user?.bio ?? null);
 
   const exitsCount = useMemo(() => startups.filter((s) => s.stage === "exit").length, [startups]);
   const bidsCount = useMemo(() => activities.filter((a) => a.kind === "bid_placed").length, [activities]);
@@ -354,13 +353,6 @@ export function PublicUserProfile({ userId, viewerId }: Props) {
                 <div className="min-w-0">
                   <div className="text-sm text-gray-400">Telegram</div>
                   <div className="truncate">{tg ?? "—"}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-xl text-gray-400">in</div>
-                <div className="min-w-0">
-                  <div className="text-sm text-gray-400">LinkedIn</div>
-                  <div className="truncate">{li ?? "—"}</div>
                 </div>
               </div>
             </div>
