@@ -71,6 +71,7 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
   const searchParams = useSearchParams();
   const { lang } = useI18n();
   const { id } = useReact(params);
+  const returnTo = searchParams.get("returnTo");
 
   const analysisIdFromUrl = searchParams.get("analysisId");
 
@@ -465,7 +466,7 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                   return;
                 }
               }
-              router.push(`/startups/${id}`);
+              router.push(returnTo || `/startups/${id}`);
             } catch {
               setErr("Сетевая ошибка");
             } finally {

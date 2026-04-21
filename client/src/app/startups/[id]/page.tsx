@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use as useReact, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
@@ -72,8 +72,10 @@ export default function StartupDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { lang } = useI18n();
   const { id } = useReact(params);
+  const returnTo = searchParams.get("returnTo");
   const [me, setMe] = useState<Me | null>(null);
   const [startup, setStartup] = useState<StartupDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -198,8 +200,11 @@ export default function StartupDetailPage({
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 text-[#eaf0ff] sm:px-6 sm:py-10">
       <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/marketplace?tab=startups" className="text-sm font-medium text-violet-300/90 hover:text-white">
-          ← Назад к стартапам
+        <Link
+          href={returnTo || "/marketplace?tab=startups"}
+          className="text-sm font-medium text-violet-300/90 hover:text-white"
+        >
+          ← Назад
         </Link>
         <div className="flex items-center gap-2">
           {me && startup && me.id === startup.owner.id && !startup.auction ? (

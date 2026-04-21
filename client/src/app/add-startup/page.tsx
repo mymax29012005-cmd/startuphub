@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { Suspense, useCallback, useMemo, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,7 @@ const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as con
 const formats = ["online", "offline", "hybrid"] as const;
 
 type MaterialSlot = "pitch" | "excel" | "video" | "other";
+type Me = { id: string; role: "user" | "admin" };
 
 export default function AddStartupPage() {
   return (
@@ -40,6 +41,26 @@ function AddStartupInner() {
   const { lang } = useI18n();
 
   const analysisId = searchParams.get("analysisId");
+  const [me, setMe] = useState<Me | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-store" },
+        });
+        if (r.ok && !cancelled) setMe((await r.json()) as Me);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [title, setTitle] = useState("");
   const [tagline, setTagline] = useState("");
@@ -253,18 +274,20 @@ function AddStartupInner() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const ok = window.confirm(
-      [
-        "Перед отправкой на модерацию проверь:",
-        "— без капса и эмодзи в заголовке",
-        "— без рекламных обещаний и ссылок",
-        "— достаточно деталей по продукту/рынку/команде",
-        "— финансы и условия указаны корректно",
-        "",
-        "Отправить карточку на модерацию?",
-      ].join("\n"),
-    );
-    if (!ok) return;
+    if (me?.role !== "admin") {
+      const ok = window.confirm(
+        [
+          "Перед отправкой на модерацию проверь:",
+          "— без капса и эмодзи в заголовке",
+          "— без рекламных обещаний и ссылок",
+          "— достаточно деталей по продукту/рынку/команде",
+          "— финансы и условия указаны корректно",
+          "",
+          "Отправить карточку на модерацию?",
+        ].join("\n"),
+      );
+      if (!ok) return;
+    }
     setLoading(true);
 
     const priceNum = price === "" ? undefined : Number(stripNonDigits(price));

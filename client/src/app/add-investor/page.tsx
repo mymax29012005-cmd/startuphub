@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
@@ -12,11 +12,32 @@ import { stageLabelsByLang } from "@/lib/labelMaps";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
+type Me = { id: string; role: "user" | "admin" };
 
 export default function AddInvestorPage() {
   const router = useRouter();
   const { lang } = useI18n();
   const fc = addListingFieldClass;
+  const [me, setMe] = useState<Me | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-store" },
+        });
+        if (r.ok && !cancelled) setMe((await r.json()) as Me);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [investorName, setInvestorName] = useState("");
   const [investorTitle, setInvestorTitle] = useState("");
@@ -56,17 +77,19 @@ export default function AddInvestorPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const ok = window.confirm(
-      [
-        "Перед отправкой на модерацию проверь:",
-        "— чек и стадии указаны корректно",
-        "— без рекламных обещаний и капса",
-        "— описание отражает реальный запрос",
-        "",
-        "Отправить карточку на модерацию?",
-      ].join("\n"),
-    );
-    if (!ok) return;
+    if (me?.role !== "admin") {
+      const ok = window.confirm(
+        [
+          "Перед отправкой на модерацию проверь:",
+          "— чек и стадии указаны корректно",
+          "— без рекламных обещаний и капса",
+          "— описание отражает реальный запрос",
+          "",
+          "Отправить карточку на модерацию?",
+        ].join("\n"),
+      );
+      if (!ok) return;
+    }
     setLoading(true);
 
     const minN = checkMin === "" ? undefined : Number(stripNonDigits(checkMin));

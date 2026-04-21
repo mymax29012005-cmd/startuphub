@@ -159,6 +159,13 @@ function MarketplaceInner() {
   const [modUserId, setModUserId] = useState("");
   const [modSelected, setModSelected] = useState<Set<string>>(new Set());
 
+  const [modDialogOpen, setModDialogOpen] = useState(false);
+  const [modDialogMode, setModDialogMode] = useState<"revision" | "reject">("revision");
+  const [modDialogText, setModDialogText] = useState("");
+  const [modDialogItem, setModDialogItem] = useState<{ type: ModerationQueueItem["type"]; id: string } | null>(null);
+
+  const [toast, setToast] = useState<{ text: string; kind: "ok" | "err" } | null>(null);
+
   const visibleTabs = useMemo(() => {
     const out: Array<{ key: TabKey; label: string }> = [...baseTabs];
     if (me?.id && me?.role !== "admin") out.push({ key: "my", label: "Ожидают подтверждения" });
@@ -207,8 +214,8 @@ function MarketplaceInner() {
         if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
         const r = await fetch("/api/v1/moderation/queue/count", { credentials: "include", cache: "no-store" });
         if (!r.ok) return;
-        const data = (await r.json()) as { total?: number };
-        if (!cancelled) setModerationCount(typeof data.total === "number" ? data.total : 0);
+        const data = (await r.json()) as { pending?: number; total?: number };
+        if (!cancelled) setModerationCount(typeof data.pending === "number" ? data.pending : 0);
       } catch {
         // ignore
       }
@@ -281,6 +288,12 @@ function MarketplaceInner() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [postModalOpen]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 2200);
+    return () => window.clearTimeout(t);
+  }, [toast]);
 
   const totalCount = (startups?.length ?? 0) + (ideas?.length ?? 0) + (investors?.length ?? 0) + (partners?.length ?? 0);
 
@@ -433,6 +446,20 @@ function MarketplaceInner() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6">
+      {toast ? (
+        <div className="fixed inset-0 z-[200] flex items-start justify-center px-4 pt-24 pointer-events-none">
+          <div
+            className={[
+              "pointer-events-none rounded-3xl border px-6 py-4 text-sm font-semibold shadow-2xl backdrop-blur-md",
+              toast.kind === "ok"
+                ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200"
+                : "border-rose-400/20 bg-rose-500/10 text-rose-200",
+            ].join(" ")}
+          >
+            {toast.text}
+          </div>
+        </div>
+      ) : null}
       <div className="border-b border-white/10 py-8 sm:py-12">
         <h1 className="mb-3 text-3xl font-bold tracking-tighter sm:text-4xl md:text-6xl">Маркетплейс</h1>
         <p className="max-w-2xl text-base text-gray-400 sm:text-lg md:text-xl">
@@ -462,8 +489,8 @@ function MarketplaceInner() {
         </div>
       </div>
 
-      <div className="relative z-10 mt-6 sm:mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-visible pr-2 sm:gap-6 md:gap-8">
+      <div className="relative z-10 mt-6 sm:mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4 overflow-visible">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-visible pr-2 py-2 sm:gap-6 md:gap-8">
           {visibleTabs.map((t) => {
             const active = t.key === activeTab;
             return (
@@ -472,13 +499,13 @@ function MarketplaceInner() {
                 href={`/marketplace?tab=${t.key}`}
                 scroll={false}
                 className={[
-                  "relative whitespace-nowrap px-3 py-2 text-sm transition sm:px-6 sm:py-3 sm:text-lg",
+                  "relative overflow-visible whitespace-nowrap px-3 py-2 text-sm transition sm:px-6 sm:py-3 sm:text-lg",
                   active ? "border-b-[3px] border-[#7C3AED] font-semibold text-white" : "text-gray-400 hover:text-white",
                 ].join(" ")}
               >
                 {t.label}
                 {t.key === "moderation" && moderationCount > 0 ? (
-                  <span className="absolute -right-1 top-0 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.65)]" />
+                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.65)]" />
                 ) : null}
               </Link>
             );
@@ -550,6 +577,126 @@ function MarketplaceInner() {
                 <div className="font-semibold text-white">Партнёр</div>
                 <div className="mt-1 text-xs text-gray-500">Поиск партнёра по роли</div>
               </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {modDialogOpen && modDialogItem ? (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 px-4 py-8" role="presentation" onClick={() => setModDialogOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#12121A] p-6 sm:p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-xl font-bold text-white">
+                  {modDialogMode === "revision" ? "Отправить на доработку" : "Отклонить заявку"}
+                </div>
+                <div className="mt-1 text-sm text-gray-400">
+                  {modDialogMode === "revision"
+                    ? "Комментарий увидит пользователь. Он сможет внести правки и отправить повторно."
+                    : "Причина обязательна. Заявка будет отклонена."}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 hover:bg-white/10"
+                onClick={() => setModDialogOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {modDialogMode === "revision" ? (
+              <div className="mt-6">
+                <div className="text-xs text-white/40 mb-2">Шаблон</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    "Добавьте описание traction / команды / рынка",
+                    "Уберите рекламный текст, эмодзи, капс",
+                    "Нужно больше деталей по финансам / MVP",
+                    "Нарушение правил публикации",
+                  ].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setModDialogText(t)}
+                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm text-gray-200 hover:bg-white/10"
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6">
+              <div className="text-xs text-white/40 mb-2">{modDialogMode === "revision" ? "Комментарий" : "Причина"}</div>
+              <textarea
+                value={modDialogText}
+                onChange={(e) => setModDialogText(e.target.value)}
+                className="w-full min-h-[120px] rounded-3xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-white placeholder-white/30 outline-none focus:border-violet-500/40"
+                placeholder={modDialogMode === "revision" ? "Напишите, что нужно исправить…" : "Опишите причину отклонения…"}
+              />
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setModDialogOpen(false)}
+                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-gray-200 hover:bg-white/10"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                disabled={!modDialogText.trim()}
+                onClick={async () => {
+                  const text = modDialogText.trim();
+                  if (!text) return;
+                  setModBusyId(modDialogItem.id);
+                  setModMsg(null);
+                  try {
+                    const r =
+                      modDialogMode === "revision"
+                        ? await fetch("/api/v1/moderation/revision", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ item: modDialogItem, comment: text }),
+                          })
+                        : await fetch("/api/v1/moderation/reject", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ item: modDialogItem, reason: text }),
+                          });
+                    const data = (await r.json().catch(() => ({}))) as { error?: string };
+                    if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                    setModDialogOpen(false);
+                    setModDialogText("");
+                    setModDialogItem(null);
+                    setQueue(null);
+                    await ensureLoaded("moderation");
+                    setToast({ kind: "ok", text: modDialogMode === "revision" ? "Отправлено на доработку" : "Отклонено" });
+                  } catch (e) {
+                    setToast({ kind: "err", text: e instanceof Error ? e.message : "Ошибка" });
+                  } finally {
+                    setModBusyId(null);
+                  }
+                }}
+                className={[
+                  "rounded-2xl px-5 py-3 text-sm font-semibold text-white disabled:opacity-60",
+                  modDialogMode === "revision"
+                    ? "bg-amber-500/20 hover:bg-amber-500/25 text-amber-200 border border-amber-500/20"
+                    : "bg-rose-500/20 hover:bg-rose-500/25 text-rose-200 border border-rose-500/20",
+                ].join(" ")}
+              >
+                Отправить
+              </button>
             </div>
           </div>
         </div>
@@ -735,6 +882,7 @@ function MarketplaceInner() {
                             : x.type === "partner"
                               ? `/partners/${x.id}/edit`
                               : `/auction/${x.id}`;
+                      const hrefWithReturnTo = `${href}?returnTo=${encodeURIComponent("/marketplace?tab=my")}`;
 
                       const canResubmit = x.moderationStatus === "needs_revision" || x.moderationStatus === "draft";
                       const note = x.adminComment || x.rejectedReason;
@@ -765,7 +913,7 @@ function MarketplaceInner() {
                             </div>
                             <div className="flex shrink-0 flex-col gap-2 sm:items-end">
                               <Link
-                                href={href}
+                                href={hrefWithReturnTo}
                                 className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
                               >
                                 Редактировать
@@ -818,7 +966,6 @@ function MarketplaceInner() {
                                 <select
                                   value={modType}
                                   onChange={(e) => {
-                                    setQueue(null);
                                     setModSelected(new Set());
                                     setModType(e.target.value as any);
                                   }}
@@ -837,7 +984,6 @@ function MarketplaceInner() {
                                 <select
                                   value={modStatus}
                                   onChange={(e) => {
-                                    setQueue(null);
                                     setModSelected(new Set());
                                     setModStatus(e.target.value as any);
                                   }}
@@ -905,6 +1051,12 @@ function MarketplaceInner() {
                           </div>
                         </div>
 
+                        {(queue ?? []).length === 0 ? (
+                          <div className="rounded-3xl border border-white/10 bg-[#161618] p-6 text-gray-400">
+                            Пока нет заявок на модерацию по выбранным фильтрам.
+                          </div>
+                        ) : null}
+
                         {(queue ?? []).map((x) => {
                       const href =
                         x.type === "startup"
@@ -916,6 +1068,7 @@ function MarketplaceInner() {
                               : x.type === "partner"
                                 ? `/partners/${x.id}`
                                 : `/auction/${x.id}`;
+                      const hrefWithReturnTo = `${href}?returnTo=${encodeURIComponent("/marketplace?tab=moderation")}`;
                       const overdue48h = Date.now() - new Date(x.createdAt).getTime() > 48 * 60 * 60 * 1000;
                       const selKey = `${x.type}:${x.id}`;
                       const on = modSelected.has(selKey);
@@ -946,7 +1099,10 @@ function MarketplaceInner() {
                                   <span className="rounded-xl bg-rose-500/20 px-2 py-1 text-rose-300">48ч+</span>
                                 ) : null}
                               </div>
-                              <Link href={href} className="mt-2 block truncate text-xl font-semibold text-white hover:text-violet-300">
+                              <Link
+                                href={hrefWithReturnTo}
+                                className="mt-2 block truncate text-xl font-semibold text-white hover:text-violet-300"
+                              >
                                 {x.title}
                               </Link>
                               {x.adminComment ? <div className="mt-2 text-sm text-gray-400">Комментарий: {x.adminComment}</div> : null}
@@ -984,30 +1140,10 @@ function MarketplaceInner() {
                                 type="button"
                                 disabled={modBusyId === x.id}
                                 onClick={async () => {
-                                  const template = window.prompt(
-                                    "Комментарий (можно вставить шаблон):\n- Добавьте описание traction / команды / рынка\n- Уберите рекламный текст, эмодзи, капс\n- Нужно больше деталей по финансам / MVP\n- Нарушение правил публикации",
-                                    "Добавьте описание traction / команды / рынка",
-                                  );
-                                  if (!template) return;
-                                  setModBusyId(x.id);
-                                  setModMsg(null);
-                                  try {
-                                    const r = await fetch("/api/v1/moderation/revision", {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      credentials: "include",
-                                      body: JSON.stringify({ item: { type: x.type, id: x.id }, comment: template }),
-                                    });
-                                    const data = (await r.json().catch(() => ({}))) as { error?: string };
-                                    if (!r.ok) throw new Error(data.error ?? "Ошибка");
-                                    setQueue(null);
-                                    await ensureLoaded("moderation");
-                                    setModMsg("Отправлено на доработку");
-                                  } catch (e) {
-                                    setModMsg(e instanceof Error ? e.message : "Ошибка");
-                                  } finally {
-                                    setModBusyId(null);
-                                  }
+                                  setModDialogMode("revision");
+                                  setModDialogItem({ type: x.type, id: x.id });
+                                  setModDialogText("Добавьте описание traction / команды / рынка");
+                                  setModDialogOpen(true);
                                 }}
                                 className="rounded-2xl bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
                               >
@@ -1017,27 +1153,10 @@ function MarketplaceInner() {
                                 type="button"
                                 disabled={modBusyId === x.id}
                                 onClick={async () => {
-                                  const reason = window.prompt("Причина отклонения (обязательно):", "Нарушение правил публикации");
-                                  if (!reason) return;
-                                  setModBusyId(x.id);
-                                  setModMsg(null);
-                                  try {
-                                    const r = await fetch("/api/v1/moderation/reject", {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      credentials: "include",
-                                      body: JSON.stringify({ item: { type: x.type, id: x.id }, reason }),
-                                    });
-                                    const data = (await r.json().catch(() => ({}))) as { error?: string };
-                                    if (!r.ok) throw new Error(data.error ?? "Ошибка");
-                                    setQueue(null);
-                                    await ensureLoaded("moderation");
-                                    setModMsg("Отклонено");
-                                  } catch (e) {
-                                    setModMsg(e instanceof Error ? e.message : "Ошибка");
-                                  } finally {
-                                    setModBusyId(null);
-                                  }
+                                  setModDialogMode("reject");
+                                  setModDialogItem({ type: x.type, id: x.id });
+                                  setModDialogText("Нарушение правил публикации");
+                                  setModDialogOpen(true);
                                 }}
                                 className="rounded-2xl bg-rose-500/15 px-4 py-2 text-sm font-semibold text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
                               >

@@ -2,7 +2,7 @@
 
 import React, { use as useReact, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
 import { DeleteResourceButton } from "@/components/DeleteResourceButton";
@@ -43,7 +43,9 @@ export default function InvestorDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { id } = useReact(params);
+  const returnTo = searchParams.get("returnTo");
   const [me, setMe] = useState<Me | null>(null);
   const [item, setItem] = useState<InvestorDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -134,8 +136,8 @@ export default function InvestorDetailPage({
     <div className="min-h-screen bg-[#0A0A0F] text-white">
       <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pb-20 sm:pt-10">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link href="/marketplace?tab=investors" className="text-sm text-gray-400 transition hover:text-white">
-            ← Назад в маркетплейс
+          <Link href={returnTo || "/marketplace?tab=investors"} className="text-sm text-gray-400 transition hover:text-white">
+            ← Назад
           </Link>
           <div className="flex items-center gap-2">
             {me && item && (me.role === "admin" || me.id === item.author.id) ? (

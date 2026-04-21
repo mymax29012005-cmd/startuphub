@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use as useReact, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
 import { Button } from "@/components/ui/Button";
@@ -28,10 +28,12 @@ type PartnerDetail = {
 
 export default function EditPartnerPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { lang } = useI18n();
   const fc = addListingFieldClass;
 
   const { id } = useReact(params);
+  const returnTo = searchParams.get("returnTo");
 
   const [me, setMe] = useState<Me | null>(null);
   const [item, setItem] = useState<PartnerDetail | null>(null);
@@ -148,7 +150,7 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
         setError((data?.error as string) ?? "Ошибка при сохранении");
         return;
       }
-      router.push(`/partners/${id}`);
+      router.push(returnTo || `/partners/${id}`);
     } catch {
       setError("Сетевая ошибка");
     } finally {

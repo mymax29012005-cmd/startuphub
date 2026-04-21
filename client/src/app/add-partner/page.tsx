@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
@@ -11,6 +11,7 @@ import { allowedCategories, asAllowedCategory } from "@/lib/categories";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const roles = ["supplier", "reseller", "integration", "cofounder"] as const;
+type Me = { id: string; role: "user" | "admin" };
 
 type ServiceRow = { title: string; note: string };
 
@@ -18,6 +19,26 @@ export default function AddPartnerPage() {
   const router = useRouter();
   const { lang } = useI18n();
   const fc = addListingFieldClass;
+  const [me, setMe] = useState<Me | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-store" },
+        });
+        if (r.ok && !cancelled) setMe((await r.json()) as Me);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [role, setRole] = useState<(typeof roles)[number]>("supplier");
   const [industry, setIndustry] = useState(allowedCategories[0]?.value ?? "SaaS");
@@ -39,17 +60,19 @@ export default function AddPartnerPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const ok = window.confirm(
-      [
-        "Перед отправкой на модерацию проверь:",
-        "— услуги описаны конкретно (без рекламных обещаний)",
-        "— без капса и эмодзи",
-        "— понятны условия и кому подходит",
-        "",
-        "Отправить карточку на модерацию?",
-      ].join("\n"),
-    );
-    if (!ok) return;
+    if (me?.role !== "admin") {
+      const ok = window.confirm(
+        [
+          "Перед отправкой на модерацию проверь:",
+          "— услуги описаны конкретно (без рекламных обещаний)",
+          "— без капса и эмодзи",
+          "— понятны условия и кому подходит",
+          "",
+          "Отправить карточку на модерацию?",
+        ].join("\n"),
+      );
+      if (!ok) return;
+    }
     setLoading(true);
 
     const fitFor = fitForRaw

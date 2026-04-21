@@ -2,7 +2,7 @@
 
 import React, { use as useReact, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -54,6 +54,8 @@ export default function AuctionDetailPage({
 }) {
   const router = useRouter();
   const { id } = useReact(params);
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [me, setMe] = useState<Me | null>(null);
   const [auction, setAuction] = useState<AuctionDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -167,8 +169,8 @@ export default function AuctionDetailPage({
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
       <div className="mb-5 flex items-center justify-between gap-4">
-        <Link href="/auction" className="text-[var(--accent)] hover:text-white text-sm font-medium">
-          ← Назад к аукционам
+        <Link href={returnTo || "/auction"} className="text-[var(--accent)] hover:text-white text-sm font-medium">
+          ← Назад
         </Link>
         {me && auction && (me.role === "admin" || me.id === auction.startup.ownerId) ? (
           <DeleteResourceButton

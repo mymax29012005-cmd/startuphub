@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use as useReact, useMemo, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
 import { Button } from "@/components/ui/Button";
@@ -30,10 +30,12 @@ type InvestorDetail = {
 
 export default function EditInvestorPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { lang } = useI18n();
   const fc = addListingFieldClass;
 
   const { id } = useReact(params);
+  const returnTo = searchParams.get("returnTo");
 
   const [me, setMe] = useState<Me | null>(null);
   const [item, setItem] = useState<InvestorDetail | null>(null);
@@ -195,7 +197,7 @@ export default function EditInvestorPage({ params }: { params: Promise<{ id: str
         setError((data?.error as string) ?? "Ошибка при сохранении");
         return;
       }
-      router.push(`/investors/${id}`);
+      router.push(returnTo || `/investors/${id}`);
     } catch {
       setError("Сетевая ошибка");
     } finally {

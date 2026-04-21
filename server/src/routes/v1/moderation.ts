@@ -226,14 +226,19 @@ moderationRouter.get("/queue/count", requireAuth, requireAdmin, async (_req, res
   await autoRejectExpiredRevisions();
   const prisma = getPrisma();
   try {
-    const [s, i, inv, p, a] = await Promise.all([
+    const [pendingS, pendingI, pendingInv, pendingP, pendingA, totalS, totalI, totalInv, totalP, totalA] = await Promise.all([
+      prisma.startup.count({ where: { moderationStatus: "pending_moderation" as any } }),
+      prisma.idea.count({ where: { moderationStatus: "pending_moderation" as any } }),
+      prisma.investorRequest.count({ where: { moderationStatus: "pending_moderation" as any } }),
+      prisma.partnerRequest.count({ where: { moderationStatus: "pending_moderation" as any } }),
+      prisma.auction.count({ where: { moderationStatus: "pending_moderation" as any } }),
       prisma.startup.count({ where: { moderationStatus: { in: ["pending_moderation", "needs_revision"] } as any } }),
       prisma.idea.count({ where: { moderationStatus: { in: ["pending_moderation", "needs_revision"] } as any } }),
       prisma.investorRequest.count({ where: { moderationStatus: { in: ["pending_moderation", "needs_revision"] } as any } }),
       prisma.partnerRequest.count({ where: { moderationStatus: { in: ["pending_moderation", "needs_revision"] } as any } }),
       prisma.auction.count({ where: { moderationStatus: { in: ["pending_moderation", "needs_revision"] } as any } }),
     ]);
-    return res.json({ total: s + i + inv + p + a });
+    return res.json({ pending: pendingS + pendingI + pendingInv + pendingP + pendingA, total: totalS + totalI + totalInv + totalP + totalA });
   } catch {
     return res.status(503).json({ error: "База данных недоступна" });
   }

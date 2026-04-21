@@ -40,6 +40,7 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
   const { id } = useReact(params);
 
   const analysisIdFromUrl = searchParams.get("analysisId");
+  const returnTo = searchParams.get("returnTo");
   const draftKey = `draft:edit-idea:${id}`;
 
   const [me, setMe] = useState<Me | null>(null);
@@ -256,7 +257,7 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
         setError(firstMsg ? `${base}: ${firstMsg}` : base);
         return;
       }
-      router.push(`/ideas/${id}`);
+      router.push(returnTo || `/ideas/${id}`);
     } catch {
       setError("Сетевая ошибка");
     } finally {

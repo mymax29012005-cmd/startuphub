@@ -13,6 +13,7 @@ import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
 const formats = ["online", "offline", "hybrid"] as const;
+type Me = { id: string; role: "user" | "admin" };
 
 export default function AddIdeaPage() {
   return (
@@ -27,6 +28,7 @@ function AddIdeaInner() {
   const { lang } = useI18n();
   const searchParams = useSearchParams();
   const analysisId = searchParams.get("analysisId");
+  const [me, setMe] = useState<Me | null>(null);
 
   const draftKey = "draft:add-idea";
 
@@ -75,6 +77,25 @@ function AddIdeaInner() {
   }, [analysisId]);
 
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-store" },
+        });
+        if (r.ok && !cancelled) setMe((await r.json()) as Me);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     try {
       const raw = localStorage.getItem(draftKey);
       if (!raw) return;
@@ -103,17 +124,19 @@ function AddIdeaInner() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const ok = window.confirm(
-      [
-        "Перед отправкой на модерацию проверь:",
-        "— без капса и эмодзи в заголовке",
-        "— без рекламного текста и внешних ссылок",
-        "— проблема/решение/рынок заполнены по сути",
-        "",
-        "Отправить карточку на модерацию?",
-      ].join("\n"),
-    );
-    if (!ok) return;
+    if (me?.role !== "admin") {
+      const ok = window.confirm(
+        [
+          "Перед отправкой на модерацию проверь:",
+          "— без капса и эмодзи в заголовке",
+          "— без рекламного текста и внешних ссылок",
+          "— проблема/решение/рынок заполнены по сути",
+          "",
+          "Отправить карточку на модерацию?",
+        ].join("\n"),
+      );
+      if (!ok) return;
+    }
     setLoading(true);
 
     const priceNum = price === "" ? undefined : Number(price);
