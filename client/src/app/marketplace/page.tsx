@@ -86,7 +86,7 @@ type MeBrief = { id: string; role: "user" | "admin" };
 type ModerationQueueItem = {
   type: "startup" | "idea" | "investor" | "partner" | "auction";
   id: string;
-  status: "pending_moderation" | "needs_revision";
+  status: "pending_moderation" | "needs_revision" | "rejected";
   title: string;
   userId: string;
   userName: string;
@@ -94,6 +94,7 @@ type ModerationQueueItem = {
   updatedAt: string;
   revisionDate: string | null;
   adminComment: string | null;
+  rejectedReason: string | null;
 };
 
 type MySubmissionItem = {
@@ -155,7 +156,6 @@ function MarketplaceInner() {
   const [modBusyId, setModBusyId] = useState<string | null>(null);
   const [modMsg, setModMsg] = useState<string | null>(null);
   const [modType, setModType] = useState<"" | ModerationQueueItem["type"]>("");
-  const [modStatus, setModStatus] = useState<"" | "pending_moderation" | "needs_revision">("");
   const [modUserId, setModUserId] = useState("");
   const [modSelected, setModSelected] = useState<Set<string>>(new Set());
 
@@ -259,15 +259,25 @@ function MarketplaceInner() {
         if (!r.ok) throw new Error("db");
         setMySubmissions((await r.json()) as MySubmissionItem[]);
       }
-      if (tab === "moderation" && queue === null) {
-        const qs = new URLSearchParams();
-        if (modType) qs.set("type", modType);
-        if (modStatus) qs.set("status", modStatus);
-        if (modUserId.trim()) qs.set("userId", modUserId.trim());
-        const r = await fetch(`/api/v1/moderation/queue?${qs.toString()}`, { credentials: "include", cache: "no-store" });
-        if (!r.ok) throw new Error("db");
-        setQueue((await r.json()) as ModerationQueueItem[]);
-      }
+    } catch {
+      setDbError(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadModerationQueue() {
+    setDbError(false);
+    setLoading(true);
+    try {
+      const qs = new URLSearchParams();
+      if (modType) qs.set("type", modType);
+      if (modUserId.trim()) qs.set("userId", modUserId.trim());
+      qs.set("status", "all");
+      const r = await fetch(`/api/v1/moderation/queue?${qs.toString()}`, { credentials: "include", cache: "no-store" });
+      if (!r.ok) throw new Error("db");
+      const all = (await r.json()) as ModerationQueueItem[];
+      setQueue(all);
     } catch {
       setDbError(true);
     } finally {
@@ -276,7 +286,11 @@ function MarketplaceInner() {
   }
 
   useEffect(() => {
-    void ensureLoaded(activeTab);
+    if (activeTab === "moderation") {
+      void loadModerationQueue();
+    } else {
+      void ensureLoaded(activeTab);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
@@ -679,7 +693,7 @@ function MarketplaceInner() {
                     setModDialogOpen(false);
                     setModDialogText("");
                     setModDialogItem(null);
-                    await ensureLoaded("moderation");
+                    await loadModerationQueue();
                     setToast({ kind: "ok", text: modDialogMode === "revision" ? "Отправлено на доработку" : "Отклонено" });
                   } catch (e) {
                     setToast({ kind: "err", text: e instanceof Error ? e.message : "Ошибка" });
@@ -978,21 +992,6 @@ function MarketplaceInner() {
                                   <option value="auction">Аукцион</option>
                                 </select>
                               </div>
-                              <div>
-                                <div className="text-xs text-white/40 mb-1">Статус</div>
-                                <select
-                                  value={modStatus}
-                                  onChange={(e) => {
-                                    setModSelected(new Set());
-                                    setModStatus(e.target.value as any);
-                                  }}
-                                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm"
-                                >
-                                  <option value="">Все</option>
-                                  <option value="pending_moderation">На модерации</option>
-                                  <option value="needs_revision">Требует доработки</option>
-                                </select>
-                              </div>
                               <div className="min-w-0">
                                 <div className="text-xs text-white/40 mb-1">User ID (uuid)</div>
                                 <input
@@ -1005,8 +1004,7 @@ function MarketplaceInner() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setQueue(null);
-                                  void ensureLoaded("moderation");
+                                  void loadModerationQueue();
                                 }}
                                 className="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/15"
                               >
@@ -1034,7 +1032,7 @@ function MarketplaceInner() {
                                   const data = (await r.json().catch(() => ({}))) as { error?: string };
                                   if (!r.ok) throw new Error(data.error ?? "Ошибка");
                                   setModSelected(new Set());
-                                  await ensureLoaded("moderation");
+                                  await loadModerationQueue();
                                   setModMsg("Массовое одобрение выполнено");
                                 } catch (e) {
                                   setModMsg(e instanceof Error ? e.message : "Ошибка");
@@ -1049,121 +1047,179 @@ function MarketplaceInner() {
                           </div>
                         </div>
 
-                        {(queue ?? []).length === 0 ? (
-                          <div className="rounded-3xl border border-white/10 bg-[#161618] p-6 text-gray-400">
-                            Пока нет заявок на модерацию по выбранным фильтрам.
-                          </div>
-                        ) : null}
+                        {(() => {
+                          const all = queue ?? [];
+                          const active = all.filter((x) => x.status === "pending_moderation");
+                          const revision = all.filter((x) => x.status === "needs_revision");
+                          const rejected = all.filter((x) => x.status === "rejected");
 
-                        {(queue ?? []).map((x) => {
-                      const href =
-                        x.type === "startup"
-                          ? `/startups/${x.id}`
-                          : x.type === "idea"
-                            ? `/ideas/${x.id}`
-                            : x.type === "investor"
-                              ? `/investors/${x.id}`
-                              : x.type === "partner"
-                                ? `/partners/${x.id}`
-                                : `/auction/${x.id}`;
-                      const hrefWithReturnTo = `${href}?returnTo=${encodeURIComponent("/marketplace?tab=moderation")}`;
-                      const overdue48h = Date.now() - new Date(x.createdAt).getTime() > 48 * 60 * 60 * 1000;
-                      const selKey = `${x.type}:${x.id}`;
-                      const on = modSelected.has(selKey);
-                      return (
-                        <div key={x.type + ":" + x.id} className="rounded-3xl border border-white/10 bg-[#161618] p-6">
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0">
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
-                                <label className="flex items-center gap-2 mr-1">
-                                  <input
-                                    type="checkbox"
-                                    checked={on}
-                                    onChange={(e) => {
-                                      const checked = e.target.checked;
-                                      setModSelected((prev) => {
-                                        const next = new Set(prev);
-                                        if (checked) next.add(selKey);
-                                        else next.delete(selKey);
-                                        return next;
-                                      });
-                                    }}
-                                    className="accent-violet-500"
-                                  />
-                                </label>
-                                <span className="rounded-xl bg-white/5 px-2 py-1">{x.type.toUpperCase()}</span>
-                                <span>от {x.userName}</span>
-                                {overdue48h ? (
-                                  <span className="rounded-xl bg-rose-500/20 px-2 py-1 text-rose-300">48ч+</span>
-                                ) : null}
+                          function renderRow(x: ModerationQueueItem, opts: { showActions: boolean; showCheckbox: boolean }) {
+                            const href =
+                              x.type === "startup"
+                                ? `/startups/${x.id}`
+                                : x.type === "idea"
+                                  ? `/ideas/${x.id}`
+                                  : x.type === "investor"
+                                    ? `/investors/${x.id}`
+                                    : x.type === "partner"
+                                      ? `/partners/${x.id}`
+                                      : `/auction/${x.id}`;
+                            const hrefWithReturnTo = `${href}?returnTo=${encodeURIComponent("/marketplace?tab=moderation")}`;
+                            const overdue48h = Date.now() - new Date(x.createdAt).getTime() > 48 * 60 * 60 * 1000;
+                            const selKey = `${x.type}:${x.id}`;
+                            const on = modSelected.has(selKey);
+                            const note = x.status === "rejected" ? x.rejectedReason : x.adminComment;
+
+                            return (
+                              <div key={x.type + ":" + x.id} className="rounded-3xl border border-white/10 bg-[#161618] p-6">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                  <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
+                                      {opts.showCheckbox ? (
+                                        <label className="flex items-center gap-2 mr-1">
+                                          <input
+                                            type="checkbox"
+                                            checked={on}
+                                            onChange={(e) => {
+                                              const checked = e.target.checked;
+                                              setModSelected((prev) => {
+                                                const next = new Set(prev);
+                                                if (checked) next.add(selKey);
+                                                else next.delete(selKey);
+                                                return next;
+                                              });
+                                            }}
+                                            className="accent-violet-500"
+                                          />
+                                        </label>
+                                      ) : null}
+                                      <span className="rounded-xl bg-white/5 px-2 py-1">{x.type.toUpperCase()}</span>
+                                      <span>от {x.userName}</span>
+                                      {overdue48h && x.status === "pending_moderation" ? (
+                                        <span className="rounded-xl bg-rose-500/20 px-2 py-1 text-rose-300">48ч+</span>
+                                      ) : null}
+                                      <span
+                                        className={[
+                                          "rounded-xl px-2 py-1",
+                                          x.status === "pending_moderation"
+                                            ? "bg-violet-500/15 text-violet-200"
+                                            : x.status === "needs_revision"
+                                              ? "bg-amber-500/15 text-amber-200"
+                                              : "bg-rose-500/15 text-rose-200",
+                                        ].join(" ")}
+                                      >
+                                        {x.status === "pending_moderation"
+                                          ? "На модерации"
+                                          : x.status === "needs_revision"
+                                            ? "На доработке"
+                                            : "Отклонено"}
+                                      </span>
+                                    </div>
+                                    <Link href={hrefWithReturnTo} className="mt-2 block truncate text-xl font-semibold text-white hover:text-violet-300">
+                                      {x.title}
+                                    </Link>
+                                    {note ? (
+                                      <div className="mt-2 text-sm text-gray-400">
+                                        {x.status === "rejected" ? "Причина: " : "Комментарий: "}
+                                        {note}
+                                      </div>
+                                    ) : null}
+                                  </div>
+
+                                  {opts.showActions ? (
+                                    <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                                      <button
+                                        type="button"
+                                        disabled={modBusyId === x.id}
+                                        onClick={async () => {
+                                          setModBusyId(x.id);
+                                          setModMsg(null);
+                                          try {
+                                            const r = await fetch("/api/v1/moderation/approve", {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json" },
+                                              credentials: "include",
+                                              body: JSON.stringify({ type: x.type, id: x.id }),
+                                            });
+                                            const data = (await r.json().catch(() => ({}))) as { error?: string };
+                                            if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                                            await loadModerationQueue();
+                                            setModMsg("Одобрено");
+                                          } catch (e) {
+                                            setModMsg(e instanceof Error ? e.message : "Ошибка");
+                                          } finally {
+                                            setModBusyId(null);
+                                          }
+                                        }}
+                                        className="rounded-2xl bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-60"
+                                      >
+                                        {modBusyId === x.id ? "…" : "Одобрить"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={modBusyId === x.id}
+                                        onClick={() => {
+                                          setModDialogMode("revision");
+                                          setModDialogItem({ type: x.type, id: x.id });
+                                          setModDialogText("Добавьте описание traction / команды / рынка");
+                                          setModDialogOpen(true);
+                                        }}
+                                        className="rounded-2xl bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                                      >
+                                        На доработку
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={modBusyId === x.id}
+                                        onClick={() => {
+                                          setModDialogMode("reject");
+                                          setModDialogItem({ type: x.type, id: x.id });
+                                          setModDialogText("Нарушение правил публикации");
+                                          setModDialogOpen(true);
+                                        }}
+                                        className="rounded-2xl bg-rose-500/15 px-4 py-2 text-sm font-semibold text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
+                                      >
+                                        Отклонить
+                                      </button>
+                                    </div>
+                                  ) : null}
+                                </div>
                               </div>
-                              <Link
-                                href={hrefWithReturnTo}
-                                className="mt-2 block truncate text-xl font-semibold text-white hover:text-violet-300"
-                              >
-                                {x.title}
-                              </Link>
-                              {x.adminComment ? <div className="mt-2 text-sm text-gray-400">Комментарий: {x.adminComment}</div> : null}
+                            );
+                          }
+
+                          const section = (title: string, items: ModerationQueueItem[], hint?: string) => (
+                            <div className="mt-6">
+                              <div className="mb-3 flex items-end justify-between gap-3">
+                                <div>
+                                  <div className="text-lg font-semibold text-white">{title}</div>
+                                  {hint ? <div className="mt-1 text-xs text-white/40">{hint}</div> : null}
+                                </div>
+                                <div className="text-xs text-white/40">{items.length}</div>
+                              </div>
+                              {items.length === 0 ? (
+                                <div className="rounded-3xl border border-white/10 bg-[#161618] p-6 text-gray-400">Пусто.</div>
+                              ) : (
+                                <div className="flex flex-col gap-4">
+                                  {items.map((x) =>
+                                    renderRow(x, {
+                                      showActions: x.status === "pending_moderation",
+                                      showCheckbox: x.status === "pending_moderation",
+                                    }),
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-                              <button
-                                type="button"
-                                disabled={modBusyId === x.id}
-                                onClick={async () => {
-                                  setModBusyId(x.id);
-                                  setModMsg(null);
-                                  try {
-                                    const r = await fetch("/api/v1/moderation/approve", {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      credentials: "include",
-                                      body: JSON.stringify({ type: x.type, id: x.id }),
-                                    });
-                                    const data = (await r.json().catch(() => ({}))) as { error?: string };
-                                    if (!r.ok) throw new Error(data.error ?? "Ошибка");
-                                    await ensureLoaded("moderation");
-                                    setModMsg("Одобрено");
-                                  } catch (e) {
-                                    setModMsg(e instanceof Error ? e.message : "Ошибка");
-                                  } finally {
-                                    setModBusyId(null);
-                                  }
-                                }}
-                                className="rounded-2xl bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-60"
-                              >
-                                {modBusyId === x.id ? "…" : "Одобрить"}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={modBusyId === x.id}
-                                onClick={async () => {
-                                  setModDialogMode("revision");
-                                  setModDialogItem({ type: x.type, id: x.id });
-                                  setModDialogText("Добавьте описание traction / команды / рынка");
-                                  setModDialogOpen(true);
-                                }}
-                                className="rounded-2xl bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
-                              >
-                                На доработку
-                              </button>
-                              <button
-                                type="button"
-                                disabled={modBusyId === x.id}
-                                onClick={async () => {
-                                  setModDialogMode("reject");
-                                  setModDialogItem({ type: x.type, id: x.id });
-                                  setModDialogText("Нарушение правил публикации");
-                                  setModDialogOpen(true);
-                                }}
-                                className="rounded-2xl bg-rose-500/15 px-4 py-2 text-sm font-semibold text-rose-300 hover:bg-rose-500/20 disabled:opacity-60"
-                              >
-                                Отклонить
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+
+                          return (
+                            <>
+                              {section("Активные заявки", active, "Тут можно одобрить / отправить на доработку / отклонить.")}
+                              {section("Отправлены на доработку", revision, "Пока пользователь не отправит повторно — карточка хранится здесь (без действий).")}
+                              {section("Отклонённые", rejected, "Отклонённые заявки (без действий).")}
+                            </>
+                          );
+                        })()}
                       </>
                     ) : null}
 

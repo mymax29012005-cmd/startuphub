@@ -7,7 +7,7 @@ import { requireAdmin, requireAuth } from "../../middleware/auth";
 export const moderationRouter = Router();
 
 const entityTypeSchema = z.enum(["startup", "idea", "investor", "partner", "auction"]);
-const queueStatusSchema = z.enum(["pending_moderation", "needs_revision"]);
+const queueStatusSchema = z.enum(["pending_moderation", "needs_revision", "rejected"]);
 
 function sevenDaysAgo(now: Date) {
   return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -54,6 +54,7 @@ type QueueItem = {
   updatedAt: string;
   revisionDate: string | null;
   adminComment: string | null;
+  rejectedReason: string | null;
 };
 
 moderationRouter.get("/queue", requireAuth, requireAdmin, async (req, res) => {
@@ -74,7 +75,7 @@ moderationRouter.get("/queue", requireAuth, requireAdmin, async (req, res) => {
 
   const prisma = getPrisma();
   const { type, userId, status, from, to } = parsed.data;
-  const statuses = status && status !== "all" ? [status] : ["pending_moderation", "needs_revision"];
+  const statuses = status && status !== "all" ? [status] : ["pending_moderation", "needs_revision", "rejected"];
 
   const dateWhere = {
     ...(from ? { createdAt: { gte: from } } : {}),
@@ -103,6 +104,7 @@ moderationRouter.get("/queue", requireAuth, requireAdmin, async (req, res) => {
       updatedAt: r.updatedAt.toISOString(),
       revisionDate: r.revisionDate ? r.revisionDate.toISOString() : null,
       adminComment: r.adminComment ?? null,
+      rejectedReason: r.rejectedReason ?? null,
     }));
   }
 
@@ -128,6 +130,7 @@ moderationRouter.get("/queue", requireAuth, requireAdmin, async (req, res) => {
       updatedAt: r.updatedAt.toISOString(),
       revisionDate: r.revisionDate ? r.revisionDate.toISOString() : null,
       adminComment: r.adminComment ?? null,
+      rejectedReason: r.rejectedReason ?? null,
     }));
   }
 
@@ -153,6 +156,7 @@ moderationRouter.get("/queue", requireAuth, requireAdmin, async (req, res) => {
       updatedAt: r.updatedAt.toISOString(),
       revisionDate: r.revisionDate ? r.revisionDate.toISOString() : null,
       adminComment: r.adminComment ?? null,
+      rejectedReason: r.rejectedReason ?? null,
     }));
   }
 
@@ -178,6 +182,7 @@ moderationRouter.get("/queue", requireAuth, requireAdmin, async (req, res) => {
       updatedAt: r.updatedAt.toISOString(),
       revisionDate: r.revisionDate ? r.revisionDate.toISOString() : null,
       adminComment: r.adminComment ?? null,
+      rejectedReason: r.rejectedReason ?? null,
     }));
   }
 
@@ -203,6 +208,7 @@ moderationRouter.get("/queue", requireAuth, requireAdmin, async (req, res) => {
       updatedAt: r.updatedAt.toISOString(),
       revisionDate: r.revisionDate ? r.revisionDate.toISOString() : null,
       adminComment: r.adminComment ?? null,
+      rejectedReason: r.rejectedReason ?? null,
     }));
   }
 
