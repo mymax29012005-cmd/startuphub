@@ -47,7 +47,7 @@ export function IdeaCard({
     (viewer!.role === "admin" || viewer!.id === idea.owner.id);
 
   return (
-    <Card className="p-5">
+    <Card className="p-5 sm:p-6">
       {canDelete ? (
         <div className="flex justify-end mb-2">
           <DeleteResourceButton apiUrl={`/api/v1/ideas/${idea.id}`} onDeleted={onDeleted!} />
@@ -55,11 +55,11 @@ export function IdeaCard({
       ) : null}
       <Link href={`/ideas/${idea.id}`} className="block" aria-label={`Открыть ${idea.title}`}>
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <Badge>{idea.category}</Badge>
             </div>
-            <div className="mt-3 text-white font-semibold leading-tight">{idea.title}</div>
+            <div className="mt-3 text-white font-semibold leading-tight text-base sm:text-lg truncate">{idea.title}</div>
             <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] line-clamp-2">
               {idea.description}
             </div>
@@ -70,7 +70,7 @@ export function IdeaCard({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-10 w-10 rounded-2xl border-[rgba(255,255,255,0.16)]"
+                className="h-10 w-10 shrink-0 rounded-2xl border border-[rgba(255,255,255,0.16)]"
                 disabled={loadingFav}
                 onClick={async (e) => {
                   e.preventDefault();
@@ -108,13 +108,13 @@ export function IdeaCard({
         </div>
 
         <div className="mt-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-white/5 border border-[rgba(255,255,255,0.12)] overflow-hidden">
+          <div className="h-10 w-10 shrink-0 rounded-2xl bg-white/5 border border-[rgba(255,255,255,0.12)] overflow-hidden">
             {idea.owner.avatarUrl ? (
               <img src={idea.owner.avatarUrl} alt={idea.owner.name} className="h-full w-full object-cover" />
             ) : null}
           </div>
-          <div>
-            <div className="text-sm font-medium text-white">{idea.owner.name}</div>
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-white truncate">{idea.owner.name}</div>
             <div className="text-xs text-[rgba(234,240,255,0.72)]">Рейтинг: {idea.owner.rating.toFixed(1)}</div>
           </div>
         </div>

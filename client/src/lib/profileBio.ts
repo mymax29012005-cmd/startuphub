@@ -65,7 +65,7 @@ export function composeBio(p: {
   freeText: string;
 }) {
   return [
-    p.country && p.country !== "Россия" ? `Страна: ${p.country}` : null,
+    p.country.trim() ? `Страна: ${p.country.trim()}` : null,
     p.city.trim() ? `Город: ${p.city.trim()}` : null,
     p.telegram.trim() ? `Telegram: ${p.telegram.trim()}` : null,
     p.skills?.length ? `Навыки: ${p.skills.join(", ")}` : null,

@@ -57,24 +57,24 @@ export default function LoginPage() {
   return (
     <div className="bg-[#0A0A0F] text-white min-h-screen">
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0A0A0F]/80 backdrop-blur-xl">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-3">
             <span className="logo-dot inline-block h-4 w-4 rounded-full" />
-            <span className="text-3xl font-semibold tracking-tight">StartupHub</span>
+            <span className="text-xl sm:text-3xl font-semibold tracking-tight">StartupHub</span>
           </Link>
-          <Link href="/" className="text-gray-400 hover:text-white flex items-center gap-2">
+          <Link href="/" className="text-sm sm:text-base text-gray-400 hover:text-white flex items-center gap-2">
             ← На главную
           </Link>
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 pt-32 pb-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-28 sm:pt-32 pb-20">
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold tracking-tighter">С возвращением</h1>
-          <p className="text-gray-400 mt-3 text-xl">Войдите, чтобы продолжить работу с проектами и аукционами</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">С возвращением</h1>
+          <p className="text-gray-400 mt-3 text-base sm:text-xl">Войдите, чтобы продолжить работу с проектами и аукционами</p>
         </div>
 
-        <div className="max-w-md mx-auto bg-[#12121A] border border-white/10 rounded-3xl p-10">
+        <div className="max-w-md mx-auto bg-[#12121A] border border-white/10 rounded-3xl p-6 sm:p-10">
           <h2 className="text-2xl font-semibold mb-8 text-center">Вход в аккаунт</h2>
 
           <form className="space-y-6" onSubmit={onSubmit}>
@@ -114,7 +114,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                   placeholder="you@example.com"
                   autoComplete="email"
                 />
@@ -126,7 +126,7 @@ export default function LoginPage() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                   placeholder="+7 (999) 123-45-67"
                   autoComplete="tel"
                 />
@@ -139,7 +139,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                 placeholder="Пароль"
                 autoComplete="current-password"
               />
@@ -150,7 +150,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || !canSubmit}
-              className="w-full py-6 text-xl font-semibold rounded-3xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition disabled:opacity-60"
+              className="w-full py-5 sm:py-6 text-lg sm:text-xl font-semibold rounded-3xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition disabled:opacity-60"
             >
               {loading ? "…" : t("auth.submitLogin")}
             </button>

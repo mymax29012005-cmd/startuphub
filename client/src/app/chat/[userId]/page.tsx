@@ -299,10 +299,10 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
   return (
     <div className="bg-[#0A0A0F] text-white h-[100dvh] flex flex-col">
       <nav className="bg-[rgba(10,10,15,0.95)] backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-3 min-w-0">
             <span className="logo-dot inline-block h-4 w-4 shrink-0 rounded-full" />
-            <span className="text-2xl font-semibold tracking-tight truncate">StartupHub</span>
+            <span className="text-xl sm:text-2xl font-semibold tracking-tight truncate">StartupHub</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <Link className="hover:text-violet-400" href="/">
@@ -386,11 +386,11 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
 
         {/* main chat */}
         <div className="flex-1 flex flex-col min-w-0">
-          <div className="border-b border-white/10 px-6 md:px-8 py-5 flex items-center gap-4 bg-[#12121A]">
+          <div className="border-b border-white/10 px-4 py-4 flex items-center gap-3 bg-[#12121A] sm:px-6 sm:py-5 md:px-8 md:gap-4">
             <Link href="/chats" className="md:hidden text-violet-400 hover:text-violet-300 text-sm shrink-0">
               ←
             </Link>
-            <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-rose-500 rounded-2xl overflow-hidden flex items-center justify-center text-xl font-bold shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-violet-500 to-rose-500 rounded-2xl overflow-hidden flex items-center justify-center text-lg sm:text-xl font-bold shrink-0">
               {otherUser.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={otherUser.avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -399,7 +399,7 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
               )}
             </div>
             <div className="min-w-0">
-              <Link href={`/users/${otherUser.id}`} className="font-semibold text-lg truncate block hover:text-violet-300">
+              <Link href={`/users/${otherUser.id}`} className="font-semibold text-base sm:text-lg truncate block hover:text-violet-300">
                 {otherUser.name}
               </Link>
               <div className="text-gray-400 text-sm">Диалог</div>
@@ -411,7 +411,7 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 bg-[#0A0A0F]">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 bg-[#0A0A0F]">
             {messages.map((m) => {
               const mine = m.senderId === me.id;
               const ts = formatMsgTime(m.createdAt);
@@ -428,14 +428,14 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
             <div ref={bottomRef} />
           </div>
 
-          <div className="p-6 border-t border-white/10 bg-[#12121A]">
+          <div className="p-4 sm:p-6 border-t border-white/10 bg-[#12121A]">
             <div className="flex gap-4">
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 type="text"
                 placeholder={t("chatsPage.messagePlaceholder")}
-                className="flex-1 bg-[#1A1A24] border border-white/10 rounded-3xl px-7 py-5 focus:outline-none focus:border-violet-500 text-base"
+                className="flex-1 bg-[#1A1A24] border border-white/10 rounded-3xl px-5 py-4 sm:px-7 sm:py-5 focus:outline-none focus:border-violet-500 text-base"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -446,7 +446,7 @@ export default function ChatThreadPage({ params }: { params: Promise<{ userId: s
               <button
                 type="button"
                 onClick={() => void send()}
-                className="w-14 h-14 bg-gradient-to-br from-violet-600 to-rose-500 rounded-3xl flex items-center justify-center hover:scale-110 transition"
+                className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-violet-600 to-rose-500 rounded-3xl flex items-center justify-center hover:scale-110 transition"
                 aria-label={t("chatsPage.send")}
                 title={t("chatsPage.send")}
               >

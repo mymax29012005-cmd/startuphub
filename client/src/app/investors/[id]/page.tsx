@@ -132,7 +132,7 @@ export default function InvestorDetailPage({
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] text-white">
-      <div className="mx-auto max-w-7xl px-6 pb-20 pt-10">
+      <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pb-20 sm:pt-10">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link href="/marketplace?tab=investors" className="text-sm text-gray-400 transition hover:text-white">
             ← Назад в маркетплейс
@@ -162,41 +162,41 @@ export default function InvestorDetailPage({
             <div className="space-y-12 lg:col-span-8">
               <div>
                 <div className="flex items-center gap-4">
-                  <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 text-4xl font-bold">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 text-3xl font-bold sm:h-24 sm:w-24 sm:text-4xl">
                     {initials(display.name)}
                   </div>
                   <div>
-                    <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{display.name}</h1>
-                    <p className="mt-2 text-2xl text-emerald-400">{display.title}</p>
+                    <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">{display.name}</h1>
+                    <p className="mt-1 text-lg text-emerald-400 sm:mt-2 sm:text-2xl">{display.title}</p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h2 className="mb-5 text-3xl font-semibold">Обо мне</h2>
-                <p className="text-lg leading-relaxed text-gray-300">{item.description}</p>
+                <h2 className="mb-4 text-2xl font-semibold sm:mb-5 sm:text-3xl">Обо мне</h2>
+                <p className="text-base leading-relaxed text-gray-300 sm:text-lg">{item.description}</p>
               </div>
 
               <div>
-                <h2 className="mb-5 text-3xl font-semibold">Инвестиционные критерии</h2>
+                <h2 className="mb-4 text-2xl font-semibold sm:mb-5 sm:text-3xl">Инвестиционные критерии</h2>
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="rounded-3xl bg-[#12121A] p-6">
                     <div className="text-sm text-gray-400">Чек</div>
-                    <div className="mt-2 text-2xl font-semibold">{display.check}</div>
+                    <div className="mt-2 text-xl font-semibold sm:text-2xl">{display.check}</div>
                   </div>
                   <div className="rounded-3xl bg-[#12121A] p-6">
                     <div className="text-sm text-gray-400">Стадии</div>
-                    <div className="mt-2 text-2xl font-semibold">{display.stages.length ? display.stages.join(" · ") : "—"}</div>
+                    <div className="mt-2 text-xl font-semibold sm:text-2xl">{display.stages.length ? display.stages.join(" · ") : "—"}</div>
                   </div>
                   <div className="rounded-3xl bg-[#12121A] p-6">
                     <div className="text-sm text-gray-400">Количество сделок</div>
-                    <div className="mt-2 text-2xl font-semibold">
+                    <div className="mt-2 text-xl font-semibold sm:text-2xl">
                       {display.pe?.dealsCount != null ? String(display.pe.dealsCount) : "—"}
                     </div>
                   </div>
                   <div className="rounded-3xl bg-[#12121A] p-6">
                     <div className="text-sm text-gray-400">Успешных выходов</div>
-                    <div className="mt-2 text-2xl font-semibold">
+                    <div className="mt-2 text-xl font-semibold sm:text-2xl">
                       {display.pe?.exitsCount != null ? String(display.pe.exitsCount) : "—"}
                     </div>
                   </div>
@@ -205,10 +205,10 @@ export default function InvestorDetailPage({
 
               {display.interests.length ? (
                 <div>
-                  <h2 className="mb-5 text-3xl font-semibold">Интересы</h2>
+                  <h2 className="mb-4 text-2xl font-semibold sm:mb-5 sm:text-3xl">Интересы</h2>
                   <div className="flex flex-wrap gap-3">
                     {display.interests.map((t) => (
-                      <span key={t} className="rounded-3xl bg-white/10 px-6 py-3">
+                      <span key={t} className="rounded-3xl bg-white/10 px-4 py-2 text-sm sm:px-6 sm:py-3 sm:text-base">
                         {t}
                       </span>
                     ))}

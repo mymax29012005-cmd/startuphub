@@ -93,10 +93,10 @@ export default function ChatsPage() {
   return (
     <div className="bg-[#0A0A0F] text-white h-[100dvh] flex flex-col">
       <nav className="bg-[rgba(10,10,15,0.95)] backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-3 min-w-0">
             <span className="logo-dot inline-block h-4 w-4 shrink-0 rounded-full" />
-            <span className="text-2xl font-semibold tracking-tight truncate">StartupHub</span>
+            <span className="text-xl sm:text-2xl font-semibold tracking-tight truncate">StartupHub</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <Link className="hover:text-violet-400" href="/">
@@ -115,7 +115,7 @@ export default function ChatsPage() {
 
       <div className="flex flex-1 overflow-hidden">
         <div className="w-full md:w-[380px] border-r border-white/10 chat-sidebar flex flex-col">
-          <div className="p-6 border-b border-white/10">
+          <div className="p-4 sm:p-6 border-b border-white/10">
             <div className="relative">
               <input
                 value={q}
@@ -128,7 +128,7 @@ export default function ChatsPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
             {state.status === "loading" ? <div className="text-sm text-gray-400 px-2 py-2">…</div> : null}
             {state.status === "error" ? <div className="text-sm text-gray-400 px-2 py-2">{t("chatsPage.loadError")}</div> : null}
             {state.status === "guest" ? (
@@ -151,9 +151,9 @@ export default function ChatsPage() {
                 <Link
                   key={row.id}
                   href={`/chat/${row.otherUser.id}`}
-                  className="flex gap-4 p-4 rounded-3xl hover:bg-white/5 transition"
+                  className="flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-3xl hover:bg-white/5 transition"
                 >
-                  <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-rose-500 rounded-2xl overflow-hidden flex items-center justify-center text-lg font-bold shrink-0">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-violet-500 to-rose-500 rounded-2xl overflow-hidden flex items-center justify-center text-base sm:text-lg font-bold shrink-0">
                     {row.otherUser.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={row.otherUser.avatarUrl} alt="" className="h-full w-full object-cover" />

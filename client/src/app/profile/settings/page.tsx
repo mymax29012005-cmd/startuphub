@@ -153,24 +153,44 @@ export default function ProfileSettingsPage() {
     }
   }
 
+  async function onDeleteAccount() {
+    const ok = window.confirm("Удалить аккаунт навсегда? Это действие нельзя отменить.");
+    if (!ok) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/v1/auth/me", { method: "DELETE", credentials: "include" });
+      const data = (await r.json().catch(() => ({}))) as { error?: string };
+      if (!r.ok) {
+        setError(data?.error ?? "Не удалось удалить аккаунт");
+        return;
+      }
+      router.push("/");
+    } catch {
+      setError("Сетевая ошибка");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="bg-[#0A0A0F] text-white min-h-screen">
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0A0A0F]/80 backdrop-blur-xl">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-3">
             <span className="logo-dot inline-block h-4 w-4 rounded-full" />
-            <span className="text-3xl font-semibold tracking-tight">StartupHub</span>
+            <span className="text-xl sm:text-3xl font-semibold tracking-tight">StartupHub</span>
           </Link>
-          <Link href="/profile" className="text-gray-400 hover:text-white flex items-center gap-2">
+          <Link href="/profile" className="text-sm sm:text-base text-gray-400 hover:text-white flex items-center gap-2">
             ← В профиль
           </Link>
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 pt-32 pb-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-28 sm:pt-32 pb-20">
         <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter">Редактирование профиля</h1>
-          <p className="text-gray-400 mt-3 text-lg">Те же поля, что при регистрации</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">Редактирование профиля</h1>
+          <p className="text-gray-400 mt-3 text-base sm:text-lg">Те же поля, что при регистрации</p>
         </div>
 
         {loading ? (
@@ -178,7 +198,7 @@ export default function ProfileSettingsPage() {
         ) : !me ? (
           <div className="text-center text-gray-400">Войдите, чтобы редактировать профиль.</div>
         ) : (
-          <form onSubmit={onSubmit} className="max-w-2xl mx-auto bg-[#12121A] border border-white/10 rounded-3xl p-10">
+          <form onSubmit={onSubmit} className="max-w-2xl mx-auto bg-[#12121A] border border-white/10 rounded-3xl p-6 sm:p-10">
             <div className="grid md:grid-cols-2 gap-10">
               <div className="flex flex-col items-center">
                 <div className="w-40 h-40 bg-gradient-to-br from-violet-500 to-rose-500 rounded-3xl overflow-hidden border-4 border-white/20">
@@ -212,7 +232,7 @@ export default function ProfileSettingsPage() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                     placeholder="Иван Петров"
                   />
                 </div>
@@ -223,7 +243,7 @@ export default function ProfileSettingsPage() {
                     <select
                       value={accountType}
                       onChange={(e) => setAccountType(e.target.value as Me["accountType"])}
-                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5"
+                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5"
                     >
                       {accountTypeOptions.map((x) => (
                         <option key={x.value} value={x.value}>
@@ -238,7 +258,7 @@ export default function ProfileSettingsPage() {
                     <select
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5"
+                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5"
                     >
                       <option>Россия</option>
                       <option>Казахстан</option>
@@ -254,7 +274,7 @@ export default function ProfileSettingsPage() {
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                       placeholder="Москва"
                     />
                   </div>
@@ -264,7 +284,7 @@ export default function ProfileSettingsPage() {
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                       placeholder="+7 (999) 123-45-67"
                     />
                   </div>
@@ -276,7 +296,7 @@ export default function ProfileSettingsPage() {
                     rows={3}
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    className="w-full bg-[#1A1A24] border border-white/10 rounded-3xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                    className="w-full bg-[#1A1A24] border border-white/10 rounded-3xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                     placeholder="Например: основатель AI-стартапа…"
                   />
                 </div>
@@ -287,7 +307,7 @@ export default function ProfileSettingsPage() {
                     type="text"
                     value={telegram}
                     onChange={(e) => setTelegram(e.target.value)}
-                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                     placeholder="@username"
                   />
                 </div>
@@ -298,7 +318,7 @@ export default function ProfileSettingsPage() {
                     type="text"
                     value={skillsRaw}
                     onChange={(e) => setSkillsRaw(e.target.value)}
-                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                     placeholder="Например: Основатель, Product, Маркетинг"
                   />
                 </div>
@@ -309,7 +329,7 @@ export default function ProfileSettingsPage() {
                     type="text"
                     value={lookingForRaw}
                     onChange={(e) => setLookingForRaw(e.target.value)}
-                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                     placeholder="Инвестора, партнёра, консультацию"
                   />
                 </div>
@@ -318,18 +338,18 @@ export default function ProfileSettingsPage() {
 
             {error ? <div className="mt-6 text-sm text-red-300">{error}</div> : null}
 
-            <div className="flex flex-col sm:flex-row gap-4 mt-12">
+            <div className="flex flex-col sm:flex-row gap-4 mt-10 sm:mt-12">
               <button
                 type="button"
                 onClick={() => router.push("/profile")}
-                className="flex-1 py-6 text-lg font-medium rounded-3xl border border-white/30 hover:bg-white/10 transition"
+                className="flex-1 py-5 sm:py-6 text-base sm:text-lg font-medium rounded-3xl border border-white/30 hover:bg-white/10 transition"
               >
                 Отмена
               </button>
               <button
                 type="submit"
                 disabled={saving || name.trim().length < 2}
-                className="flex-1 py-6 text-lg font-semibold rounded-3xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition disabled:opacity-60"
+                className="flex-1 py-5 sm:py-6 text-base sm:text-lg font-semibold rounded-3xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition disabled:opacity-60"
               >
                 {saving ? "…" : t("pages.save")}
               </button>
@@ -341,6 +361,15 @@ export default function ProfileSettingsPage() {
               className="mt-6 w-full py-4 text-sm text-gray-400 hover:text-white border border-white/10 rounded-2xl"
             >
               {t("pages.logout")}
+            </button>
+
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => void onDeleteAccount()}
+              className="mt-3 w-full py-4 text-sm text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-400/40 rounded-2xl"
+            >
+              Удалить аккаунт
             </button>
           </form>
         )}

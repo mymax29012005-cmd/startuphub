@@ -10,6 +10,16 @@ import { upload } from "../../upload/multer";
 
 export const authRouter = Router();
 
+function normEmail(v: string | undefined) {
+  const x = (v ?? "").trim().toLowerCase();
+  return x ? x : undefined;
+}
+
+function normPhone(v: string | undefined) {
+  const x = (v ?? "").trim().replace(/\s+/g, "");
+  return x ? x : undefined;
+}
+
 const registerSchema = z.object({
   name: z.string().min(2).max(64),
   email: z.string().email().optional(),
@@ -30,7 +40,9 @@ authRouter.post("/register", async (req, res) => {
     return res.status(400).json({ error: "Неверные данные", details: parsed.error.flatten() });
   }
 
-  const { name, email, phone, password, accountType } = parsed.data;
+  const { name, password, accountType } = parsed.data;
+  const email = normEmail(parsed.data.email);
+  const phone = normPhone(parsed.data.phone);
   if (!email && !phone)
     return res.status(400).json({ error: "Нужно указать email или телефон" });
   if (email && phone)
@@ -40,6 +52,15 @@ authRouter.post("/register", async (req, res) => {
 
   const prisma = getPrisma();
   try {
+    if (email) {
+      const exists = await prisma.user.findFirst({ where: { email }, select: { id: true } });
+      if (exists) return res.status(409).json({ error: "Этот email уже используется" });
+    }
+    if (phone) {
+      const exists = await prisma.user.findFirst({ where: { phone }, select: { id: true } });
+      if (exists) return res.status(409).json({ error: "Этот телефон уже используется" });
+    }
+
     const passwordHash = await bcryptjs.hash(password, 10);
 
     const user = await prisma.user.create({
@@ -79,8 +100,15 @@ authRouter.post("/register", async (req, res) => {
 
     return res.status(201).json(user);
   } catch (e: any) {
-    // Prisma unique constraint error.
-    return res.status(409).json({ error: "Пользователь уже существует или нарушены ограничения" });
+    // Prisma unique constraint error (race condition).
+    if (e?.code === "P2002") {
+      const target = (e?.meta?.target ?? []) as unknown;
+      const arr = Array.isArray(target) ? (target as string[]) : typeof target === "string" ? [target] : [];
+      if (arr.includes("email")) return res.status(409).json({ error: "Этот email уже используется" });
+      if (arr.includes("phone")) return res.status(409).json({ error: "Этот телефон уже используется" });
+      return res.status(409).json({ error: "Пользователь уже существует" });
+    }
+    return res.status(503).json({ error: "База данных недоступна" });
   }
 });
 
@@ -90,7 +118,9 @@ authRouter.post("/login", async (req, res) => {
     return res.status(400).json({ error: "Неверные данные", details: parsed.error.flatten() });
   }
 
-  const { email, phone, password } = parsed.data;
+  const email = normEmail(parsed.data.email);
+  const phone = normPhone(parsed.data.phone);
+  const { password } = parsed.data;
   if (!email && !phone)
     return res.status(400).json({ error: "Нужно указать email или телефон" });
   const prisma = getPrisma();
@@ -186,13 +216,19 @@ authRouter.patch("/me", requireAuth, upload.single("avatar"), async (req, res) =
   }
 
   try {
+    const nextPhone = normPhone(parsed.data.phone);
+    if (nextPhone) {
+      const exists = await prisma.user.findFirst({ where: { phone: nextPhone, id: { not: req.user!.userId } }, select: { id: true } });
+      if (exists) return res.status(409).json({ error: "Этот телефон уже используется" });
+    }
+
     const avatarUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
     const updated = await prisma.user.update({
       where: { id: req.user!.userId },
       data: {
         name: parsed.data.name ?? undefined,
         bio: parsed.data.bio ?? undefined,
-        phone: parsed.data.phone ?? undefined,
+        phone: nextPhone ?? undefined,
         avatarUrl: avatarUrl ?? undefined,
         accountType: parsed.data.accountType ?? undefined,
       },
@@ -215,6 +251,17 @@ authRouter.patch("/me", requireAuth, upload.single("avatar"), async (req, res) =
     ]);
 
     return res.json({ ...updated, startupsCount, ideasCount });
+  } catch (_e) {
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
+});
+
+authRouter.delete("/me", requireAuth, async (req, res) => {
+  const prisma = getPrisma();
+  try {
+    await prisma.user.delete({ where: { id: req.user!.userId } });
+    res.clearCookie(env.COOKIE_NAME, { path: "/" });
+    return res.status(200).json({ ok: true });
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
   }

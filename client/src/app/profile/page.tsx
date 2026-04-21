@@ -137,6 +137,7 @@ export default function ProfilePage() {
   const tg = extractTelegram(me.bio);
   const meta = parseBioMeta(me.bio);
   const bioText = stripMetaLines(me.bio);
+  const locationLine = [meta.country?.trim(), meta.city?.trim()].filter(Boolean).join(", ");
 
   return (
     <div className="bg-[#0A0A0F] text-white min-h-screen">
@@ -165,11 +166,11 @@ export default function ProfilePage() {
         </div>
       </nav>
 
-      <div className="pt-10 max-w-7xl mx-auto px-6 pb-16">
+      <div className="pt-10 max-w-7xl mx-auto px-4 pb-16 sm:px-6">
         <div className="flex flex-col md:flex-row gap-10 items-start">
           <div className="md:w-80 shrink-0 w-full">
             <div className="relative">
-              <div className="w-48 h-48 mx-auto md:mx-0 rounded-3xl overflow-hidden border-4 border-violet-500/30 shadow-2xl bg-white/5">
+              <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto md:mx-0 rounded-3xl overflow-hidden border-4 border-violet-500/30 shadow-2xl bg-white/5">
                 {me.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={me.avatarUrl} alt={me.name} className="w-full h-full object-cover" />
@@ -180,22 +181,22 @@ export default function ProfilePage() {
             </div>
 
             <div className="mt-6 text-center md:text-left">
-              <h1 className="text-4xl font-bold">{me.name}</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold">{me.name}</h1>
               <p className="text-violet-400 text-lg mt-1">{subtitle}</p>
-              <p className="text-gray-400 mt-1">Профиль StartupHub</p>
+              <p className="text-gray-400 mt-1">{locationLine ? locationLine : "Профиль StartupHub"}</p>
             </div>
 
-            <div className="mt-8 flex justify-center md:justify-start gap-4 md:-ml-3">
+            <div className="mt-8 flex flex-col sm:flex-row justify-center md:justify-start gap-3 sm:gap-4 md:-ml-3">
               <Link
                 href="/profile/settings"
-                className="flex-1 md:flex-none px-7 py-4 bg-white/10 hover:bg-white/20 rounded-3xl font-medium flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 md:flex-none px-7 py-4 bg-white/10 hover:bg-white/20 rounded-3xl font-medium flex items-center justify-center gap-2"
               >
                 ✎ Редактировать
               </Link>
               <button
                 type="button"
                 onClick={() => void onShare()}
-                className="flex-1 md:flex-none px-7 py-4 border border-white/30 hover:bg-white/10 rounded-3xl font-medium"
+                className="w-full sm:flex-1 md:flex-none px-7 py-4 border border-white/30 hover:bg-white/10 rounded-3xl font-medium"
               >
                 Поделиться
               </button>
@@ -210,7 +211,7 @@ export default function ProfilePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
               <div className="transition hover:-translate-y-1 bg-[#12121A] border border-white/10 rounded-3xl p-6 text-center">
                 <div className="text-4xl font-bold text-violet-400">{me.startupsCount}</div>
                 <div className="text-sm text-gray-400 mt-2">Стартапов</div>
@@ -240,7 +241,7 @@ export default function ProfilePage() {
               {startups.length === 0 ? (
                 <div className="text-sm text-gray-400">Пока нет опубликованных стартапов.</div>
               ) : (
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {startups.map((s) => {
                     const stageLabel = stageLabelsByLang[lang]?.[s.stage] ?? s.stage;
                     const pill = s.auction ? "Аукцион" : "Активен";

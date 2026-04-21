@@ -78,23 +78,25 @@ export function StartupCard({
       ) : null}
 
       <Link href={`/startups/${startup.id}`} className="block" aria-label={`Открыть ${startup.title}`}>
-        <div className={`relative flex h-[180px] items-center justify-center bg-gradient-to-br ${coverGradient(startup.category)}`}>
-          <div className="text-5xl font-bold text-white/90">{initials(startup.title, startup.category)}</div>
-          <div className="badge absolute right-4 top-4 rounded-full bg-emerald-500/90 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
+        <div
+          className={`relative flex h-[160px] sm:h-[180px] items-center justify-center bg-gradient-to-br ${coverGradient(startup.category)}`}
+        >
+          <div className="text-4xl sm:text-5xl font-bold text-white/90">{initials(startup.title, startup.category)}</div>
+          <div className="badge absolute right-3 top-3 sm:right-4 sm:top-4 rounded-full bg-emerald-500/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
             {stageLabel}
           </div>
           {startup.auction ? (
-            <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-red-500/90 px-3 py-1.5 text-xs font-semibold text-white">
+            <div className="absolute left-3 top-3 sm:left-4 sm:top-4 flex items-center gap-1.5 rounded-full bg-red-500/90 px-3 py-1.5 text-xs font-semibold text-white">
               <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white" />
               Аукцион
             </div>
           ) : null}
         </div>
 
-        <div className="p-6">
+        <div className="p-5 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-xl font-semibold leading-tight tracking-tight text-white">{startup.title}</h3>
+              <h3 className="text-lg sm:text-xl font-semibold leading-tight tracking-tight text-white">{startup.title}</h3>
               {startup.tagline?.trim() ? (
                 <p className="mt-1 text-sm text-violet-300/90">{startup.tagline}</p>
               ) : null}
@@ -130,10 +132,10 @@ export function StartupCard({
           </div>
           <p className="mt-2 line-clamp-2 text-sm text-gray-400">{startup.description}</p>
 
-          <div className="mt-6 flex items-end justify-between gap-3 border-t border-white/10 pt-6">
+          <div className="mt-5 sm:mt-6 flex items-end justify-between gap-3 border-t border-white/10 pt-5 sm:pt-6">
             <div>
               <div className="text-xs text-gray-500">Нужно привлечь</div>
-              <div className="text-lg font-semibold text-emerald-400">{startup.price.toLocaleString("ru-RU")} ₽</div>
+              <div className="text-base sm:text-lg font-semibold text-emerald-400">{startup.price.toLocaleString("ru-RU")} ₽</div>
             </div>
             <div className="text-right">
               <div className="text-xs text-gray-500">{startup.isOnline ? "Онлайн" : "Офлайн"}</div>
@@ -169,7 +171,7 @@ export function StartupCard({
 
           <div className="mt-4 flex flex-wrap gap-2">
             {tags.map((t) => (
-              <span key={t} className="rounded-2xl bg-white/10 px-4 py-2 text-xs">
+              <span key={t} className="rounded-2xl bg-white/10 px-3 py-2 sm:px-4 text-xs">
                 {t}
               </span>
             ))}

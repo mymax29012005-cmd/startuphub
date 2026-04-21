@@ -161,7 +161,7 @@ export default function IdeaDetailPage({
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] text-white">
-      <div className="mx-auto max-w-7xl px-6 pb-20 pt-10">
+      <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pb-20 sm:pt-10">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link href="/marketplace?tab=ideas" className="text-sm text-gray-400 transition hover:text-white">
             ← Назад в маркетплейс
@@ -224,28 +224,28 @@ export default function IdeaDetailPage({
                 ideaHeroGradientClass(idea.profileExtra?.coverGradient),
               ].join(" ")}
             >
-              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-10">
+              <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 md:p-10">
                 <span className="rounded-3xl bg-white/20 px-5 py-2 text-sm backdrop-blur-md">Идея</span>
-                <h1 className="mt-4 max-w-4xl text-4xl font-bold leading-tight tracking-tight md:text-5xl">{idea.title}</h1>
+                <h1 className="mt-4 max-w-4xl text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl">{idea.title}</h1>
               </div>
             </div>
 
             <div className="grid gap-12 lg:grid-cols-12">
               <div className="space-y-12 lg:col-span-8">
                 <div>
-                  <h2 className="mb-6 text-3xl font-semibold">Описание идеи</h2>
-                  <p className="text-lg leading-relaxed text-gray-300">{idea.description}</p>
+                  <h2 className="mb-4 text-2xl font-semibold sm:mb-6 sm:text-3xl">Описание идеи</h2>
+                  <p className="text-base leading-relaxed text-gray-300 sm:text-lg">{idea.description}</p>
                 </div>
 
                 {idea.problem?.trim() ? (
                   <div>
-                    <h2 className="mb-6 text-3xl font-semibold">Проблема</h2>
-                    <p className="text-lg leading-relaxed text-gray-300 whitespace-pre-wrap">{idea.problem}</p>
+                    <h2 className="mb-4 text-2xl font-semibold sm:mb-6 sm:text-3xl">Проблема</h2>
+                    <p className="text-base leading-relaxed text-gray-300 whitespace-pre-wrap sm:text-lg">{idea.problem}</p>
                   </div>
                 ) : null}
 
                 <div>
-                  <h2 className="mb-6 text-3xl font-semibold">Что уже сделано</h2>
+                  <h2 className="mb-4 text-2xl font-semibold sm:mb-6 sm:text-3xl">Что уже сделано</h2>
                   {(() => {
                     const done = idea.profileExtra?.doneItems?.filter(Boolean) ?? [];
                     const fallback = idea.solution?.trim()
@@ -272,8 +272,8 @@ export default function IdeaDetailPage({
                 </div>
 
                 <div>
-                  <h2 className="mb-6 text-3xl font-semibold">Что нужно для реализации</h2>
-                  <p className="text-lg leading-relaxed text-gray-300">
+                  <h2 className="mb-4 text-2xl font-semibold sm:mb-6 sm:text-3xl">Что нужно для реализации</h2>
+                  <p className="text-base leading-relaxed text-gray-300 sm:text-lg">
                     {idea.profileExtra?.needsText?.trim() || "—"}
                   </p>
                 </div>

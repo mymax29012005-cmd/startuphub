@@ -324,28 +324,28 @@ function MarketplaceInner() {
           : filteredPartners.length === 0;
 
   return (
-    <div className="mx-auto max-w-7xl px-6">
-      <div className="border-b border-white/10 py-12">
-        <h1 className="mb-3 text-5xl font-bold tracking-tighter md:text-6xl">Маркетплейс</h1>
-        <p className="max-w-2xl text-xl text-gray-400">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6">
+      <div className="border-b border-white/10 py-8 sm:py-12">
+        <h1 className="mb-3 text-3xl font-bold tracking-tighter sm:text-4xl md:text-6xl">Маркетплейс</h1>
+        <p className="max-w-2xl text-base text-gray-400 sm:text-lg md:text-xl">
           {totalCount > 0
             ? `Более ${totalCount} стартапов, идей, инвесторов и партнёров в одном месте`
             : "Стартапы, идеи, инвесторы и партнёры в одном месте — аукционы в отдельном разделе «Аукционы»"}
         </p>
 
         <div className="relative mt-8">
-          <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-[#12121A] px-6 py-5 shadow-xl">
+          <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-[#12121A] px-4 py-4 shadow-xl sm:flex-row sm:items-center sm:px-6 sm:py-5">
             <span className="text-xl text-gray-400">⌕</span>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               type="text"
               placeholder="Поиск по названию, отрасли, ключевому слову..."
-              className="flex-1 bg-transparent text-lg outline-none placeholder-gray-500"
+              className="w-full flex-1 bg-transparent text-base outline-none placeholder-gray-500 sm:w-auto sm:text-lg"
             />
             <button
               type="button"
-              className="rounded-2xl bg-violet-600 px-8 py-3 font-medium hover:bg-violet-500"
+              className="w-full rounded-2xl bg-violet-600 px-6 py-3 text-sm font-medium hover:bg-violet-500 sm:w-auto sm:px-8 sm:text-base"
               onClick={() => void ensureLoaded(activeTab)}
             >
               Найти
@@ -354,8 +354,8 @@ function MarketplaceInner() {
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
-        <div className="flex min-w-0 flex-1 items-center gap-6 overflow-x-auto md:gap-8">
+      <div className="mt-6 sm:mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto sm:gap-6 md:gap-8">
           {tabs.map((t) => {
             const active = t.key === activeTab;
             return (
@@ -364,7 +364,7 @@ function MarketplaceInner() {
                 type="button"
                 onClick={() => selectTab(t.key)}
                 className={[
-                  "whitespace-nowrap px-6 py-3 text-lg transition",
+                  "whitespace-nowrap px-3 py-2 text-sm transition sm:px-6 sm:py-3 sm:text-lg",
                   active ? "border-b-[3px] border-[#7C3AED] font-semibold text-white" : "text-gray-400 hover:text-white",
                 ].join(" ")}
               >
@@ -376,7 +376,7 @@ function MarketplaceInner() {
         <button
           type="button"
           onClick={() => setPostModalOpen(true)}
-          className="shrink-0 rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 md:px-8 md:text-base"
+          className="w-full shrink-0 rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 sm:w-auto md:px-8 md:text-base"
         >
           Разместить
         </button>

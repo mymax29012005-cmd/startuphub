@@ -165,7 +165,7 @@ export default function AuctionDetailPage({
   const isJoinedActive = !!myParticipant?.active;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
       <div className="mb-5 flex items-center justify-between gap-4">
         <Link href="/auction" className="text-[var(--accent)] hover:text-white text-sm font-medium">
           ← Назад к аукционам
@@ -185,14 +185,14 @@ export default function AuctionDetailPage({
       ) : !auction ? (
         <div className="text-[rgba(234,240,255,0.72)]">Аукцион не найден.</div>
       ) : (
-        <Card className="p-6 md:p-10">
-          <div className="flex items-start justify-between gap-4">
+        <Card className="p-5 sm:p-6 md:p-10">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge>Аукцион</Badge>
                 <Badge>{auction.startup.category}</Badge>
               </div>
-              <h1 className="mt-3 text-3xl font-semibold text-white leading-tight">{auction.startup.title}</h1>
+              <h1 className="mt-3 text-2xl font-semibold text-white leading-tight sm:text-3xl">{auction.startup.title}</h1>
               <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)]">
                 Текущая цена:{" "}
                 <b className="text-white">{auction.currentPrice.toLocaleString("ru-RU")} ₽</b>
@@ -212,7 +212,7 @@ export default function AuctionDetailPage({
                 </div>
               ) : null}
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <div className="text-xs text-[rgba(234,240,255,0.72)]">Статус</div>
               <div className="text-sm font-semibold text-white">{auction.status}</div>
             </div>
@@ -237,7 +237,7 @@ export default function AuctionDetailPage({
               <b className="text-white">{auction.participants.filter((p) => p.active).length}</b>
             </div>
             {me ? (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
                 {auction.status === "planned" && !isOwner && !isJoinedActive ? (
                   <Button
                     variant="secondary"
@@ -258,7 +258,7 @@ export default function AuctionDetailPage({
                         setActing(false);
                       }
                     }}
-                    className="h-10"
+                    className="h-10 w-full sm:w-auto"
                   >
                     Записаться
                   </Button>
@@ -284,7 +284,7 @@ export default function AuctionDetailPage({
                         setActing(false);
                       }
                     }}
-                    className="h-10"
+                    className="h-10 w-full sm:w-auto"
                   >
                     Выйти из аукциона
                   </Button>
@@ -292,7 +292,7 @@ export default function AuctionDetailPage({
 
                 <Button
                   variant="ghost"
-                  className="h-10"
+                  className="h-10 w-full sm:w-auto"
                   onClick={() => setShowParticipants((v) => !v)}
                 >
                   {showParticipants ? "Скрыть участников" : "Список участников"}

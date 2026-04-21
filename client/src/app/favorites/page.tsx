@@ -86,7 +86,7 @@ export default function FavoritesPage() {
         </div>
       </div>
 
-      <Card className="p-6">
+      <Card className="p-5 sm:p-6">
         {!me ? (
           <div className="text-[rgba(234,240,255,0.72)]">
             {t("pages.loginToSaveFavorites")}

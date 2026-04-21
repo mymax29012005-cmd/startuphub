@@ -182,7 +182,7 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <section className="hero-bg relative flex min-h-[calc(100dvh-var(--site-header-height))] flex-col justify-center overflow-hidden">
-        <div className="relative mx-auto w-full max-w-7xl px-6 py-10 md:py-14">
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 md:py-14">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
             <div className="space-y-6 md:space-y-8">
               {!loading ? (
@@ -191,7 +191,7 @@ export default function Home() {
                   Строим будущее стартапов
                 </div>
               ) : null}
-              <h1 className="hero-title text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl lg:text-7xl lg:leading-[1.05]">
+              <h1 className="hero-title text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl lg:leading-[1.05]">
                 <span className="hero-shine" data-text="Запусти стартап.">
                   Запусти стартап.
                 </span>
@@ -202,7 +202,7 @@ export default function Home() {
                   Продай долю.
                 </span>
               </h1>
-              <p className="max-w-xl text-lg leading-relaxed text-white/80 md:text-xl">
+              <p className="max-w-xl text-base leading-relaxed text-white/80 sm:text-lg md:text-xl">
                 Платформа для стартаперов, инвесторов и покупателей бизнеса. Находи идеи, финансирование и партнёров в одном
                 месте.
               </p>
@@ -222,8 +222,8 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="glass border border-white/10 rounded-3xl p-8 relative card-hover">
-              <div className="text-2xl font-bold text-white mb-6">Статистика платформы</div>
+              <div className="glass border border-white/10 rounded-3xl p-6 sm:p-8 relative card-hover">
+              <div className="text-xl sm:text-2xl font-bold text-white mb-6">Статистика платформы</div>
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <div>
@@ -341,13 +341,13 @@ export default function Home() {
       />
 
       <section className="hero-bg relative flex min-h-[calc(100dvh-var(--site-header-height))] flex-col justify-center overflow-hidden">
-        <div className="relative mx-auto w-full max-w-6xl px-6 py-14 text-center">
-          <div className="text-4xl font-bold text-white mb-2 md:text-5xl">Готов запустить свой проект</div>
-          <div className="text-4xl font-bold text-white mb-6 md:text-5xl">или найти инвестицию?</div>
-          <div className="text-xl text-white/70 mb-10 md:text-2xl">Присоединяйся к тысячам основателей и инвесторов уже сегодня</div>
+        <div className="relative mx-auto w-full max-w-6xl px-4 py-14 text-center sm:px-6">
+          <div className="text-3xl font-bold text-white mb-2 sm:text-4xl md:text-5xl">Готов запустить свой проект</div>
+          <div className="text-3xl font-bold text-white mb-6 sm:text-4xl md:text-5xl">или найти инвестицию?</div>
+          <div className="text-base text-white/70 mb-10 sm:text-xl md:text-2xl">Присоединяйся к тысячам основателей и инвесторов уже сегодня</div>
           <Link
             href="/register"
-            className="inline-flex items-center justify-center px-12 py-5 rounded-2xl font-semibold bg-white text-black hover:opacity-95 transition"
+            className="inline-flex w-full sm:w-auto items-center justify-center px-10 sm:px-12 py-5 rounded-2xl font-semibold bg-white text-black hover:opacity-95 transition"
           >
             Начать бесплатно
           </Link>

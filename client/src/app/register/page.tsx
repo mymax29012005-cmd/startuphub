@@ -29,6 +29,7 @@ export default function RegisterPage() {
   // Step 2
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
+  const [cityQuery, setCityQuery] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   const [telegram, setTelegram] = useState("");
@@ -56,6 +57,12 @@ export default function RegisterPage() {
     return Array.from(new Set(list));
   }, [countryIso]);
 
+  const filteredCities = useMemo(() => {
+    const q = cityQuery.trim().toLowerCase();
+    if (!q) return cities;
+    return cities.filter((c) => c.toLowerCase().includes(q));
+  }, [cities, cityQuery]);
+
   useEffect(() => {
     const found = countries.find((c) => c.isoCode === countryIso);
     setCountry(found?.name ?? "Россия");
@@ -63,6 +70,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     setCity("");
+    setCityQuery("");
   }, [countryIso]);
 
   const accountTypeOptions = useMemo(() => {
@@ -164,21 +172,21 @@ export default function RegisterPage() {
   return (
     <div className="bg-[#0A0A0F] text-white min-h-screen">
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0A0A0F]/80 backdrop-blur-xl">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-3">
             <span className="logo-dot inline-block h-4 w-4 rounded-full" />
-            <span className="text-3xl font-semibold tracking-tight">StartupHub</span>
+            <span className="text-xl sm:text-3xl font-semibold tracking-tight">StartupHub</span>
           </Link>
-          <Link href="/" className="text-gray-400 hover:text-white flex items-center gap-2">
+          <Link href="/" className="text-sm sm:text-base text-gray-400 hover:text-white flex items-center gap-2">
             ← На главную
           </Link>
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 pt-32 pb-20">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold tracking-tighter">Давайте познакомимся</h1>
-          <p className="text-gray-400 mt-3 text-xl">Создайте аккаунт и заполните профиль за 2 минуты</p>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-28 sm:pt-32 pb-20">
+        <div className="text-center mb-10 sm:mb-12">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">Давайте познакомимся</h1>
+          <p className="text-gray-400 mt-3 text-base sm:text-xl">Создайте аккаунт и заполните профиль за 2 минуты</p>
         </div>
 
         <div className="flex justify-center mb-12">
@@ -333,19 +341,27 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">Город</label>
-                    <input
-                      type="text"
-                      list="startuphub-cities"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
-                      placeholder={countryIso === "RU" ? "Москва" : "Начните вводить…"}
-                    />
-                    <datalist id="startuphub-cities">
-                      {cities.map((name) => (
-                        <option key={name} value={name} />
-                      ))}
-                    </datalist>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={cityQuery}
+                        onChange={(e) => setCityQuery(e.target.value)}
+                        className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-violet-500"
+                        placeholder="Поиск города…"
+                      />
+                      <select
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5"
+                      >
+                        <option value="">Выберите город</option>
+                        {filteredCities.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">Телефон</label>

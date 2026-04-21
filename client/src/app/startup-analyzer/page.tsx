@@ -453,11 +453,11 @@ function AnalyzerInner() {
   const report = result;
 
   return (
-    <div className="pt-24 max-w-7xl mx-auto px-6 pb-20">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
+    <div className="pt-24 max-w-7xl mx-auto px-4 pb-20 sm:px-6">
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8 sm:mb-10">
         <div>
-          <h1 className="text-5xl font-bold tracking-tighter">Анализатор проекта</h1>
-          <p className="text-gray-400 mt-2 text-lg">Получи глубокий AI-анализ твоего стартапа за секунды</p>
+          <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Анализатор проекта</h1>
+          <p className="text-gray-400 mt-2 text-base sm:text-lg">Получи глубокий AI-анализ твоего стартапа за секунды</p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 lg:text-right">
           <div>
@@ -467,7 +467,7 @@ function AnalyzerInner() {
           <button
             type="button"
             onClick={resetNewAnalysis}
-            className="px-6 py-3 text-sm font-semibold rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition"
+            className="w-full sm:w-auto px-6 py-3 text-sm font-semibold rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition"
           >
             Новый анализ
           </button>
@@ -491,7 +491,7 @@ function AnalyzerInner() {
         </div>
       ) : null}
 
-      <div className="bg-[#12121A] border border-white/10 rounded-3xl p-8 md:p-10 shadow-[0_20px_40px_-10px_rgb(124_58_237_/_0.3)] ring-1 ring-[rgba(124,58,237,0.35)]">
+      <div className="bg-[#12121A] border border-white/10 rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_20px_40px_-10px_rgb(124_58_237_/_0.3)] ring-1 ring-[rgba(124,58,237,0.35)]">
         <div className="grid md:grid-cols-2 gap-10">
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -525,7 +525,7 @@ function AnalyzerInner() {
               type="text"
               value={projectTitle}
               onChange={(e) => setProjectTitle(e.target.value)}
-              className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:border-violet-500"
+              className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 text-base sm:px-6 sm:text-lg focus:outline-none focus:border-violet-500"
               placeholder="Например: SalesAI Pro — ИИ для автоматизации продаж"
             />
 
@@ -535,7 +535,7 @@ function AnalyzerInner() {
                 rows={4}
                 value={projectDescription}
                 onChange={(e) => setProjectDescription(e.target.value)}
-                className="w-full bg-[#1A1A24] border border-white/10 rounded-3xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                className="w-full bg-[#1A1A24] border border-white/10 rounded-3xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                 placeholder="Расскажи, что делает продукт, для кого он и почему это важно…"
               />
             </div>

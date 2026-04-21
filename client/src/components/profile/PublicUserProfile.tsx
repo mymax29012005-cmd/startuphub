@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { accountTypeLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
-import { extractTelegram, stripMetaLines } from "@/lib/profileBio";
+import { extractTelegram, parseBioMeta, stripMetaLines } from "@/lib/profileBio";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { Lang } from "@/i18n/dictionaries";
 
@@ -171,6 +171,8 @@ export function PublicUserProfile({ userId, viewerId }: Props) {
 
   const bioText = useMemo(() => stripMetaLines(user?.bio ?? null), [user?.bio]);
   const tg = extractTelegram(user?.bio ?? null);
+  const meta = useMemo(() => parseBioMeta(user?.bio ?? null), [user?.bio]);
+  const locationLine = useMemo(() => [meta.country?.trim(), meta.city?.trim()].filter(Boolean).join(", "), [meta.city, meta.country]);
 
   const exitsCount = useMemo(() => startups.filter((s) => s.stage === "exit").length, [startups]);
   const bidsCount = useMemo(() => activities.filter((a) => a.kind === "bid_placed").length, [activities]);
@@ -220,7 +222,7 @@ export function PublicUserProfile({ userId, viewerId }: Props) {
             <div className="mt-6 text-center md:text-left">
               <h1 className="text-4xl font-bold">{user.name}</h1>
               <p className="text-violet-400 text-lg mt-1">{subtitle}</p>
-              <p className="text-gray-400 mt-1">Профиль StartupHub</p>
+              <p className="text-gray-400 mt-1">{locationLine ? locationLine : "Профиль StartupHub"}</p>
             </div>
 
             <div className="mt-8 flex justify-center md:justify-start gap-4 flex-wrap">

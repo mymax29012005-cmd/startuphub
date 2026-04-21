@@ -22,7 +22,7 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 min-h-[var(--site-header-height)] border-b border-white/10 bg-[rgba(10,10,15,0.85)] backdrop-blur-xl">
-      <div className="mx-auto flex h-[var(--site-header-height)] max-w-7xl items-center gap-4 px-6">
+      <div className="mx-auto flex h-[var(--site-header-height)] max-w-7xl items-center gap-4 px-4 sm:px-6">
         <div className="flex shrink-0 items-center gap-3">
           <Link href="/" className="inline-flex items-center gap-3 font-semibold tracking-tight text-white">
             <span className="logo-dot inline-block h-4 w-4 shrink-0 rounded-full" />

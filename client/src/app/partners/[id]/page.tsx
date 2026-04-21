@@ -101,7 +101,7 @@ export default function PartnerDetailPage({
 
   return (
     <div className="min-h-screen bg-[#0A0A0F] text-white">
-      <div className="mx-auto max-w-7xl px-6 pb-20 pt-10">
+      <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pb-20 sm:pt-10">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link href="/marketplace?tab=partners" className="text-sm text-gray-400 transition hover:text-white">
             ← Назад в маркетплейс
@@ -130,24 +130,24 @@ export default function PartnerDetailPage({
           <div className="grid gap-12 lg:grid-cols-12">
             <div className="space-y-12 lg:col-span-8">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-2xl font-bold">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-xl font-bold sm:h-14 sm:w-14 sm:text-2xl">
                   {initials(display.name)}
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{display.name}</h1>
-                  <p className="mt-2 text-2xl text-cyan-400">{display.sub}</p>
+                  <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">{display.name}</h1>
+                  <p className="mt-1 text-lg text-cyan-400 sm:mt-2 sm:text-2xl">{display.sub}</p>
                   <p className="mt-3 text-sm text-gray-500">Категория: {item.industry}</p>
                 </div>
               </div>
 
               <div>
-                <h2 className="mb-5 text-3xl font-semibold">Чем мы помогаем стартапам</h2>
-                <p className="text-lg leading-relaxed text-gray-300">{item.description}</p>
+                <h2 className="mb-4 text-2xl font-semibold sm:mb-5 sm:text-3xl">Чем мы помогаем стартапам</h2>
+                <p className="text-base leading-relaxed text-gray-300 sm:text-lg">{item.description}</p>
               </div>
 
               {display.services.length ? (
                 <div>
-                  <h2 className="mb-6 text-3xl font-semibold">Доступные услуги</h2>
+                  <h2 className="mb-5 text-2xl font-semibold sm:mb-6 sm:text-3xl">Доступные услуги</h2>
                   <div className="grid gap-6 md:grid-cols-2">
                     {display.services.map((s) => (
                       <div key={s.title} className="rounded-3xl bg-[#12121A] p-6">
@@ -180,7 +180,7 @@ export default function PartnerDetailPage({
             </div>
 
             <div className="lg:col-span-4">
-              <div className="sticky top-24 rounded-3xl border border-white/10 bg-[#12121A] p-8">
+              <div className="sticky top-24 rounded-3xl border border-white/10 bg-[#12121A] p-6 sm:p-8">
                 <h3 className="mb-6 text-xl font-semibold">Для кого мы подходим</h3>
                 {display.fitFor.length ? (
                   <ul className="space-y-4 text-gray-300">
@@ -193,7 +193,7 @@ export default function PartnerDetailPage({
                 )}
                 <Button
                   type="button"
-                  className="mt-10 w-full rounded-3xl bg-gradient-to-r from-blue-500 to-cyan-500 py-6 text-lg font-semibold hover:brightness-110"
+                  className="mt-8 w-full rounded-3xl bg-gradient-to-r from-blue-500 to-cyan-500 py-5 text-base font-semibold hover:brightness-110 sm:mt-10 sm:py-6 sm:text-lg"
                   onClick={() => {
                     if (!item) return;
                     if (!me) {

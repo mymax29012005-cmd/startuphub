@@ -39,7 +39,7 @@ export function AuctionCard({
     (viewer!.role === "admin" || viewer!.id === auction.startup.ownerId);
 
   return (
-    <Card className="p-5">
+    <Card className="p-5 sm:p-6">
       {canDelete ? (
         <div className="flex justify-end mb-2">
           <DeleteResourceButton apiUrl={`/api/v1/auctions/${auction.id}`} onDeleted={onDeleted!} />
@@ -47,12 +47,12 @@ export function AuctionCard({
       ) : null}
       <Link href={`/auction/${auction.id}`} className="block" aria-label={`Открыть аукцион: ${auction.startup.title}`}>
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <Badge>Аукцион</Badge>
               <Badge>{auction.startup.category}</Badge>
             </div>
-            <div className="mt-3 text-white font-semibold leading-tight">{auction.startup.title}</div>
+            <div className="mt-3 text-white font-semibold leading-tight text-base sm:text-lg truncate">{auction.startup.title}</div>
             <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] line-clamp-2">
               {auction.startup.description}
             </div>
@@ -80,7 +80,7 @@ export function AuctionCard({
         ) : null}
 
         <div className="mt-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-white/5 border border-[rgba(255,255,255,0.12)] overflow-hidden">
+          <div className="h-10 w-10 shrink-0 rounded-2xl bg-white/5 border border-[rgba(255,255,255,0.12)] overflow-hidden">
             {auction.startup.owner.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -90,8 +90,8 @@ export function AuctionCard({
               />
             ) : null}
           </div>
-          <div>
-            <div className="text-sm font-medium text-white">{auction.startup.owner.name}</div>
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-white truncate">{auction.startup.owner.name}</div>
             <div className="text-xs text-[rgba(234,240,255,0.72)]">
               Рейтинг: {auction.startup.owner.rating.toFixed(1)}
             </div>
