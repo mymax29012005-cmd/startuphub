@@ -25,11 +25,13 @@ export default function RegisterPage() {
   const [accountType, setAccountType] = useState<AccountType>("founder");
   const [countryIso, setCountryIso] = useState("RU");
   const [country, setCountry] = useState("Россия");
+  const [countryQuery, setCountryQuery] = useState("Россия");
+  const [countryOpen, setCountryOpen] = useState(false);
 
   // Step 2
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
-  const [cityQuery, setCityQuery] = useState("");
+  const [cityOpen, setCityOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   const [telegram, setTelegram] = useState("");
@@ -41,13 +43,25 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const displayNamesRu = useMemo(() => {
+    try {
+      // eslint-disable-next-line no-restricted-syntax
+      return new Intl.DisplayNames(["ru"], { type: "region" });
+    } catch {
+      return null;
+    }
+  }, []);
+
   const countries = useMemo(() => {
     const list = Country.getAllCountries()
-      .map((c) => ({ isoCode: c.isoCode, name: c.name }))
-      .filter((c) => c.isoCode && c.name)
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .map((c) => {
+        const ru = displayNamesRu?.of(c.isoCode) ?? null;
+        return { isoCode: c.isoCode, nameRu: (ru && ru !== c.isoCode ? ru : c.name) || c.name, nameEn: c.name };
+      })
+      .filter((c) => c.isoCode && c.nameRu)
+      .sort((a, b) => a.nameRu.localeCompare(b.nameRu, "ru"));
     return list;
-  }, []);
+  }, [displayNamesRu]);
 
   const cities = useMemo(() => {
     const list = (City.getCitiesOfCountry(countryIso) ?? [])
@@ -57,20 +71,28 @@ export default function RegisterPage() {
     return Array.from(new Set(list));
   }, [countryIso]);
 
+  const filteredCountries = useMemo(() => {
+    const q = countryQuery.trim().toLowerCase();
+    if (!q) return countries.slice(0, 50);
+    return countries.filter((c) => c.nameRu.toLowerCase().includes(q)).slice(0, 50);
+  }, [countries, countryQuery]);
+
   const filteredCities = useMemo(() => {
-    const q = cityQuery.trim().toLowerCase();
-    if (!q) return cities;
-    return cities.filter((c) => c.toLowerCase().includes(q));
-  }, [cities, cityQuery]);
+    const q = city.trim().toLowerCase();
+    if (!q) return cities.slice(0, 60);
+    return cities.filter((c) => c.toLowerCase().includes(q)).slice(0, 60);
+  }, [cities, city]);
 
   useEffect(() => {
     const found = countries.find((c) => c.isoCode === countryIso);
-    setCountry(found?.name ?? "Россия");
+    const name = found?.nameRu ?? "Россия";
+    setCountry(name);
+    setCountryQuery(name);
   }, [countries, countryIso]);
 
   useEffect(() => {
     setCity("");
-    setCityQuery("");
+    setCityOpen(false);
   }, [countryIso]);
 
   const accountTypeOptions = useMemo(() => {
@@ -261,17 +283,47 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">Страна</label>
-                  <select
-                    value={countryIso}
-                    onChange={(e) => setCountryIso(e.target.value)}
-                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5"
-                  >
-                    {countries.map((c) => (
-                      <option key={c.isoCode} value={c.isoCode}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={countryQuery}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setCountryQuery(v);
+                        setCountry(v);
+                        setCountryOpen(true);
+                        const exact = countries.find((c) => c.nameRu.toLowerCase() === v.trim().toLowerCase());
+                        if (exact?.isoCode) setCountryIso(exact.isoCode);
+                      }}
+                      onFocus={() => setCountryOpen(true)}
+                      onBlur={() => setTimeout(() => setCountryOpen(false), 120)}
+                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                      placeholder="Начните вводить страну…"
+                    />
+                    {countryOpen ? (
+                      <div className="absolute z-30 mt-2 w-full max-h-72 overflow-auto rounded-2xl border border-white/10 bg-[#0A0A0F] shadow-2xl">
+                        {filteredCountries.map((c) => (
+                          <button
+                            key={c.isoCode}
+                            type="button"
+                            className="w-full text-left px-4 py-3 text-sm hover:bg-white/5"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              setCountryIso(c.isoCode);
+                              setCountry(c.nameRu);
+                              setCountryQuery(c.nameRu);
+                              setCountryOpen(false);
+                            }}
+                          >
+                            {c.nameRu}
+                          </button>
+                        ))}
+                        {filteredCountries.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-white/60">Нет совпадений</div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
 
@@ -341,26 +393,40 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">Город</label>
-                    <div className="space-y-3">
+                    <div className="relative">
                       <input
                         type="text"
-                        value={cityQuery}
-                        onChange={(e) => setCityQuery(e.target.value)}
-                        className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-violet-500"
-                        placeholder="Поиск города…"
-                      />
-                      <select
                         value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5"
-                      >
-                        <option value="">Выберите город</option>
-                        {filteredCities.map((name) => (
-                          <option key={name} value={name}>
-                            {name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(e) => {
+                          setCity(e.target.value);
+                          setCityOpen(true);
+                        }}
+                        onFocus={() => setCityOpen(true)}
+                        onBlur={() => setTimeout(() => setCityOpen(false), 120)}
+                        className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                        placeholder={countryIso === "RU" ? "Москва" : "Начните вводить город…"}
+                      />
+                      {cityOpen ? (
+                        <div className="absolute z-30 mt-2 w-full max-h-72 overflow-auto rounded-2xl border border-white/10 bg-[#0A0A0F] shadow-2xl">
+                          {filteredCities.map((name) => (
+                            <button
+                              key={name}
+                              type="button"
+                              className="w-full text-left px-4 py-3 text-sm hover:bg-white/5"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setCity(name);
+                                setCityOpen(false);
+                              }}
+                            >
+                              {name}
+                            </button>
+                          ))}
+                          {filteredCities.length === 0 ? (
+                            <div className="px-4 py-3 text-sm text-white/60">Нет совпадений</div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                   <div>
