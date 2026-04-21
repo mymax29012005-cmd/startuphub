@@ -497,15 +497,15 @@ function MarketplaceInner() {
         </div>
       </div>
 
-      <div className="mt-6 sm:mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
+      <div className="relative z-10 mt-6 sm:mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto sm:gap-6 md:gap-8">
           {visibleTabs.map((t) => {
             const active = t.key === activeTab;
             return (
-              <button
+              <Link
                 key={t.key}
-                type="button"
-                onClick={() => selectTab(t.key)}
+                href={`/marketplace?tab=${t.key}`}
+                scroll={false}
                 className={[
                   "relative whitespace-nowrap px-3 py-2 text-sm transition sm:px-6 sm:py-3 sm:text-lg",
                   active ? "border-b-[3px] border-[#7C3AED] font-semibold text-white" : "text-gray-400 hover:text-white",
@@ -515,14 +515,14 @@ function MarketplaceInner() {
                 {t.key === "moderation" && moderationCount > 0 ? (
                   <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.65)]" />
                 ) : null}
-              </button>
+              </Link>
             );
           })}
         </div>
         <button
           type="button"
           onClick={() => setPostModalOpen(true)}
-          className="w-full shrink-0 rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 sm:w-auto md:px-8 md:text-base"
+          className="relative z-10 w-full shrink-0 rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 sm:w-auto md:px-8 md:text-base"
         >
           Разместить
         </button>
