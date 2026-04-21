@@ -20,6 +20,61 @@ type Me = {
 
 const accountTypes = ["founder", "investor", "partner"] as const;
 
+function latinToCyrRu(input: string) {
+  const s = (input ?? "").trim();
+  if (!s) return "";
+  // quick heuristic: if already has Cyrillic, keep as is
+  if (/[А-Яа-яЁё]/.test(s)) return s;
+
+  let out = s;
+  const reps: Array<[RegExp, string]> = [
+    [/shch/gi, "щ"],
+    [/yo/gi, "ё"],
+    [/zh/gi, "ж"],
+    [/kh/gi, "х"],
+    [/ts/gi, "ц"],
+    [/ch/gi, "ч"],
+    [/sh/gi, "ш"],
+    [/yu/gi, "ю"],
+    [/ya/gi, "я"],
+    [/ye/gi, "е"],
+  ];
+  for (const [r, v] of reps) out = out.replace(r, v);
+  const m: Record<string, string> = {
+    a: "а",
+    b: "б",
+    v: "в",
+    g: "г",
+    d: "д",
+    e: "е",
+    z: "з",
+    i: "и",
+    y: "й",
+    k: "к",
+    l: "л",
+    m: "м",
+    n: "н",
+    o: "о",
+    p: "п",
+    r: "р",
+    s: "с",
+    t: "т",
+    u: "у",
+    f: "ф",
+    h: "х",
+    c: "к",
+    q: "к",
+    w: "в",
+    x: "кс",
+  };
+  out = out.replace(/[A-Za-z]/g, (ch) => {
+    const low = ch.toLowerCase();
+    const rep = m[low] ?? ch;
+    return ch === low ? rep : rep.toUpperCase();
+  });
+  return out;
+}
+
 export default function ProfileSettingsPage() {
   const router = useRouter();
   const { lang, t } = useI18n();
@@ -80,11 +135,23 @@ export default function ProfileSettingsPage() {
     return Array.from(new Set(list));
   }, [countryIso]);
 
+  const cityOptions = useMemo(() => {
+    return cities.map((raw) => {
+      if (countryIso === "RU") {
+        const label = latinToCyrRu(raw);
+        return { raw, label, value: label };
+      }
+      return { raw, label: raw, value: raw };
+    });
+  }, [cities, countryIso]);
+
   const filteredCities = useMemo(() => {
     const q = city.trim().toLowerCase();
-    if (!q) return cities.slice(0, 60);
-    return cities.filter((c) => c.toLowerCase().includes(q)).slice(0, 60);
-  }, [cities, city]);
+    if (!q) return cityOptions.slice(0, 60);
+    return cityOptions
+      .filter((c) => c.label.toLowerCase().includes(q) || c.raw.toLowerCase().includes(q))
+      .slice(0, 60);
+  }, [city, cityOptions]);
 
   const filteredCountries = useMemo(() => {
     const q = countryQuery.trim().toLowerCase();
@@ -251,7 +318,18 @@ export default function ProfileSettingsPage() {
         ) : !me ? (
           <div className="text-center text-gray-400">Войдите, чтобы редактировать профиль.</div>
         ) : (
-          <form onSubmit={onSubmit} className="max-w-2xl mx-auto bg-[#12121A] border border-white/10 rounded-3xl p-6 sm:p-10">
+          <form
+            onSubmit={onSubmit}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              const el = e.target as HTMLElement | null;
+              const tag = el?.tagName?.toLowerCase();
+              if (tag === "textarea") return;
+              // prevent accidental form submit while moving between fields
+              e.preventDefault();
+            }}
+            className="max-w-2xl mx-auto bg-[#12121A] border border-white/10 rounded-3xl p-6 sm:p-10"
+          >
             <div className="grid md:grid-cols-2 gap-10">
               <div className="flex flex-col items-center">
                 <div className="w-40 h-40 bg-gradient-to-br from-violet-500 to-rose-500 rounded-3xl overflow-hidden border-4 border-white/20">
@@ -370,18 +448,18 @@ export default function ProfileSettingsPage() {
                       />
                       {cityOpen ? (
                         <div className="absolute z-30 mt-2 w-full max-h-72 overflow-auto rounded-2xl border border-white/10 bg-[#0A0A0F] shadow-2xl">
-                          {filteredCities.map((name) => (
+                          {filteredCities.map((c) => (
                             <button
-                              key={name}
+                              key={c.raw}
                               type="button"
                               className="w-full text-left px-4 py-3 text-sm hover:bg-white/5"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => {
-                                setCity(name);
+                                setCity(c.value);
                                 setCityOpen(false);
                               }}
                             >
-                              {name}
+                              {c.label}
                             </button>
                           ))}
                           {filteredCities.length === 0 ? (
