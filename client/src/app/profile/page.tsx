@@ -20,6 +20,8 @@ type Me = {
   accountType: "founder" | "investor" | "partner" | "buyer";
   startupsCount: number;
   ideasCount: number;
+  investorRequestsCount?: number;
+  partnerRequestsCount?: number;
 };
 
 type StartupListItem = {
@@ -93,6 +95,50 @@ export default function ProfilePage() {
     return Math.min(100, score);
   }, [me]);
 
+  const meta = useMemo(() => parseBioMeta(me?.bio ?? null), [me?.bio]);
+  const tg = useMemo(() => extractTelegram(me?.bio ?? null), [me?.bio]);
+  const bioText = useMemo(() => stripMetaLines(me?.bio ?? null), [me?.bio]);
+  const locationLine = useMemo(() => [meta.country?.trim(), meta.city?.trim()].filter(Boolean).join(", "), [meta.city, meta.country]);
+
+  const readiness = useMemo(() => {
+    if (!me) {
+      return { pct: 0, filledSegments: 0, segments: 10, hint: "" };
+    }
+    const hasListing =
+      (me.startupsCount ?? 0) +
+        (me.ideasCount ?? 0) +
+        (me.investorRequestsCount ?? 0) +
+        (me.partnerRequestsCount ?? 0) >
+      0;
+
+    const segments = 10;
+    const profileSegments = segments - 1; // last segment is "first listing"
+    const filledProfile = Math.min(profileSegments, Math.floor((profileFill / 100) * profileSegments));
+    const filledSegments = filledProfile + (hasListing ? 1 : 0);
+    const pct = Math.round((filledSegments / segments) * 100);
+
+    const missing: string[] = [];
+    if (!me.avatarUrl) missing.push("фото");
+    if (!me.bio || stripMetaLines(me.bio).length === 0) missing.push("описание");
+    if (!me.phone) missing.push("телефон");
+    if (!tg?.trim()) missing.push("Telegram");
+    if (!meta.skills.length) missing.push("навыки");
+    if (!meta.lookingFor.length) missing.push("что ищу");
+    if (!meta.country?.trim() || !meta.city?.trim()) missing.push("страна/город");
+
+    let hint = "";
+    if (profileFill < 100) {
+      const top = missing.slice(0, 3);
+      hint = top.length ? `Заполните профиль: добавьте ${top.join(", ")}.` : "Заполните профиль до конца.";
+    } else if (!hasListing) {
+      hint = "Профиль готов. Следующий шаг — выложите первую карточку в маркетплейсе.";
+    } else {
+      hint = "Отлично! Профиль активен.";
+    }
+
+    return { pct, filledSegments, segments, hint, hasListing };
+  }, [me, meta, profileFill, tg]);
+
   const exitsCount = useMemo(() => startups.filter((s) => s.stage === "exit").length, [startups]);
   const bidsCount = useMemo(() => activities.filter((a) => a.kind === "bid_placed").length, [activities]);
 
@@ -133,11 +179,6 @@ export default function ProfilePage() {
       </div>
     );
   }
-
-  const tg = extractTelegram(me.bio);
-  const meta = parseBioMeta(me.bio);
-  const bioText = stripMetaLines(me.bio);
-  const locationLine = [meta.country?.trim(), meta.city?.trim()].filter(Boolean).join(", ");
 
   return (
     <div className="bg-[#0A0A0F] text-white min-h-screen">
@@ -224,10 +265,39 @@ export default function ProfilePage() {
                 <div className="text-4xl font-bold text-rose-400">{bidsCount}</div>
                 <div className="text-sm text-gray-400 mt-2">Откликов (ставки)</div>
               </div>
-              <div className="transition hover:-translate-y-1 bg-[#12121A] border border-white/10 rounded-3xl p-6 text-center">
-                <div className="text-4xl font-bold text-amber-400">{profileFill}%</div>
-                <div className="text-sm text-gray-400 mt-2">Заполненность профиля</div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-[#12121A] p-6 sm:p-7">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="text-sm text-gray-400">Готовность профиля</div>
+                  <div className="mt-1 text-2xl font-semibold text-white">{readiness.pct}%</div>
+                </div>
+                <div className="text-right text-xs text-gray-400">
+                  {readiness.hasListing ? "Первое действие выполнено" : "Остался последний шаг"}
+                </div>
               </div>
+
+              <div className="mt-4 flex gap-2">
+                {Array.from({ length: readiness.segments }).map((_, i) => {
+                  const on = i < readiness.filledSegments;
+                  return (
+                    <span
+                      key={i}
+                      className={[
+                        "h-2 flex-1 rounded-full border",
+                        on
+                          ? i === readiness.segments - 1
+                            ? "border-rose-500/40 bg-gradient-to-r from-rose-500 to-violet-500 shadow-[0_0_18px_rgba(225,29,72,0.22)]"
+                            : "border-emerald-500/35 bg-gradient-to-r from-emerald-400 to-cyan-400 shadow-[0_0_16px_rgba(0,245,212,0.16)]"
+                          : "border-white/10 bg-white/5",
+                      ].join(" ")}
+                    />
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 text-sm text-gray-300">{readiness.hint}</div>
             </div>
 
             <div>

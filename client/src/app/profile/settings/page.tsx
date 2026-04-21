@@ -49,6 +49,11 @@ export default function ProfileSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ruCities, setRuCities] = useState<string[] | null>(null);
+  const [pwdCurrent, setPwdCurrent] = useState("");
+  const [pwdNext, setPwdNext] = useState("");
+  const [pwdNext2, setPwdNext2] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState<string | null>(null);
 
   const accountTypeOptions = useMemo(() => {
     return accountTypes.map((x) => ({
@@ -263,6 +268,40 @@ export default function ProfileSettingsPage() {
       setError("Сетевая ошибка");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onChangePassword() {
+    setPwdMsg(null);
+    if (pwdNext.trim().length < 8) {
+      setPwdMsg("Новый пароль должен быть минимум 8 символов");
+      return;
+    }
+    if (pwdNext !== pwdNext2) {
+      setPwdMsg("Пароли не совпадают");
+      return;
+    }
+    setPwdSaving(true);
+    try {
+      const r = await fetch("/api/v1/auth/me/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ currentPassword: pwdCurrent, newPassword: pwdNext }),
+      });
+      const data = (await r.json().catch(() => ({}))) as { error?: string };
+      if (!r.ok) {
+        setPwdMsg(data?.error ?? "Не удалось сменить пароль");
+        return;
+      }
+      setPwdCurrent("");
+      setPwdNext("");
+      setPwdNext2("");
+      setPwdMsg("Пароль обновлён");
+    } catch {
+      setPwdMsg("Сетевая ошибка");
+    } finally {
+      setPwdSaving(false);
     }
   }
 
@@ -494,6 +533,56 @@ export default function ProfileSettingsPage() {
             </div>
 
             {error ? <div className="mt-6 text-sm text-red-300">{error}</div> : null}
+
+            <div className="mt-8 rounded-3xl border border-white/10 bg-[#101017] p-5 sm:p-6">
+              <div className="text-base sm:text-lg font-semibold text-white">Сменить пароль</div>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Текущий пароль</label>
+                  <input
+                    type="password"
+                    value={pwdCurrent}
+                    onChange={(e) => setPwdCurrent(e.target.value)}
+                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
+                    placeholder="Введите текущий пароль"
+                    autoComplete="current-password"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Новый пароль</label>
+                    <input
+                      type="password"
+                      value={pwdNext}
+                      onChange={(e) => setPwdNext(e.target.value)}
+                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
+                      placeholder="Минимум 8 символов"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Повтор нового</label>
+                    <input
+                      type="password"
+                      value={pwdNext2}
+                      onChange={(e) => setPwdNext2(e.target.value)}
+                      className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
+                      placeholder="Повторите пароль"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </div>
+                {pwdMsg ? <div className={pwdMsg === "Пароль обновлён" ? "text-sm text-emerald-300" : "text-sm text-red-300"}>{pwdMsg}</div> : null}
+                <button
+                  type="button"
+                  disabled={pwdSaving || saving || !pwdCurrent || !pwdNext || !pwdNext2}
+                  onClick={() => void onChangePassword()}
+                  className="w-full py-4 text-sm font-semibold rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 disabled:opacity-60"
+                >
+                  {pwdSaving ? "…" : "Сменить пароль"}
+                </button>
+              </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-10 sm:mt-12">
               <button

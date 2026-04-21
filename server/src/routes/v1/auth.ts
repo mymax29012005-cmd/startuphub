@@ -187,12 +187,14 @@ authRouter.get("/me", requireAuth, async (req, res) => {
     });
 
     if (!user) return res.status(404).json({ error: "Пользователь не найден" });
-    const [startupsCount, ideasCount] = await Promise.all([
+    const [startupsCount, ideasCount, investorRequestsCount, partnerRequestsCount] = await Promise.all([
       prisma.startup.count({ where: { ownerId: user.id } }),
       prisma.idea.count({ where: { ownerId: user.id } }),
+      prisma.investorRequest.count({ where: { authorId: user.id } }),
+      prisma.partnerRequest.count({ where: { authorId: user.id } }),
     ]);
 
-    return res.json({ ...user, startupsCount, ideasCount });
+    return res.json({ ...user, startupsCount, ideasCount, investorRequestsCount, partnerRequestsCount });
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
   }
@@ -245,12 +247,14 @@ authRouter.patch("/me", requireAuth, upload.single("avatar"), async (req, res) =
       },
     });
 
-    const [startupsCount, ideasCount] = await Promise.all([
+    const [startupsCount, ideasCount, investorRequestsCount, partnerRequestsCount] = await Promise.all([
       prisma.startup.count({ where: { ownerId: updated.id } }),
       prisma.idea.count({ where: { ownerId: updated.id } }),
+      prisma.investorRequest.count({ where: { authorId: updated.id } }),
+      prisma.partnerRequest.count({ where: { authorId: updated.id } }),
     ]);
 
-    return res.json({ ...updated, startupsCount, ideasCount });
+    return res.json({ ...updated, startupsCount, ideasCount, investorRequestsCount, partnerRequestsCount });
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
   }
@@ -262,6 +266,39 @@ authRouter.delete("/me", requireAuth, async (req, res) => {
     await prisma.user.delete({ where: { id: req.user!.userId } });
     res.clearCookie(env.COOKIE_NAME, { path: "/" });
     return res.status(200).json({ ok: true });
+  } catch (_e) {
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
+});
+
+authRouter.patch("/me/password", requireAuth, async (req, res) => {
+  const parsed = z
+    .object({
+      currentPassword: z.string().min(1).max(128),
+      newPassword: z.string().min(8).max(128),
+    })
+    .safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Неверные данные", details: parsed.error.flatten() });
+  }
+
+  const prisma = getPrisma();
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { passwordHash: true } });
+    if (!user) return res.status(404).json({ error: "Пользователь не найден" });
+
+    const ok = await bcryptjs.compare(parsed.data.currentPassword, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: "Текущий пароль неверный" });
+
+    const nextHash = await bcryptjs.hash(parsed.data.newPassword, 10);
+    await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { passwordHash: nextHash },
+      select: { id: true },
+    });
+
+    return res.json({ ok: true });
   } catch (_e) {
     return res.status(503).json({ error: "База данных недоступна" });
   }
