@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { City, Country } from "country-state-city";
 
 import { accountTypeLabelsByLang } from "@/lib/labelMaps";
 import { composeBio } from "@/lib/profileBio";
 import { useI18n } from "@/i18n/I18nProvider";
 
-const accountTypes = ["founder", "investor", "partner", "buyer"] as const;
+type AccountType = "founder" | "investor" | "partner" | "buyer";
 
 type Step = 1 | 2;
 
@@ -21,7 +22,8 @@ export default function RegisterPage() {
   // Step 1
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [accountType, setAccountType] = useState<(typeof accountTypes)[number]>("founder");
+  const [accountType, setAccountType] = useState<AccountType>("founder");
+  const [countryIso, setCountryIso] = useState("RU");
   const [country, setCountry] = useState("Россия");
 
   // Step 2
@@ -37,6 +39,31 @@ export default function RegisterPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const countries = useMemo(() => {
+    const list = Country.getAllCountries()
+      .map((c) => ({ isoCode: c.isoCode, name: c.name }))
+      .filter((c) => c.isoCode && c.name)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    return list;
+  }, []);
+
+  const cities = useMemo(() => {
+    const list = (City.getCitiesOfCountry(countryIso) ?? [])
+      .map((c) => c.name)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+    return Array.from(new Set(list));
+  }, [countryIso]);
+
+  useEffect(() => {
+    const found = countries.find((c) => c.isoCode === countryIso);
+    setCountry(found?.name ?? "Россия");
+  }, [countries, countryIso]);
+
+  useEffect(() => {
+    setCity("");
+  }, [countryIso]);
 
   const accountTypeOptions = useMemo(() => {
     // В макете нет "Покупатель" — оставляем только 3 роли как в HTML, но backend всё равно принимает buyer.
@@ -214,7 +241,7 @@ export default function RegisterPage() {
                   <label className="block text-sm text-gray-400 mb-2">Я</label>
                   <select
                     value={accountType}
-                    onChange={(e) => setAccountType(e.target.value as (typeof accountTypes)[number])}
+                    onChange={(e) => setAccountType(e.target.value as AccountType)}
                     className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5"
                   >
                     {accountTypeOptions.map((x) => (
@@ -226,10 +253,16 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">Страна</label>
-                  <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5">
-                    <option>Россия</option>
-                    <option>Казахстан</option>
-                    <option>Беларусь</option>
+                  <select
+                    value={countryIso}
+                    onChange={(e) => setCountryIso(e.target.value)}
+                    className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5"
+                  >
+                    {countries.map((c) => (
+                      <option key={c.isoCode} value={c.isoCode}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -302,11 +335,17 @@ export default function RegisterPage() {
                     <label className="block text-sm text-gray-400 mb-2">Город</label>
                     <input
                       type="text"
+                      list="startuphub-cities"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
-                      placeholder="Москва"
+                      placeholder={countryIso === "RU" ? "Москва" : "Начните вводить…"}
                     />
+                    <datalist id="startuphub-cities">
+                      {cities.map((name) => (
+                        <option key={name} value={name} />
+                      ))}
+                    </datalist>
                   </div>
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">Телефон</label>

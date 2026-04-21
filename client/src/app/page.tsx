@@ -340,14 +340,14 @@ export default function Home() {
         auctionGradient={auctionGradientByCategory}
       />
 
-      <section className="hero-bg">
-        <div className="relative mx-auto max-w-6xl px-4 py-36 md:py-44 text-center">
-          <div className="text-4xl font-bold text-white mb-2">Готов запустить свой проект</div>
-          <div className="text-4xl font-bold text-white mb-6">или найти инвестицию?</div>
-          <div className="text-xl text-white/70 mb-10">Присоединяйся к тысячам основателей и инвесторов уже сегодня</div>
+      <section className="hero-bg relative flex min-h-[calc(100dvh-var(--site-header-height))] flex-col justify-center overflow-hidden">
+        <div className="relative mx-auto w-full max-w-6xl px-6 py-14 text-center">
+          <div className="text-4xl font-bold text-white mb-2 md:text-5xl">Готов запустить свой проект</div>
+          <div className="text-4xl font-bold text-white mb-6 md:text-5xl">или найти инвестицию?</div>
+          <div className="text-xl text-white/70 mb-10 md:text-2xl">Присоединяйся к тысячам основателей и инвесторов уже сегодня</div>
           <Link
             href="/register"
-            className="inline-flex items-center justify-center px-12 py-4 rounded-2xl font-semibold bg-white text-black hover:opacity-95 transition"
+            className="inline-flex items-center justify-center px-12 py-5 rounded-2xl font-semibold bg-white text-black hover:opacity-95 transition"
           >
             Начать бесплатно
           </Link>
