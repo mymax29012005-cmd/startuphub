@@ -679,7 +679,6 @@ function MarketplaceInner() {
                     setModDialogOpen(false);
                     setModDialogText("");
                     setModDialogItem(null);
-                    setQueue(null);
                     await ensureLoaded("moderation");
                     setToast({ kind: "ok", text: modDialogMode === "revision" ? "Отправлено на доработку" : "Отклонено" });
                   } catch (e) {
@@ -855,7 +854,7 @@ function MarketplaceInner() {
           {dbError ? <div className="py-12 text-gray-400">База данных недоступна</div> : null}
 
           {!loading && !dbError ? (
-            listIsEmpty ? (
+            activeTab !== "my" && activeTab !== "moderation" && listIsEmpty ? (
               <div className="col-span-full py-12 text-center text-gray-400">В этой категории пока ничего нет</div>
             ) : (
               <div className="flex flex-col gap-4">
@@ -1035,7 +1034,6 @@ function MarketplaceInner() {
                                   const data = (await r.json().catch(() => ({}))) as { error?: string };
                                   if (!r.ok) throw new Error(data.error ?? "Ошибка");
                                   setModSelected(new Set());
-                                  setQueue(null);
                                   await ensureLoaded("moderation");
                                   setModMsg("Массовое одобрение выполнено");
                                 } catch (e) {
@@ -1123,7 +1121,6 @@ function MarketplaceInner() {
                                     });
                                     const data = (await r.json().catch(() => ({}))) as { error?: string };
                                     if (!r.ok) throw new Error(data.error ?? "Ошибка");
-                                    setQueue(null);
                                     await ensureLoaded("moderation");
                                     setModMsg("Одобрено");
                                   } catch (e) {
