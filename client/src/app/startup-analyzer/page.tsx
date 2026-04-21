@@ -72,8 +72,10 @@ function AnalyzerInner() {
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.body.classList.add("cosmic-bg");
+    document.documentElement.classList.add("cosmic-bg");
     return () => {
       document.body.classList.remove("cosmic-bg");
+      document.documentElement.classList.remove("cosmic-bg");
     };
   }, []);
 

@@ -262,7 +262,9 @@ select option {
 }
 
 /* Page-only animated cosmic background (matches design-new/redesign.html) */
+html.marketplace-cosmic-bg,
 body.marketplace-cosmic-bg,
+html.cosmic-bg,
 body.cosmic-bg {
   background: linear-gradient(
     135deg,
@@ -297,7 +299,9 @@ body.cosmic-bg {
   }
 }
 
+html.marketplace-cosmic-bg::before,
 body.marketplace-cosmic-bg::before,
+html.cosmic-bg::before,
 body.cosmic-bg::before {
   content: "";
   position: fixed;

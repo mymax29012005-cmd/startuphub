@@ -108,13 +108,6 @@ type MySubmissionItem = {
   createdAt: string;
 };
 
-type UiNotification = {
-  id: string;
-  type: string;
-  payload: unknown;
-  isRead: boolean;
-  createdAt: string;
-};
 
 function MarketplaceInner() {
   const router = useRouter();
@@ -124,8 +117,10 @@ function MarketplaceInner() {
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.body.classList.add("marketplace-cosmic-bg");
+    document.documentElement.classList.add("marketplace-cosmic-bg");
     return () => {
       document.body.classList.remove("marketplace-cosmic-bg");
+      document.documentElement.classList.remove("marketplace-cosmic-bg");
     };
   }, []);
 
@@ -163,12 +158,10 @@ function MarketplaceInner() {
   const [modStatus, setModStatus] = useState<"" | "pending_moderation" | "needs_revision">("");
   const [modUserId, setModUserId] = useState("");
   const [modSelected, setModSelected] = useState<Set<string>>(new Set());
-  const [notifications, setNotifications] = useState<UiNotification[] | null>(null);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
 
   const visibleTabs = useMemo(() => {
     const out: Array<{ key: TabKey; label: string }> = [...baseTabs];
-    if (me?.id) out.push({ key: "my", label: "Ожидают подтверждения" });
+    if (me?.id && me?.role !== "admin") out.push({ key: "my", label: "Ожидают подтверждения" });
     if (me?.role === "admin") out.push({ key: "moderation", label: "На проверке" });
     return out;
   }, [me?.id, me?.role]);
@@ -230,29 +223,6 @@ function MarketplaceInner() {
     };
   }, [me?.role, activeTab]);
 
-  useEffect(() => {
-    if (!me?.id) return;
-    let cancelled = false;
-    async function tick() {
-      try {
-        if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-        if (activeTab !== "my" && activeTab !== "moderation") return;
-        const r = await fetch("/api/v1/notifications/unread-count", { credentials: "include", cache: "no-store" });
-        if (!r.ok) return;
-        const data = (await r.json()) as { unread?: number };
-        if (!cancelled) setUnreadCount(typeof data.unread === "number" ? data.unread : 0);
-      } catch {
-        // ignore
-      }
-    }
-    void tick();
-    const t = window.setInterval(() => void tick(), 60000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(t);
-    };
-  }, [me?.id, activeTab]);
-
   async function ensureLoaded(tab: TabKey) {
     setDbError(false);
     setLoading(true);
@@ -281,11 +251,6 @@ function MarketplaceInner() {
         const r = await fetch("/api/v1/moderation/my", { credentials: "include", cache: "no-store" });
         if (!r.ok) throw new Error("db");
         setMySubmissions((await r.json()) as MySubmissionItem[]);
-      }
-      if ((tab === "my" || tab === "moderation") && notifications === null && me?.id) {
-        const r = await fetch("/api/v1/notifications", { credentials: "include", cache: "no-store" });
-        if (!r.ok) throw new Error("db");
-        setNotifications((await r.json()) as UiNotification[]);
       }
       if (tab === "moderation" && queue === null) {
         const qs = new URLSearchParams();
@@ -498,7 +463,7 @@ function MarketplaceInner() {
       </div>
 
       <div className="relative z-10 mt-6 sm:mt-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto sm:gap-6 md:gap-8">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-visible pr-2 sm:gap-6 md:gap-8">
           {visibleTabs.map((t) => {
             const active = t.key === activeTab;
             return (
@@ -513,7 +478,7 @@ function MarketplaceInner() {
               >
                 {t.label}
                 {t.key === "moderation" && moderationCount > 0 ? (
-                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.65)]" />
+                  <span className="absolute -right-1 top-0 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.65)]" />
                 ) : null}
               </Link>
             );
@@ -841,65 +806,6 @@ function MarketplaceInner() {
                       );
                     })
                   : null}
-
-                {(activeTab === "my" || activeTab === "moderation") && notifications && notifications.length ? (
-                  <div className="rounded-3xl border border-white/10 bg-[#161618] p-6">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="text-lg font-semibold text-white">
-                        Уведомления {unreadCount > 0 ? <span className="text-rose-300">({unreadCount} новых)</span> : null}
-                      </div>
-                      <button
-                        type="button"
-                        disabled={unreadCount === 0}
-                        onClick={async () => {
-                          try {
-                            await fetch("/api/v1/notifications/read-all", { method: "POST", credentials: "include" });
-                            setNotifications((prev) => (prev ? prev.map((x) => ({ ...x, isRead: true })) : prev));
-                            setUnreadCount(0);
-                          } catch {
-                            // ignore
-                          }
-                        }}
-                        className="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/15 disabled:opacity-60"
-                      >
-                        Прочитать все
-                      </button>
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      {notifications.slice(0, 12).map((n) => (
-                        <button
-                          key={n.id}
-                          type="button"
-                          onClick={async () => {
-                            if (n.isRead) return;
-                            try {
-                              await fetch("/api/v1/notifications/read", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                credentials: "include",
-                                body: JSON.stringify({ id: n.id }),
-                              });
-                              setNotifications((prev) => (prev ? prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)) : prev));
-                              setUnreadCount((c) => Math.max(0, c - 1));
-                            } catch {
-                              // ignore
-                            }
-                          }}
-                          className={[
-                            "w-full rounded-2xl border px-4 py-3 text-left text-sm transition",
-                            n.isRead ? "border-white/10 bg-white/5 text-gray-300" : "border-rose-500/25 bg-rose-500/10 text-white",
-                          ].join(" ")}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="truncate font-medium">{n.type === "moderation_new" ? "Новая заявка на модерацию" : "Обновление статуса карточки"}</div>
-                            <div className="shrink-0 text-xs text-white/50">{new Date(n.createdAt).toLocaleString("ru-RU")}</div>
-                          </div>
-                          <div className="mt-1 text-xs text-white/60 truncate">{JSON.stringify(n.payload)}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
 
                 {activeTab === "moderation"
                   ? (

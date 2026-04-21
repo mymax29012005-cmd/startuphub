@@ -17,10 +17,11 @@ auctionsRouter.get("/", tryAuth, async (req, res) => {
   try {
     const now = new Date();
     const viewer = req.user;
+    const includeAll = req.query.includeAll === "1" || req.query.includeAll === "true";
     const auctions = await prisma.auction.findMany({
       where: {
         isActive: true,
-        ...(viewer?.role === "admin" ? {} : { moderationStatus: "published" }),
+        ...(viewer?.role === "admin" ? (includeAll ? {} : { moderationStatus: "published" }) : { moderationStatus: "published" }),
       },
       orderBy: { startsAt: "asc" },
       take: 50,

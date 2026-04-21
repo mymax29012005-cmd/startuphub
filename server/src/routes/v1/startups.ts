@@ -118,6 +118,7 @@ const updateStartupSchema = z.object({
 startupsRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   const ownerId = typeof req.query.ownerId === "string" ? req.query.ownerId : undefined;
+  const includeAll = req.query.includeAll === "1" || req.query.includeAll === "true";
   try {
     const viewer = req.user;
     const canSeeAllForOwner = ownerId && viewer && (viewer.role === "admin" || viewer.userId === ownerId);
@@ -127,7 +128,9 @@ startupsRouter.get("/", tryAuth, async (req, res) => {
         : ownerId
           ? { ownerId, moderationStatus: "published" }
           : viewer?.role === "admin"
-            ? undefined
+            ? includeAll
+              ? undefined
+              : { moderationStatus: "published" }
             : { moderationStatus: "published" },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -277,7 +280,7 @@ startupsRouter.post("/", requireAuth, async (req, res) => {
       if (a.userId !== req.user!.userId) return res.status(403).json({ error: "Доступ запрещен" });
     }
 
-    const nextStatus = data.submitMode === "draft" ? "draft" : "pending_moderation";
+    const nextStatus = req.user!.role === "admin" ? "published" : data.submitMode === "draft" ? "draft" : "pending_moderation";
     const created = await prisma.startup.create({
       data: {
         title: data.title,
@@ -315,7 +318,7 @@ startupsRouter.post("/", requireAuth, async (req, res) => {
       });
     }
 
-    if (nextStatus !== "draft") {
+    if (nextStatus === "pending_moderation") {
       await prisma.moderationEvent.create({
         data: { entityType: "startup", entityId: created.id, action: "submitted", actorId: req.user!.userId },
       });
@@ -495,23 +498,25 @@ startupsRouter.post("/:startupId/auction", requireAuth, async (req, res) => {
         startsAt,
         registrationEndsAt,
         endsAt: null,
-        moderationStatus: "pending_moderation",
+        moderationStatus: req.user!.role === "admin" ? "published" : "pending_moderation",
       },
       select: { id: true },
     });
 
-    await prisma.moderationEvent.create({
-      data: { entityType: "auction", entityId: created.id, action: "submitted", actorId: req.user!.userId },
-    });
-    const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
-    await Promise.all(
-      admins.map((a) =>
-        prisma.notification.create({
-          data: { userId: a.id, type: "moderation_new", payload: { entityType: "auction", entityId: created.id } },
-          select: { id: true },
-        }),
-      ),
-    );
+    if (req.user!.role !== "admin") {
+      await prisma.moderationEvent.create({
+        data: { entityType: "auction", entityId: created.id, action: "submitted", actorId: req.user!.userId },
+      });
+      const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { id: true } });
+      await Promise.all(
+        admins.map((a) =>
+          prisma.notification.create({
+            data: { userId: a.id, type: "moderation_new", payload: { entityType: "auction", entityId: created.id } },
+            select: { id: true },
+          }),
+        ),
+      );
+    }
 
     return res.status(201).json({ id: created.id });
   } catch (_e) {

@@ -72,6 +72,7 @@ const updateIdeaSchema = z.object({
 ideasRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   const ownerId = typeof req.query.ownerId === "string" ? req.query.ownerId : undefined;
+  const includeAll = req.query.includeAll === "1" || req.query.includeAll === "true";
   try {
     const viewer = req.user;
     const canSeeAllForOwner = ownerId && viewer && (viewer.role === "admin" || viewer.userId === ownerId);
@@ -81,7 +82,9 @@ ideasRouter.get("/", tryAuth, async (req, res) => {
         : ownerId
           ? { ownerId, moderationStatus: "published" }
           : viewer?.role === "admin"
-            ? undefined
+            ? includeAll
+              ? undefined
+              : { moderationStatus: "published" }
             : { moderationStatus: "published" },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -213,7 +216,7 @@ ideasRouter.post("/", requireAuth, async (req, res) => {
       if (a.userId !== req.user!.userId) return res.status(403).json({ error: "Доступ запрещен" });
     }
 
-    const nextStatus = data.submitMode === "draft" ? "draft" : "pending_moderation";
+    const nextStatus = req.user!.role === "admin" ? "published" : data.submitMode === "draft" ? "draft" : "pending_moderation";
     const created = await prisma.idea.create({
       data: {
         title: data.title,
@@ -240,7 +243,7 @@ ideasRouter.post("/", requireAuth, async (req, res) => {
       });
     }
 
-    if (nextStatus !== "draft") {
+    if (nextStatus === "pending_moderation") {
       await prisma.moderationEvent.create({
         data: { entityType: "idea", entityId: created.id, action: "submitted", actorId: req.user!.userId },
       });

@@ -77,10 +77,13 @@ partnersRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
   try {
     const viewer = req.user;
+    const includeAll = req.query.includeAll === "1" || req.query.includeAll === "true";
     const items = await prisma.partnerRequest.findMany({
       where:
         viewer?.role === "admin"
-          ? undefined
+          ? includeAll
+            ? undefined
+            : { moderationStatus: "published" }
           : {
               moderationStatus: "published",
             },
@@ -143,7 +146,7 @@ partnersRouter.post("/", requireAuth, async (req, res) => {
       .json({ error: "Неверные данные", details: parsed.error.flatten() });
   }
   try {
-    const nextStatus = parsed.data.submitMode === "draft" ? "draft" : "pending_moderation";
+    const nextStatus = req.user!.role === "admin" ? "published" : parsed.data.submitMode === "draft" ? "draft" : "pending_moderation";
     const created = await prisma.partnerRequest.create({
       data: {
         role: parsed.data.role,
@@ -161,7 +164,7 @@ partnersRouter.post("/", requireAuth, async (req, res) => {
         data: { partnerRequestId: created.id },
       });
     }
-    if (nextStatus !== "draft") {
+    if (nextStatus === "pending_moderation") {
       await prisma.moderationEvent.create({
         data: { entityType: "partner", entityId: created.id, action: "submitted", actorId: req.user!.userId },
       });
