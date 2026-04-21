@@ -114,6 +114,22 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stats?.startupsCount, stats?.ideasCount, stats?.investorsCount, stats?.partnersCount]);
 
+  useEffect(() => {
+    // "How it works" scroll reveal (like redesign.html)
+    const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-how-card]"));
+    if (!cards.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) (e.target as HTMLElement).classList.add("how-show");
+        }
+      },
+      { threshold: 0.3 },
+    );
+    cards.forEach((c) => obs.observe(c));
+    return () => obs.disconnect();
+  }, []);
+
   function fmtMoney(v: number) {
     return Number(v || 0).toLocaleString("ru-RU");
   }
@@ -168,17 +184,10 @@ export default function Home() {
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
             <div className="space-y-6 md:space-y-8">
               {!loading ? (
-                stats && stats.activeAuctions > 0 ? (
-                  <div className="inline-flex items-center gap-2 rounded-3xl border border-white/10 bg-white/10 px-5 py-2 text-sm backdrop-blur-md">
-                    <span className="text-emerald-400">●</span>
-                    Уже {stats.activeAuctions} активных аукционов
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-2 rounded-3xl border border-white/10 bg-white/10 px-5 py-2 text-sm text-white/80 backdrop-blur-md">
-                    <span className="text-white/40">●</span>
-                    Аукционы — в разделе «Аукционы»
-                  </div>
-                )
+                <div className="inline-flex items-center gap-2 rounded-3xl border border-white/10 bg-white/10 px-5 py-2 text-sm text-white/80 backdrop-blur-md">
+                  <span className="text-emerald-400">●</span>
+                  Строим будущее стартапов
+                </div>
               ) : null}
               <h1 className="hero-title text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl lg:text-7xl lg:leading-[1.05]">
                 <span className="hero-shine" data-text="Запусти стартап.">
@@ -217,7 +226,7 @@ export default function Home() {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="text-white/60 text-sm">Активных проектов</div>
-                    <div className="counter text-3xl font-bold text-white">
+                    <div className="counter stat-number text-3xl font-bold">
                       {loading && !stats ? "—" : counters.activeProjects.toLocaleString("ru-RU")}
                     </div>
                   </div>
@@ -226,7 +235,7 @@ export default function Home() {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="text-white/60 text-sm">Количество проектов</div>
-                    <div className="counter text-3xl font-bold text-white">
+                    <div className="counter stat-number text-3xl font-bold">
                       {loading && !stats ? "—" : counters.projectsTotal.toLocaleString("ru-RU")}
                     </div>
                   </div>
@@ -235,7 +244,7 @@ export default function Home() {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="text-white/60 text-sm">Инвесторы и партнёры</div>
-                    <div className="counter text-3xl font-bold text-white">
+                    <div className="counter stat-number text-3xl font-bold">
                       {loading && !stats ? "—" : counters.investorsPartners.toLocaleString("ru-RU")}
                     </div>
                   </div>
@@ -259,36 +268,48 @@ export default function Home() {
             <h2 className="text-4xl font-bold text-white mb-4">Как это работает</h2>
             <p className="text-white/60 text-lg">Простой путь от идеи до сделки за 4 шага</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="how-timeline mt-10">
             {[
               {
                 n: 1,
                 nBg: "bg-[#7c3aed]/20 text-[#a78bfa]",
+                icon: "🚀",
                 title: "Создай профиль",
                 text: "За 60 секунд расскажи о себе и своём проекте",
               },
               {
                 n: 2,
                 nBg: "bg-[#e11d48]/20 text-[#fb7185]",
+                icon: "🧩",
                 title: "Размести проект",
                 text: "Или сразу выставь долю на аукцион",
               },
               {
                 n: 3,
                 nBg: "bg-[#00f5d4]/15 text-[#00f5d4]",
+                icon: "🤝",
                 title: "Получай отклики",
                 text: "От инвесторов и партнёров в реальном времени",
               },
               {
                 n: 4,
                 nBg: "bg-[#f59e0b]/20 text-[#fbbf24]",
+                icon: "📈",
                 title: "Закрой сделку",
                 text: "Прозрачно и безопасно через платформу",
               },
-            ].map((s) => (
-              <div key={s.n} className="glass border border-white/10 rounded-3xl p-8 card-hover">
-                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl font-bold ${s.nBg}`}>
-                  {s.n}
+            ].map((s, idx) => (
+              <div
+                key={s.n}
+                data-how-card
+                className={[
+                  "how-card glass border border-white/10 rounded-3xl p-8 card-hover",
+                  idx % 2 === 0 ? "how-left" : "how-right",
+                ].join(" ")}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl">{s.icon}</div>
+                  <div className={`inline-flex items-center justify-center w-11 h-11 rounded-2xl font-bold ${s.nBg}`}>{s.n}</div>
                 </div>
                 <div className="mt-6 text-2xl font-bold text-white">{s.title}</div>
                 <div className="mt-3 text-white/65 leading-relaxed">{s.text}</div>
@@ -309,7 +330,7 @@ export default function Home() {
       />
 
       <section className="hero-bg">
-        <div className="relative mx-auto max-w-6xl px-4 py-20 text-center">
+        <div className="relative mx-auto max-w-6xl px-4 py-28 md:py-36 text-center">
           <div className="text-4xl font-bold text-white mb-2">Готов запустить свой проект</div>
           <div className="text-4xl font-bold text-white mb-6">или найти инвестицию?</div>
           <div className="text-xl text-white/70 mb-10">Присоединяйся к тысячам основателей и инвесторов уже сегодня</div>

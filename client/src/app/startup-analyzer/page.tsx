@@ -69,6 +69,14 @@ function AnalyzerInner() {
   const { t, lang } = useI18n();
   const [me, setMe] = useState<{ id: string; role: "user" | "admin" } | null>(null);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.add("cosmic-bg");
+    return () => {
+      document.body.classList.remove("cosmic-bg");
+    };
+  }, []);
+
   const returnTo = searchParams.get("returnTo");
   const returnMode = searchParams.get("mode") as "startup" | "idea" | null;
 

@@ -123,6 +123,81 @@ select option {
   }
 }
 
+/* Home "How it works" vertical timeline with center arrow */
+.how-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  padding: 6px 0 26px;
+}
+
+.how-timeline::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 4px;
+  height: calc(100% - 22px);
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.85), rgba(225, 29, 72, 0.55), rgba(0, 245, 212, 0.35));
+  box-shadow: 0 0 26px rgba(124, 58, 237, 0.25);
+}
+
+.how-timeline::after {
+  /* Arrow down */
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 18px solid rgba(124, 58, 237, 0.9);
+  filter: drop-shadow(0 0 18px rgba(124, 58, 237, 0.35));
+}
+
+.how-card {
+  width: 46%;
+  opacity: 0;
+  transform: translateY(60px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.how-card.how-show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.how-left {
+  align-self: flex-start;
+}
+.how-right {
+  align-self: flex-end;
+}
+
+@media (max-width: 900px) {
+  .how-timeline::before {
+    left: 18px;
+    transform: none;
+  }
+  .how-timeline::after {
+    left: 18px;
+    transform: translateX(-50%);
+  }
+  .how-card {
+    width: 100%;
+    padding-left: 62px;
+  }
+  .how-left,
+  .how-right {
+    align-self: flex-start;
+  }
+}
+
 .gradient-text {
   background: linear-gradient(to right, #7c3aed, #e11d48);
   -webkit-background-clip: text;
@@ -182,8 +257,9 @@ select option {
   }
 }
 
-/* Marketplace: page-only animated cosmic background (matches design-new/redesign.html) */
-body.marketplace-cosmic-bg {
+/* Page-only animated cosmic background (matches design-new/redesign.html) */
+body.marketplace-cosmic-bg,
+body.cosmic-bg {
   background: linear-gradient(
     135deg,
     #06060e 0%,
@@ -217,7 +293,8 @@ body.marketplace-cosmic-bg {
   }
 }
 
-body.marketplace-cosmic-bg::before {
+body.marketplace-cosmic-bg::before,
+body.cosmic-bg::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -254,6 +331,15 @@ body.marketplace-cosmic-bg::before {
 
 .counter {
   font-variant-numeric: tabular-nums;
+}
+
+/* Home stats digits: brighter + premium glow */
+.stat-number {
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow:
+    0 0 18px rgba(255, 255, 255, 0.22),
+    0 0 34px rgba(124, 58, 237, 0.26),
+    0 0 44px rgba(0, 245, 212, 0.12);
 }
 
 .section-dark {

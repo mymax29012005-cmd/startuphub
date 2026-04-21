@@ -18,6 +18,14 @@ export default function FavoritesPage() {
   const [dbError, setDbError] = useState(false);
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.add("cosmic-bg");
+    return () => {
+      document.body.classList.remove("cosmic-bg");
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     async function run() {
       try {

@@ -58,6 +58,14 @@ export default function AuctionDetailPage({
   const [auction, setAuction] = useState<AuctionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.add("cosmic-bg");
+    return () => {
+      document.body.classList.remove("cosmic-bg");
+    };
+  }, []);
   const [bidAmount, setBidAmount] = useState("");
   const [acting, setActing] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
