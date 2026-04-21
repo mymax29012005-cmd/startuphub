@@ -13,58 +13,8 @@ type AccountType = "founder" | "investor" | "partner" | "buyer";
 
 type Step = 1 | 2;
 
-function latinToCyrRu(input: string) {
-  const s = (input ?? "").trim();
-  if (!s) return "";
-  if (/[А-Яа-яЁё]/.test(s)) return s;
-
-  let out = s;
-  const reps: Array<[RegExp, string]> = [
-    [/shch/gi, "щ"],
-    [/yo/gi, "ё"],
-    [/zh/gi, "ж"],
-    [/kh/gi, "х"],
-    [/ts/gi, "ц"],
-    [/ch/gi, "ч"],
-    [/sh/gi, "ш"],
-    [/yu/gi, "ю"],
-    [/ya/gi, "я"],
-    [/ye/gi, "е"],
-  ];
-  for (const [r, v] of reps) out = out.replace(r, v);
-  const m: Record<string, string> = {
-    a: "а",
-    b: "б",
-    v: "в",
-    g: "г",
-    d: "д",
-    e: "е",
-    z: "з",
-    i: "и",
-    y: "й",
-    k: "к",
-    l: "л",
-    m: "м",
-    n: "н",
-    o: "о",
-    p: "п",
-    r: "р",
-    s: "с",
-    t: "т",
-    u: "у",
-    f: "ф",
-    h: "х",
-    c: "к",
-    q: "к",
-    w: "в",
-    x: "кс",
-  };
-  out = out.replace(/[A-Za-z]/g, (ch) => {
-    const low = ch.toLowerCase();
-    const rep = m[low] ?? ch;
-    return ch === low ? rep : rep.toUpperCase();
-  });
-  return out;
+function normRu(s: string) {
+  return (s ?? "").trim().toLowerCase().replace(/ё/g, "е");
 }
 
 export default function RegisterPage() {
@@ -96,6 +46,7 @@ export default function RegisterPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [ruCities, setRuCities] = useState<string[] | null>(null);
 
   const displayNamesRu = useMemo(() => {
     try {
@@ -118,22 +69,16 @@ export default function RegisterPage() {
   }, [displayNamesRu]);
 
   const cities = useMemo(() => {
-    const list = (City.getCitiesOfCountry(countryIso) ?? [])
-      .map((c) => c.name)
+    const base =
+      countryIso === "RU"
+        ? ruCities ?? []
+        : (City.getCitiesOfCountry(countryIso) ?? []).map((c) => c.name).filter(Boolean);
+    const list = base
+      .map((x) => String(x).trim())
       .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b));
+      .sort((a, b) => a.localeCompare(b, "ru"));
     return Array.from(new Set(list));
-  }, [countryIso]);
-
-  const cityOptions = useMemo(() => {
-    return cities.map((raw) => {
-      if (countryIso === "RU") {
-        const label = latinToCyrRu(raw);
-        return { raw, label, value: label };
-      }
-      return { raw, label: raw, value: raw };
-    });
-  }, [cities, countryIso]);
+  }, [countryIso, ruCities]);
 
   const filteredCountries = useMemo(() => {
     const q = countryQuery.trim().toLowerCase();
@@ -142,12 +87,10 @@ export default function RegisterPage() {
   }, [countries, countryQuery]);
 
   const filteredCities = useMemo(() => {
-    const q = city.trim().toLowerCase();
-    if (!q) return cityOptions.slice(0, 60);
-    return cityOptions
-      .filter((c) => c.label.toLowerCase().includes(q) || c.raw.toLowerCase().includes(q))
-      .slice(0, 60);
-  }, [city, cityOptions]);
+    const q = normRu(city);
+    if (!q) return cities.slice(0, 60);
+    return cities.filter((c) => normRu(c).includes(q)).slice(0, 60);
+  }, [cities, city]);
 
   useEffect(() => {
     const found = countries.find((c) => c.isoCode === countryIso);
@@ -160,6 +103,30 @@ export default function RegisterPage() {
     setCity("");
     setCityOpen(false);
   }, [countryIso]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRuCities() {
+      if (countryIso !== "RU") {
+        setRuCities(null);
+        return;
+      }
+      if (ruCities && ruCities.length) return;
+      try {
+        const r = await fetch("https://raw.githubusercontent.com/pensnarik/russian-cities/master/russian-cities.json", { cache: "force-cache" });
+        if (!r.ok) return;
+        const data = (await r.json()) as Array<{ name?: string }>;
+        const names = Array.isArray(data) ? data.map((x) => String(x?.name ?? "").trim()).filter(Boolean) : [];
+        if (!cancelled) setRuCities(names);
+      } catch {
+        // ignore
+      }
+    }
+    void loadRuCities();
+    return () => {
+      cancelled = true;
+    };
+  }, [countryIso, ruCities]);
 
   const accountTypeOptions = useMemo(() => {
     // В макете нет "Покупатель" — оставляем только 3 роли как в HTML, но backend всё равно принимает buyer.
@@ -474,18 +441,18 @@ export default function RegisterPage() {
                       />
                       {cityOpen ? (
                         <div className="absolute z-30 mt-2 w-full max-h-72 overflow-auto rounded-2xl border border-white/10 bg-[#0A0A0F] shadow-2xl">
-                          {filteredCities.map((c) => (
+                          {filteredCities.map((name) => (
                             <button
-                              key={c.raw}
+                              key={name}
                               type="button"
                               className="w-full text-left px-4 py-3 text-sm hover:bg-white/5"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => {
-                                setCity(c.value);
+                                setCity(name);
                                 setCityOpen(false);
                               }}
                             >
-                              {c.label}
+                              {name}
                             </button>
                           ))}
                           {filteredCities.length === 0 ? (
