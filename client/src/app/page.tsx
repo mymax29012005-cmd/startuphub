@@ -121,10 +121,12 @@ export default function Home() {
     const obs = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          if (e.isIntersecting) (e.target as HTMLElement).classList.add("how-show");
+          const el = e.target as HTMLElement;
+          if (e.isIntersecting) el.classList.add("how-show");
+          else el.classList.remove("how-show");
         }
       },
-      { threshold: 0.3 },
+      { threshold: 0.28 },
     );
     cards.forEach((c) => obs.observe(c));
     return () => obs.disconnect();
@@ -185,7 +187,7 @@ export default function Home() {
             <div className="space-y-6 md:space-y-8">
               {!loading ? (
                 <div className="inline-flex items-center gap-2 rounded-3xl border border-white/10 bg-white/10 px-5 py-2 text-sm text-white/80 backdrop-blur-md">
-                  <span className="text-emerald-400">●</span>
+                  <span className="status-dot" aria-hidden />
                   Строим будущее стартапов
                 </div>
               ) : null}
@@ -226,7 +228,7 @@ export default function Home() {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="text-white/60 text-sm">Активных проектов</div>
-                    <div className="counter stat-number text-3xl font-bold">
+                    <div className="counter stat-number stat-green text-3xl font-bold">
                       {loading && !stats ? "—" : counters.activeProjects.toLocaleString("ru-RU")}
                     </div>
                   </div>
@@ -235,7 +237,7 @@ export default function Home() {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="text-white/60 text-sm">Количество проектов</div>
-                    <div className="counter stat-number text-3xl font-bold">
+                    <div className="counter stat-number stat-rose text-3xl font-bold">
                       {loading && !stats ? "—" : counters.projectsTotal.toLocaleString("ru-RU")}
                     </div>
                   </div>
@@ -244,7 +246,7 @@ export default function Home() {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="text-white/60 text-sm">Инвесторы и партнёры</div>
-                    <div className="counter stat-number text-3xl font-bold">
+                    <div className="counter stat-number stat-violet text-3xl font-bold">
                       {loading && !stats ? "—" : counters.investorsPartners.toLocaleString("ru-RU")}
                     </div>
                   </div>
@@ -266,7 +268,9 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Как это работает</h2>
-            <p className="text-white/60 text-lg">Простой путь от идеи до сделки за 4 шага</p>
+            <p className="text-white/60 text-lg">
+              Платформа объединяет основателей стартапов, инвесторов и предпринимателей. Всё необходимое для развития проекта — в одном месте.
+            </p>
           </div>
           <div className="how-timeline mt-10">
             {[
@@ -274,29 +278,43 @@ export default function Home() {
                 n: 1,
                 nBg: "bg-[#7c3aed]/20 text-[#a78bfa]",
                 icon: "🚀",
-                title: "Создай профиль",
-                text: "За 60 секунд расскажи о себе и своём проекте",
+                title: "Создайте профиль",
+                text: "Расскажите о себе, своём опыте и направлениях деятельности. Профиль помогает участникам платформы быстро понять, с кем они взаимодействуют.",
               },
               {
                 n: 2,
                 nBg: "bg-[#e11d48]/20 text-[#fb7185]",
                 icon: "🧩",
-                title: "Размести проект",
-                text: "Или сразу выставь долю на аукцион",
+                title: "Опубликуйте проект",
+                text: "Разместите стартап, идею или действующий продукт. Опишите потенциал проекта, цели и условия сотрудничества.",
               },
               {
                 n: 3,
                 nBg: "bg-[#00f5d4]/15 text-[#00f5d4]",
                 icon: "🤝",
-                title: "Получай отклики",
-                text: "От инвесторов и партнёров в реальном времени",
+                title: "Представьте проект сообществу",
+                text: "Ваш проект становится доступен предпринимателям, инвесторам и специалистам, которые ищут новые возможности и перспективные идеи.",
               },
               {
                 n: 4,
                 nBg: "bg-[#f59e0b]/20 text-[#fbbf24]",
                 icon: "📈",
-                title: "Закрой сделку",
-                text: "Прозрачно и безопасно через платформу",
+                title: "Получайте предложения",
+                text: "Участники платформы могут предложить инвестиции, партнёрство или участие в развитии проекта.",
+              },
+              {
+                n: 5,
+                nBg: "bg-[#ef4444]/20 text-[#fca5a5]",
+                icon: "🧾",
+                title: "Заключайте договорённости",
+                text: "Обсуждайте условия сотрудничества и находите решения, которые помогут вашему проекту расти.",
+              },
+              {
+                n: 6,
+                nBg: "bg-[#3b82f6]/20 text-[#93c5fd]",
+                icon: "🌐",
+                title: "Развивайте бизнес",
+                text: "Используйте платформу как точку взаимодействия с людьми, которые могут ускорить развитие вашего стартапа.",
               },
             ].map((s, idx) => (
               <div
