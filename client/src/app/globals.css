@@ -346,6 +346,27 @@ body.profile-cosmic-bg::before {
   }
 }
 
+/* Profile readiness bar: animated flowing gradient fill */
+.profile-readiness-flow {
+  background-image: linear-gradient(90deg, #22c55e, #06b6d4, #7c3aed, #e11d48);
+  background-size: 220% 100%;
+  animation: profileReadinessFlow 5.5s linear infinite;
+  box-shadow:
+    0 0 18px rgba(34, 197, 94, 0.12),
+    0 0 22px rgba(6, 182, 212, 0.10),
+    0 0 26px rgba(124, 58, 237, 0.14),
+    0 0 32px rgba(225, 29, 72, 0.10);
+}
+
+@keyframes profileReadinessFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
 @keyframes marketplaceCombinedFlow {
   0% {
     background-position: 0% 0%;

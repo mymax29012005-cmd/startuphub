@@ -210,7 +210,7 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={() => void onLogout()}
-            className="px-6 py-3 text-sm font-medium rounded-2xl border border-white/30 hover:bg-white/10"
+            className="px-6 py-3 text-sm font-semibold rounded-2xl bg-white/10 hover:bg-white/15 transition"
           >
             Выйти
           </button>
@@ -231,7 +231,11 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-3xl font-bold truncate">{me.name}</h1>
+                  <h1 className="text-3xl font-bold truncate">
+                    <span className="hero-shine gradient-text" data-text={me.name}>
+                      {me.name}
+                    </span>
+                  </h1>
                   <p className="text-violet-400 text-lg mt-1">{subtitle}</p>
                   <p className="text-gray-400 mt-1">{locationLine ? locationLine : "Профиль StartupHub"}</p>
                 </div>
@@ -240,14 +244,14 @@ export default function ProfilePage() {
               <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto md:justify-end">
                 <Link
                   href="/profile/settings"
-                  className="w-full sm:w-auto px-7 py-4 bg-white/10 hover:bg-white/20 rounded-3xl font-medium flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-7 py-4 rounded-3xl font-semibold text-white bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(124,58,237,0.18)]"
                 >
                   ✎ Редактировать
                 </Link>
                 <button
                   type="button"
                   onClick={() => void onShare()}
-                  className="w-full sm:w-auto px-7 py-4 border border-white/30 hover:bg-white/10 rounded-3xl font-medium"
+                  className="w-full sm:w-auto px-7 py-4 rounded-3xl font-semibold border border-white/15 bg-white/5 hover:bg-white/10 transition"
                 >
                   Поделиться
                 </button>
@@ -255,7 +259,11 @@ export default function ProfilePage() {
             </div>
 
             <div className="mt-7">
-              <div className="text-sm font-semibold text-white/90">О себе</div>
+              <div className="text-sm font-semibold text-white/90">
+                <span className="hero-shine gradient-text" data-text="О себе">
+                  О себе
+                </span>
+              </div>
               <p className="mt-3 text-gray-300 leading-relaxed">
                 {bioText ? bioText : "Расскажите о себе — это поможет инвесторам и партнёрам быстрее понять, чем вы занимаетесь."}
               </p>
@@ -263,26 +271,54 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            <div className="transition hover:-translate-y-1 bg-[#12121A] border border-white/10 rounded-3xl p-6 text-center">
-              <div className="text-4xl font-bold text-violet-400">{me.startupsCount}</div>
-              <div className="text-sm text-gray-400 mt-2">Стартапа</div>
-            </div>
-            <div className="transition hover:-translate-y-1 bg-[#12121A] border border-white/10 rounded-3xl p-6 text-center">
-              <div className="text-4xl font-bold text-emerald-400">{me.startupsCount + me.ideasCount}</div>
-              <div className="text-sm text-gray-400 mt-2">Проектов</div>
-            </div>
-            <div className="transition hover:-translate-y-1 bg-[#12121A] border border-white/10 rounded-3xl p-6 text-center">
-              <div className="text-4xl font-bold text-rose-400">
-                {(me.investorRequestsCount ?? 0) + (me.partnerRequestsCount ?? 0)}
+            {(
+              [
+                {
+                  k: "startups",
+                  n: me.startupsCount,
+                  color: "text-violet-400",
+                  label: "Стартапа",
+                  tip: "Количество выложенных стартапов",
+                },
+                {
+                  k: "projects",
+                  n: me.startupsCount + me.ideasCount,
+                  color: "text-emerald-400",
+                  label: "Проектов",
+                  tip: "Стартапы + идеи (всего проектов)",
+                },
+                {
+                  k: "requests",
+                  n: (me.investorRequestsCount ?? 0) + (me.partnerRequestsCount ?? 0),
+                  color: "text-rose-400",
+                  label: "Запросов",
+                  tip: "Инвесторы + партнёры (всего запросов)",
+                },
+              ] as const
+            ).map((x) => (
+              <div
+                key={x.k}
+                className="group relative card-hover transition bg-[#12121A] border border-white/10 rounded-3xl p-6 text-center hover:border-violet-500/25"
+              >
+                <div className={["text-4xl font-bold", x.color].join(" ")}>{x.n}</div>
+                <div className="text-sm text-gray-400 mt-2">{x.label}</div>
+
+                <div className="pointer-events-none absolute left-1/2 top-0 z-20 hidden w-[260px] -translate-x-1/2 -translate-y-3/4 rounded-2xl border border-white/10 bg-[#0f0f17]/95 px-4 py-3 text-left text-xs text-gray-200 shadow-2xl backdrop-blur-md group-hover:block">
+                  {x.tip}
+                  <div className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border-r border-b border-white/10 bg-[#0f0f17]/95" />
+                </div>
               </div>
-              <div className="text-sm text-gray-400 mt-2">Запросов</div>
-            </div>
+            ))}
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-[#12121A] p-6 sm:p-7">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="text-sm text-gray-400">Готовность профиля</div>
+                <div className="text-sm text-gray-400">
+                  <span className="hero-shine gradient-text" data-text="Готовность профиля">
+                    Готовность профиля
+                  </span>
+                </div>
                 <div className="mt-1 text-2xl font-semibold text-white">{readiness.pct}%</div>
               </div>
               <div className="text-right text-xs text-gray-400">
@@ -290,23 +326,21 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-4 flex gap-2">
-              {Array.from({ length: readiness.segments }).map((_, i) => {
-                const on = i < readiness.filledSegments;
-                return (
-                  <span
-                    key={i}
-                    className={[
-                      "h-2 flex-1 rounded-full border",
-                      on
-                        ? i === readiness.segments - 1
-                          ? "border-rose-500/40 bg-gradient-to-r from-rose-500 to-violet-500 shadow-[0_0_18px_rgba(225,29,72,0.22)]"
-                          : "border-emerald-500/35 bg-gradient-to-r from-emerald-400 to-cyan-400 shadow-[0_0_16px_rgba(0,245,212,0.16)]"
-                        : "border-white/10 bg-white/5",
-                    ].join(" ")}
+            <div className="mt-4">
+              <div className="relative h-2">
+                <div className="absolute inset-0 rounded-full border border-white/10 bg-white/5" />
+                <div className="absolute inset-0 overflow-hidden rounded-full">
+                  <div
+                    className="h-full profile-readiness-flow"
+                    style={{ width: `${Math.max(0, Math.min(1, readiness.filledSegments / readiness.segments)) * 100}%` }}
                   />
-                );
-              })}
+                </div>
+                <div className="absolute inset-0 flex gap-2">
+                  {Array.from({ length: readiness.segments }).map((_, i) => (
+                    <span key={i} className="h-2 flex-1 rounded-full border border-white/10 bg-transparent" />
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="mt-4 text-sm text-gray-300">{readiness.hint}</div>
@@ -314,7 +348,11 @@ export default function ProfilePage() {
 
           <div className="rounded-3xl border border-white/10 bg-[#12121A] p-7 sm:p-8">
             <div className="flex items-center justify-between mb-6 gap-4">
-              <h2 className="text-xl font-semibold">Мои проекты</h2>
+              <h2 className="text-xl font-semibold">
+                <span className="hero-shine gradient-text" data-text="Мои проекты">
+                  Мои проекты
+                </span>
+              </h2>
               <Link href="/add-startup" className="text-violet-400 hover:text-violet-300 flex items-center gap-2 text-sm font-medium">
                 + Добавить проект
               </Link>
@@ -360,7 +398,11 @@ export default function ProfilePage() {
 
         <div className="mt-12 grid gap-8 lg:grid-cols-3">
           <div className="bg-[#12121A] border border-white/10 rounded-3xl p-8">
-            <h3 className="font-semibold mb-6">Навыки и экспертиза</h3>
+            <h3 className="font-semibold mb-6">
+              <span className="hero-shine gradient-text" data-text="Навыки и экспертиза">
+                Навыки и экспертиза
+              </span>
+            </h3>
             <div className="flex flex-wrap gap-3">
               {(meta.skills.length ? meta.skills : [accountTypeLabelsByLang[lang]?.[me.accountType] ?? me.accountType]).map((x) => (
                 <span key={x} className="bg-white/10 px-5 py-2 rounded-3xl text-sm">
@@ -371,7 +413,11 @@ export default function ProfilePage() {
           </div>
 
           <div className="bg-[#12121A] border border-white/10 rounded-3xl p-8">
-            <h3 className="font-semibold mb-6">Ищу</h3>
+            <h3 className="font-semibold mb-6">
+              <span className="hero-shine gradient-text" data-text="Ищу">
+                Ищу
+              </span>
+            </h3>
             <ul className="space-y-4 text-gray-300">
               {(meta.lookingFor.length
                 ? meta.lookingFor
@@ -390,7 +436,11 @@ export default function ProfilePage() {
           </div>
 
           <div className="bg-[#12121A] border border-white/10 rounded-3xl p-8">
-            <h3 className="font-semibold mb-6">Контакты</h3>
+            <h3 className="font-semibold mb-6">
+              <span className="hero-shine gradient-text" data-text="Контакты">
+                Контакты
+              </span>
+            </h3>
             <div className="space-y-5">
               <div className="flex items-center gap-4">
                 <div className="text-xl text-gray-400">✉</div>
