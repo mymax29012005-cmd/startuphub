@@ -78,6 +78,16 @@ export default function ProfilePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.add("marketplace-cosmic-bg");
+    document.documentElement.classList.add("marketplace-cosmic-bg");
+    return () => {
+      document.body.classList.remove("marketplace-cosmic-bg");
+      document.documentElement.classList.remove("marketplace-cosmic-bg");
+    };
+  }, []);
+
   const subtitle = useMemo(() => {
     if (!me) return "";
     const base = accountTypeLabelsByLang[lang]?.[me.accountType] ?? me.accountType;
@@ -181,7 +191,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="bg-[#0A0A0F] text-white min-h-screen">
+    <div className="text-white min-h-screen">
       <nav className="bg-[rgba(10,10,15,0.95)] backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
           <Link href="/" className="inline-flex items-center gap-3 min-w-0">
@@ -208,62 +218,65 @@ export default function ProfilePage() {
       </nav>
 
       <div className="pt-10 max-w-7xl mx-auto px-4 pb-16 sm:px-6">
-        <div className="flex flex-col md:flex-row gap-10 items-start">
-          <div className="md:w-80 shrink-0 w-full">
-            <div className="relative">
-              <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto md:mx-0 rounded-3xl overflow-hidden border-4 border-violet-500/30 shadow-2xl bg-white/5">
-                {me.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={me.avatarUrl} alt={me.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-white/40 text-sm">Нет фото</div>
-                )}
+        <div className="grid gap-10 lg:grid-cols-12 lg:items-start">
+          <div className="lg:col-span-4">
+            <div className="rounded-3xl border border-white/10 bg-[#12121A] p-7 sm:p-8">
+              <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+                <div className="w-28 h-28 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-3xl overflow-hidden border-2 border-violet-500/25 shadow-2xl bg-white/5 shrink-0">
+                  {me.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={me.avatarUrl} alt={me.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-white/40 text-sm">Нет фото</div>
+                  )}
+                </div>
+                <div className="min-w-0 text-center sm:text-left">
+                  <h1 className="text-3xl font-bold truncate">{me.name}</h1>
+                  <p className="text-violet-400 text-lg mt-1">{subtitle}</p>
+                  <p className="text-gray-400 mt-1">{locationLine ? locationLine : "Профиль StartupHub"}</p>
+                </div>
               </div>
-            </div>
 
-            <div className="mt-6 text-center md:text-left">
-              <h1 className="text-3xl sm:text-4xl font-bold">{me.name}</h1>
-              <p className="text-violet-400 text-lg mt-1">{subtitle}</p>
-              <p className="text-gray-400 mt-1">{locationLine ? locationLine : "Профиль StartupHub"}</p>
-            </div>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/profile/settings"
+                  className="w-full sm:flex-1 px-7 py-4 bg-white/10 hover:bg-white/20 rounded-3xl font-medium flex items-center justify-center gap-2"
+                >
+                  ✎ Редактировать
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => void onShare()}
+                  className="w-full sm:flex-1 px-7 py-4 border border-white/30 hover:bg-white/10 rounded-3xl font-medium"
+                >
+                  Поделиться
+                </button>
+              </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row justify-center md:justify-start gap-3 sm:gap-4">
-              <Link
-                href="/profile/settings"
-                className="w-full sm:flex-1 md:w-auto md:flex-none px-7 py-4 bg-white/10 hover:bg-white/20 rounded-3xl font-medium flex items-center justify-center gap-2"
-              >
-                ✎ Редактировать
-              </Link>
-              <button
-                type="button"
-                onClick={() => void onShare()}
-                className="w-full sm:flex-1 md:w-auto md:flex-none px-7 py-4 border border-white/30 hover:bg-white/10 rounded-3xl font-medium"
-              >
-                Поделиться
-              </button>
+              <div className="mt-8">
+                <div className="text-sm font-semibold text-white/90">О себе</div>
+                <p className="mt-3 text-gray-300 leading-relaxed">
+                  {bioText ? bioText : "Расскажите о себе — это поможет инвесторам и партнёрам быстрее понять, чем вы занимаетесь."}
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 space-y-10 min-w-0">
-            <div>
-              <h2 className="text-xl font-semibold mb-3">О себе</h2>
-              <p className="text-gray-300 leading-relaxed">
-                {bioText ? bioText : "Расскажите о себе — это поможет инвесторам и партнёрам быстрее понять, чем вы занимаетесь."}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+          <div className="lg:col-span-8 min-w-0 space-y-8">
+            <div className="grid grid-cols-3 gap-4 sm:gap-6">
               <div className="transition hover:-translate-y-1 bg-[#12121A] border border-white/10 rounded-3xl p-6 text-center">
                 <div className="text-4xl font-bold text-violet-400">{me.startupsCount}</div>
-                <div className="text-sm text-gray-400 mt-2">Стартапов</div>
+                <div className="text-sm text-gray-400 mt-2">Стартапа</div>
               </div>
               <div className="transition hover:-translate-y-1 bg-[#12121A] border border-white/10 rounded-3xl p-6 text-center">
-                <div className="text-4xl font-bold text-emerald-400">{exitsCount}</div>
-                <div className="text-sm text-gray-400 mt-2">Успешный exit</div>
+                <div className="text-4xl font-bold text-emerald-400">{me.startupsCount + me.ideasCount}</div>
+                <div className="text-sm text-gray-400 mt-2">Проектов</div>
               </div>
               <div className="transition hover:-translate-y-1 bg-[#12121A] border border-white/10 rounded-3xl p-6 text-center">
-                <div className="text-4xl font-bold text-rose-400">{bidsCount}</div>
-                <div className="text-sm text-gray-400 mt-2">Откликов (ставки)</div>
+                <div className="text-4xl font-bold text-rose-400">
+                  {(me.investorRequestsCount ?? 0) + (me.partnerRequestsCount ?? 0)}
+                </div>
+                <div className="text-sm text-gray-400 mt-2">Запросов</div>
               </div>
             </div>
 
@@ -300,7 +313,7 @@ export default function ProfilePage() {
               <div className="mt-4 text-sm text-gray-300">{readiness.hint}</div>
             </div>
 
-            <div>
+            <div className="rounded-3xl border border-white/10 bg-[#12121A] p-7 sm:p-8">
               <div className="flex items-center justify-between mb-6 gap-4">
                 <h2 className="text-xl font-semibold">Мои проекты</h2>
                 <Link href="/add-startup" className="text-violet-400 hover:text-violet-300 flex items-center gap-2 text-sm font-medium">
@@ -319,7 +332,7 @@ export default function ProfilePage() {
                       <Link
                         key={s.id}
                         href={`/startups/${s.id}`}
-                        className="card-hover bg-[#12121A] border border-white/10 rounded-3xl p-6 block"
+                        className="card-hover bg-white/5 border border-white/10 rounded-3xl p-6 block hover:border-violet-500/25 transition"
                       >
                         <div className="flex justify-between gap-4">
                           <div className="min-w-0">
@@ -347,7 +360,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="mt-16 grid md:grid-cols-3 gap-8">
+        <div className="mt-12 grid gap-8 lg:grid-cols-3">
           <div className="bg-[#12121A] border border-white/10 rounded-3xl p-8">
             <h3 className="font-semibold mb-6">Навыки и экспертиза</h3>
             <div className="flex flex-wrap gap-3">
