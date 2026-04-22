@@ -281,6 +281,71 @@ body.cosmic-bg {
   overflow-x: hidden;
 }
 
+/* Profile-only cosmic background: darker + calmer */
+html.profile-cosmic-bg,
+body.profile-cosmic-bg {
+  background: linear-gradient(
+    135deg,
+    #04040a 0%,
+    #070515 22%,
+    #0c0820 45%,
+    #0a071c 68%,
+    #060512 100%
+  );
+  background-size: 420% 420%;
+  animation: profileCombinedFlow 92s ease-in-out infinite;
+  position: relative;
+  overflow-x: hidden;
+}
+
+@keyframes profileCombinedFlow {
+  0% {
+    background-position: 0% 0%;
+  }
+  30% {
+    background-position: 100% 25%;
+  }
+  55% {
+    background-position: 72% 82%;
+  }
+  80% {
+    background-position: 18% 38%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+html.profile-cosmic-bg::before,
+body.profile-cosmic-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 25%, rgba(124, 58, 237, 0.12) 0%, transparent 55%),
+    radial-gradient(circle at 76% 72%, rgba(0, 245, 212, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 55% 18%, rgba(225, 29, 72, 0.08) 0%, transparent 62%),
+    linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.10), transparent),
+    linear-gradient(180deg, transparent, rgba(225, 29, 72, 0.08), transparent);
+  background-size: auto, auto, auto, 320% 320%, 100% 520%;
+  animation: profileNeonLayer 70s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.55;
+}
+
+@keyframes profileNeonLayer {
+  0% {
+    background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%, 0% 0%;
+  }
+  50% {
+    background-position: 0% 0%, 0% 0%, 0% 0%, 100% 50%, 0% -220%;
+  }
+  100% {
+    background-position: 0% 0%, 0% 0%, 0% 0%, 0% 50%, 0% 0%;
+  }
+}
+
 @keyframes marketplaceCombinedFlow {
   0% {
     background-position: 0% 0%;
