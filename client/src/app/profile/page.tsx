@@ -335,11 +335,6 @@ export default function ProfilePage() {
                     style={{ width: `${Math.max(0, Math.min(1, readiness.filledSegments / readiness.segments)) * 100}%` }}
                   />
                 </div>
-                <div className="absolute inset-0 flex gap-2">
-                  {Array.from({ length: readiness.segments }).map((_, i) => (
-                    <span key={i} className="h-2 flex-1 rounded-full border border-white/10 bg-transparent" />
-                  ))}
-                </div>
               </div>
             </div>
 

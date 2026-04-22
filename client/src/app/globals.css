@@ -251,12 +251,13 @@ select option {
     background-position: 0% 0%, -140% 50%;
     filter: blur(0px);
   }
-  55% {
+  50% {
     background-position: 0% 0%, 140% 50%;
     filter: blur(0.2px);
   }
   100% {
-    background-position: 0% 0%, 160% 50%;
+    /* End must match start to avoid visible jump */
+    background-position: 0% 0%, -140% 50%;
     filter: blur(0px);
   }
 }
@@ -362,8 +363,12 @@ body.profile-cosmic-bg::before {
   0% {
     background-position: 0% 50%;
   }
-  100% {
+  50% {
     background-position: 100% 50%;
+  }
+  100% {
+    /* Back to start: smooth A→B→A loop */
+    background-position: 0% 50%;
   }
 }
 
