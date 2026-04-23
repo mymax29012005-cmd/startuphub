@@ -515,6 +515,8 @@ function MarketplaceInner() {
       ? (mySubmissions?.length ?? 0) === 0
       : activeTab === "moderation"
         ? (queue?.length ?? 0) === 0
+        : activeTab === "users"
+          ? false
         : activeTab === "startups"
           ? startupCards.length === 0
           : activeTab === "ideas"
