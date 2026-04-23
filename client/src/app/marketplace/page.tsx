@@ -189,7 +189,6 @@ function MarketplaceInner() {
   const [users, setUsers] = useState<AdminUserRow[] | null>(null);
   const [usersTotal, setUsersTotal] = useState<number>(0);
   const [usersBusyId, setUsersBusyId] = useState<string | null>(null);
-  const [usersShowDeleted, setUsersShowDeleted] = useState(false);
 
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [userDialogMode, setUserDialogMode] = useState<"ban" | "delete">("ban");
@@ -295,7 +294,7 @@ function MarketplaceInner() {
       if (tab === "users" && users === null) {
         const qs = new URLSearchParams();
         if (usersQ.trim()) qs.set("q", usersQ.trim());
-        if (usersShowDeleted) qs.set("showDeleted", "true");
+        qs.set("showDeleted", "true");
         const r = await fetch(`/api/v1/admin/users?${qs.toString()}`, { credentials: "include", cache: "no-store" });
         const data = (await r.json().catch(() => ({}))) as { items?: AdminUserRow[]; total?: number; error?: string };
         if (!r.ok) throw new Error(data.error ?? "db");
@@ -315,7 +314,7 @@ function MarketplaceInner() {
     try {
       const qs = new URLSearchParams();
       if (usersQ.trim()) qs.set("q", usersQ.trim());
-      if (usersShowDeleted) qs.set("showDeleted", "true");
+      qs.set("showDeleted", "true");
       const r = await fetch(`/api/v1/admin/users?${qs.toString()}`, { credentials: "include", cache: "no-store" });
       const data = (await r.json().catch(() => ({}))) as { items?: AdminUserRow[]; total?: number; error?: string };
       if (!r.ok) throw new Error(data.error ?? "Ошибка");
@@ -1400,15 +1399,6 @@ function MarketplaceInner() {
                               placeholder="email / имя / телефон"
                             />
                           </div>
-                          <label className="flex items-center gap-2 text-sm text-gray-300">
-                            <input
-                              type="checkbox"
-                              checked={usersShowDeleted}
-                              onChange={(e) => setUsersShowDeleted(e.target.checked)}
-                              className="accent-violet-500"
-                            />
-                            Показывать удалённых
-                          </label>
                           <button
                             type="button"
                             onClick={() => void loadUsers()}
@@ -1422,102 +1412,140 @@ function MarketplaceInner() {
                     </div>
 
                     <div className="mt-6 flex flex-col gap-4">
-                      {(users ?? []).map((u) => {
-                        const banned = !!u.bannedAt;
-                        const deleted = !!u.deletedAt;
-                        const badge = deleted ? "Удалён" : banned ? "Заблокирован" : "Активен";
-                        const badgeCls = deleted
-                          ? "bg-rose-500/15 text-rose-200"
-                          : banned
-                            ? "bg-amber-500/15 text-amber-200"
-                            : "bg-emerald-500/15 text-emerald-200";
-                        return (
-                          <div key={u.id} className="rounded-3xl border border-white/10 bg-[#161618] p-6">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      {(() => {
+                        const all = users ?? [];
+                        const deleted = all.filter((u) => !!u.deletedAt);
+                        const banned = all.filter((u) => !u.deletedAt && !!u.bannedAt);
+                        const active = all.filter((u) => !u.deletedAt && !u.bannedAt);
+
+                        const renderUser = (u: AdminUserRow) => {
+                          const isBanned = !!u.bannedAt;
+                          const isDeleted = !!u.deletedAt;
+                          const badge = isDeleted ? "Удалён" : isBanned ? "Заблокирован" : "Активен";
+                          const badgeCls = isDeleted
+                            ? "bg-rose-500/15 text-rose-200"
+                            : isBanned
+                              ? "bg-amber-500/15 text-amber-200"
+                              : "bg-emerald-500/15 text-emerald-200";
+
+                          return (
+                            <div key={u.id} className="rounded-3xl border border-white/10 bg-[#161618] p-6">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
+                                    <span className={["rounded-xl px-2 py-1", badgeCls].join(" ")}>{badge}</span>
+                                    {u.role === "admin" ? <span className="rounded-xl bg-violet-500/15 px-2 py-1 text-violet-200">ADMIN</span> : null}
+                                    {u.emailVerifiedAt ? (
+                                      <span className="rounded-xl bg-emerald-500/10 px-2 py-1 text-emerald-200">email ok</span>
+                                    ) : (
+                                      <span className="rounded-xl bg-white/5 px-2 py-1 text-white/70">email pending</span>
+                                    )}
+                                  </div>
+
+                                  <Link href={`/users/${u.id}`} className="mt-2 block truncate text-xl font-semibold text-white hover:text-violet-300">
+                                    {u.name}
+                                  </Link>
+
+                                  <div className="mt-1 text-sm text-gray-300">
+                                    {u.email ?? "—"} {u.phone ? <span className="text-gray-500">· {u.phone}</span> : null}
+                                  </div>
+                                  <div className="mt-3 text-xs text-white/50">
+                                    Стартапы: {u.startupsCount} · Идеи: {u.ideasCount} · Инвесторы: {u.investorRequestsCount} · Партнёры: {u.partnerRequestsCount}
+                                  </div>
+                                  {u.bannedAt ? <div className="mt-2 text-sm text-amber-200">Причина блокировки: {u.bannedReason ?? "—"}</div> : null}
+                                  {u.deletedAt ? <div className="mt-2 text-sm text-rose-200">Причина удаления: {u.deletedReason ?? "—"}</div> : null}
+                                </div>
+
+                                <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                                  {!isDeleted ? (
+                                    isBanned ? (
+                                      <button
+                                        type="button"
+                                        disabled={usersBusyId === u.id || u.role === "admin"}
+                                        onClick={async () => {
+                                          setUsersBusyId(u.id);
+                                          try {
+                                            const r = await fetch(`/api/v1/admin/users/${encodeURIComponent(u.id)}/unban`, {
+                                              method: "POST",
+                                              credentials: "include",
+                                            });
+                                            const data = (await r.json().catch(() => ({}))) as { error?: string };
+                                            if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                                            await loadUsers();
+                                            setToast({ kind: "ok", text: "Пользователь разблокирован" });
+                                          } catch (e) {
+                                            setToast({ kind: "err", text: e instanceof Error ? e.message : "Ошибка" });
+                                          } finally {
+                                            setUsersBusyId(null);
+                                          }
+                                        }}
+                                        className="rounded-2xl bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
+                                      >
+                                        Разбанить
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        disabled={usersBusyId === u.id || u.role === "admin"}
+                                        onClick={() => {
+                                          setUserDialogMode("ban");
+                                          setUserDialogTarget(u);
+                                          setUserDialogReason("Нарушение правил публикации");
+                                          setUserDialogOpen(true);
+                                        }}
+                                        className="rounded-2xl bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-500/20 disabled:opacity-60"
+                                      >
+                                        Забанить
+                                      </button>
+                                    )
+                                  ) : null}
+
+                                  <button
+                                    type="button"
+                                    disabled={usersBusyId === u.id || u.role === "admin"}
+                                    onClick={() => {
+                                      setUserDialogMode("delete");
+                                      setUserDialogTarget(u);
+                                      setUserDialogReason("Нарушение правил платформы");
+                                      setUserDialogOpen(true);
+                                    }}
+                                    className="rounded-2xl bg-rose-500/15 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-500/20 disabled:opacity-60"
+                                  >
+                                    Удалить
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        };
+
+                        const section = (title: string, items: AdminUserRow[], hint: string) => (
+                          <div className="rounded-3xl border border-white/10 bg-[#12121A] p-6">
+                            <div className="flex items-start justify-between gap-4">
                               <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
-                                  <span className={["rounded-xl px-2 py-1", badgeCls].join(" ")}>{badge}</span>
-                                  {u.role === "admin" ? <span className="rounded-xl bg-violet-500/15 px-2 py-1 text-violet-200">ADMIN</span> : null}
-                                  {u.emailVerifiedAt ? (
-                                    <span className="rounded-xl bg-emerald-500/10 px-2 py-1 text-emerald-200">email ok</span>
-                                  ) : (
-                                    <span className="rounded-xl bg-white/5 px-2 py-1 text-white/70">email pending</span>
-                                  )}
-                                </div>
-                                <div className="mt-2 truncate text-xl font-semibold text-white">{u.name}</div>
-                                <div className="mt-1 text-sm text-gray-300">
-                                  {u.email ?? "—"} {u.phone ? <span className="text-gray-500">· {u.phone}</span> : null}
-                                </div>
-                                <div className="mt-3 text-xs text-white/50">
-                                  Стартапы: {u.startupsCount} · Идеи: {u.ideasCount} · Инвесторы: {u.investorRequestsCount} · Партнёры: {u.partnerRequestsCount}
-                                </div>
-                                {u.bannedAt ? <div className="mt-2 text-sm text-amber-200">Причина блокировки: {u.bannedReason ?? "—"}</div> : null}
-                                {u.deletedAt ? <div className="mt-2 text-sm text-rose-200">Причина удаления: {u.deletedReason ?? "—"}</div> : null}
+                                <div className="text-xl font-bold text-white">{title}</div>
+                                <div className="mt-1 text-sm text-white/50">{hint}</div>
                               </div>
-                              <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-                                {!deleted ? (
-                                  banned ? (
-                                    <button
-                                      type="button"
-                                      disabled={usersBusyId === u.id}
-                                      onClick={async () => {
-                                        setUsersBusyId(u.id);
-                                        try {
-                                          const r = await fetch(`/api/v1/admin/users/${encodeURIComponent(u.id)}/unban`, {
-                                            method: "POST",
-                                            credentials: "include",
-                                          });
-                                          const data = (await r.json().catch(() => ({}))) as { error?: string };
-                                          if (!r.ok) throw new Error(data.error ?? "Ошибка");
-                                          await loadUsers();
-                                          setToast({ kind: "ok", text: "Пользователь разблокирован" });
-                                        } catch (e) {
-                                          setToast({ kind: "err", text: e instanceof Error ? e.message : "Ошибка" });
-                                        } finally {
-                                          setUsersBusyId(null);
-                                        }
-                                      }}
-                                      className="rounded-2xl bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
-                                    >
-                                      Разбанить
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      disabled={usersBusyId === u.id}
-                                      onClick={() => {
-                                        setUserDialogMode("ban");
-                                        setUserDialogTarget(u);
-                                        setUserDialogReason("Нарушение правил публикации");
-                                        setUserDialogOpen(true);
-                                      }}
-                                      className="rounded-2xl bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-500/20 disabled:opacity-60"
-                                    >
-                                      Забанить
-                                    </button>
-                                  )
-                                ) : null}
-                                <button
-                                  type="button"
-                                  disabled={usersBusyId === u.id || u.role === "admin"}
-                                  onClick={() => {
-                                    setUserDialogMode("delete");
-                                    setUserDialogTarget(u);
-                                    setUserDialogReason("Нарушение правил платформы");
-                                    setUserDialogOpen(true);
-                                  }}
-                                  className="rounded-2xl bg-rose-500/15 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-500/20 disabled:opacity-60"
-                                >
-                                  Удалить
-                                </button>
-                              </div>
+                              <div className="text-xs text-white/40">{items.length}</div>
+                            </div>
+                            <div className="mt-4 flex flex-col gap-4">
+                              {items.length === 0 ? (
+                                <div className="rounded-3xl border border-white/10 bg-[#161618] p-6 text-gray-400">Пусто.</div>
+                              ) : (
+                                items.map((u) => renderUser(u))
+                              )}
                             </div>
                           </div>
                         );
-                      })}
-                      {(users ?? []).length === 0 ? (
-                        <div className="rounded-3xl border border-white/10 bg-[#161618] p-6 text-gray-400">Пользователи не найдены.</div>
-                      ) : null}
+
+                        return (
+                          <div className="flex flex-col gap-4">
+                            {section("Активные аккаунты", active, "Аккаунты без блокировок и удаления.")}
+                            {section("Забаненные аккаунты", banned, "Причина бана видна в карточке пользователя и в его профиле.")}
+                            {section("Удалённые аккаунты", deleted, "Удалённые аккаунты остаются в базе для истории и причины.")}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </>
                 ) : null}

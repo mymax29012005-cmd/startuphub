@@ -292,10 +292,17 @@ authRouter.get("/me", requireAuth, async (req, res) => {
         bio: true,
         createdAt: true,
         emailVerifiedAt: true,
+        bannedAt: true,
+        bannedReason: true,
+        deletedAt: true,
+        deletedReason: true,
       },
     });
 
     if (!user) return res.status(404).json({ error: "Пользователь не найден" });
+    if ((user as any).deletedAt) {
+      return res.status(403).json({ error: "Аккаунт удалён", reason: (user as any).deletedReason ?? "Удалён администратором" });
+    }
     const [startupsCount, ideasCount, investorRequestsCount, partnerRequestsCount] = await Promise.all([
       prisma.startup.count({ where: { ownerId: user.id } }),
       prisma.idea.count({ where: { ownerId: user.id } }),

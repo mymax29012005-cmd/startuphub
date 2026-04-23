@@ -114,6 +114,9 @@ adminUsersRouter.post("/:id/ban", async (req, res) => {
   const prisma = getPrisma();
   try {
     if (id === req.user!.userId) return res.status(400).json({ error: "Нельзя заблокировать самого себя" });
+    const target = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (!target) return res.status(404).json({ error: "Пользователь не найден" });
+    if (target.role === "admin") return res.status(400).json({ error: "Нельзя заблокировать администратора" });
     await prisma.user.update({
       where: { id },
       data: { bannedAt: new Date(), bannedReason: parsed.data.reason },
@@ -129,6 +132,9 @@ adminUsersRouter.post("/:id/unban", async (req, res) => {
   const id = req.params.id;
   const prisma = getPrisma();
   try {
+    const target = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (!target) return res.status(404).json({ error: "Пользователь не найден" });
+    if (target.role === "admin") return res.status(400).json({ error: "Нельзя разбанить администратора (он не может быть забанен)" });
     await prisma.user.update({
       where: { id },
       data: { bannedAt: null, bannedReason: null },
@@ -147,6 +153,9 @@ adminUsersRouter.delete("/:id", async (req, res) => {
   const prisma = getPrisma();
   try {
     if (id === req.user!.userId) return res.status(400).json({ error: "Нельзя удалить самого себя" });
+    const target = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (!target) return res.status(404).json({ error: "Пользователь не найден" });
+    if (target.role === "admin") return res.status(400).json({ error: "Нельзя удалить администратора" });
     const now = new Date();
 
     await prisma.$transaction(async (tx) => {

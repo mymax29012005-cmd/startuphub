@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { getPrisma } from "../../lib/prisma";
+import { tryAuth } from "../../middleware/auth";
 
 export const usersRouter = Router();
 
@@ -24,9 +25,12 @@ type ActivityRow = {
   detail?: string;
 };
 
-usersRouter.get("/:id", async (req, res) => {
-  const id = req.params.id;
+usersRouter.get("/:id", tryAuth, async (req, res) => {
+  const raw = (req.params as any).id as string | string[] | undefined;
+  const id = Array.isArray(raw) ? raw[0] : raw;
+  if (!id) return res.status(400).json({ error: "Неверные данные" });
   const prisma = getPrisma();
+  const viewer = req.user;
 
   try {
     const user = await prisma.user.findUnique({
@@ -39,10 +43,17 @@ usersRouter.get("/:id", async (req, res) => {
         accountType: true,
         role: true,
         createdAt: true,
+        bannedAt: true,
+        bannedReason: true,
+        deletedAt: true,
+        deletedReason: true,
       },
     });
 
     if (!user) {
+      return res.status(404).json({ error: "Пользователь не найден" });
+    }
+    if ((user as any).deletedAt && viewer?.role !== "admin") {
       return res.status(404).json({ error: "Пользователь не найден" });
     }
 

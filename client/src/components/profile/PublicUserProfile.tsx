@@ -28,6 +28,10 @@ export type PublicUserPayload = {
   createdAt: string;
   startupsCount: number;
   ideasCount: number;
+  bannedAt?: string | null;
+  bannedReason?: string | null;
+  deletedAt?: string | null;
+  deletedReason?: string | null;
 };
 
 type StartupListItem = {
@@ -212,6 +216,8 @@ export function PublicUserProfile({ userId, viewerId }: Props) {
   }
 
   const isSelf = viewerId != null && viewerId === user.id;
+  const isBanned = Boolean((user as any).bannedAt);
+  const banReason = typeof (user as any).bannedReason === "string" ? String((user as any).bannedReason).trim() : "";
 
   return (
     <div className="text-white min-h-screen">
@@ -234,6 +240,25 @@ export function PublicUserProfile({ userId, viewerId }: Props) {
                       {user.name}
                     </span>
                   </h1>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {isBanned ? (
+                      <span className="group relative inline-flex items-center">
+                        <span className="inline-flex items-center rounded-xl border border-yellow-400/30 bg-yellow-500/20 px-3 py-1 text-xs font-semibold text-yellow-200">
+                          Забанен
+                        </span>
+                        {banReason ? (
+                          <span className="pointer-events-none absolute left-1/2 top-0 z-20 hidden w-[320px] -translate-x-1/2 -translate-y-full rounded-2xl border border-white/10 bg-[#0f0f17]/95 px-4 py-3 text-left text-xs text-gray-200 shadow-2xl backdrop-blur-md group-hover:block">
+                            Причина: {banReason}
+                            <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border-r border-b border-white/10 bg-[#0f0f17]/95" />
+                          </span>
+                        ) : null}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-200">
+                        Активен
+                      </span>
+                    )}
+                  </div>
                   <p className="text-violet-400 text-lg mt-1">{subtitle}</p>
                   <p className="text-gray-400 mt-1">{locationLine ? locationLine : "Профиль StartupHub"}</p>
                 </div>
