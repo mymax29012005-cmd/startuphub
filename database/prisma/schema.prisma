@@ -91,6 +91,10 @@ model User {
   phone        String?      @unique
   passwordHash String
 
+  emailVerifiedAt         DateTime?
+  emailVerifyTokenHash    String?
+  emailVerifyTokenExpires DateTime?
+
   avatarUrl    String?
   bio          String?
 

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
-import { requireAdmin, requireAuth } from "../../middleware/auth";
+import { requireAdmin, requireAuth, requireVerifiedEmail } from "../../middleware/auth";
 
 export const moderationRouter = Router();
 
@@ -474,7 +474,7 @@ moderationRouter.post("/reject", requireAuth, requireAdmin, async (req, res) => 
   }
 });
 
-moderationRouter.post("/submit", requireAuth, async (req, res) => {
+moderationRouter.post("/submit", requireAuth, requireVerifiedEmail, async (req, res) => {
   const parsed = actionItemSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Неверные данные", details: parsed.error.flatten() });
   const prisma = getPrisma();

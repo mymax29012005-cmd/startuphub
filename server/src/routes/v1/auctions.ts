@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin } from "../../lib/authz";
-import { requireAuth, tryAuth } from "../../middleware/auth";
+import { requireAuth, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
 
 export const auctionsRouter = Router();
 
@@ -239,7 +239,7 @@ const createBidSchema = z.object({
   amount: z.coerce.number().positive(),
 });
 
-auctionsRouter.post("/:auctionId/bids", requireAuth, async (req, res) => {
+auctionsRouter.post("/:auctionId/bids", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const auctionId =
     typeof req.params.auctionId === "string" ? req.params.auctionId : req.params.auctionId[0];
@@ -298,7 +298,7 @@ auctionsRouter.post("/:auctionId/bids", requireAuth, async (req, res) => {
   }
 });
 
-auctionsRouter.post("/:auctionId/join", requireAuth, async (req, res) => {
+auctionsRouter.post("/:auctionId/join", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const auctionId =
     typeof req.params.auctionId === "string" ? req.params.auctionId : req.params.auctionId[0];
@@ -326,7 +326,7 @@ auctionsRouter.post("/:auctionId/join", requireAuth, async (req, res) => {
   }
 });
 
-auctionsRouter.post("/:auctionId/leave", requireAuth, async (req, res) => {
+auctionsRouter.post("/:auctionId/leave", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const auctionId =
     typeof req.params.auctionId === "string" ? req.params.auctionId : req.params.auctionId[0];

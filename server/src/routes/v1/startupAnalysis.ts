@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, requireVerifiedEmail } from "../../middleware/auth";
 
 export const startupAnalysisRouter = Router();
 
@@ -12,7 +12,7 @@ const createStartupAnalysisSchema = z.object({
 });
 
 // Save computed analysis for the current user.
-startupAnalysisRouter.post("/", requireAuth, async (req, res) => {
+startupAnalysisRouter.post("/", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const parsed = createStartupAnalysisSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -38,7 +38,7 @@ startupAnalysisRouter.post("/", requireAuth, async (req, res) => {
 });
 
 // List saved analyses for current user (history).
-startupAnalysisRouter.get("/", requireAuth, async (req, res) => {
+startupAnalysisRouter.get("/", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   try {
     const items = await prisma.startupAnalysis.findMany({
@@ -60,7 +60,7 @@ startupAnalysisRouter.get("/", requireAuth, async (req, res) => {
 });
 
 // Get one saved analysis (owner only).
-startupAnalysisRouter.get("/:id", requireAuth, async (req, res) => {
+startupAnalysisRouter.get("/:id", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const raw = (req.params as any).id as string | string[] | undefined;
   const id = Array.isArray(raw) ? raw[0] : raw;
@@ -80,7 +80,7 @@ startupAnalysisRouter.get("/:id", requireAuth, async (req, res) => {
 });
 
 // Delete a saved analysis (owner only).
-startupAnalysisRouter.delete("/:id", requireAuth, async (req, res) => {
+startupAnalysisRouter.delete("/:id", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const raw = (req.params as any).id as string | string[] | undefined;
   const id = Array.isArray(raw) ? raw[0] : raw;

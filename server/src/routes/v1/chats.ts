@@ -2,11 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, requireVerifiedEmail } from "../../middleware/auth";
 
 export const chatsRouter = Router();
 
 chatsRouter.use(requireAuth);
+chatsRouter.use(requireVerifiedEmail);
 
 function orderedUserIds(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 
 import { env } from "../lib/config";
 import { verifyJwt, type JwtPayload } from "../lib/jwt";
+import { getPrisma } from "../lib/prisma";
 
 declare global {
   namespace Express {
@@ -42,5 +43,25 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.user) return res.status(401).json({ error: "Не авторизован" });
   if (req.user.role !== "admin") return res.status(403).json({ error: "Доступ запрещен" });
   return next();
+}
+
+export async function requireVerifiedEmail(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) return res.status(401).json({ error: "Не авторизован" });
+  if (req.user.role === "admin") return next();
+  const prisma = getPrisma();
+  try {
+    const u = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { email: true, emailVerifiedAt: true },
+    });
+    if (!u) return res.status(401).json({ error: "Не авторизован" });
+    // Email is mandatory; until it's verified, block protected actions.
+    if (!u.email || !u.emailVerifiedAt) {
+      return res.status(403).json({ error: "Подтвердите почту, чтобы пользоваться этим действием" });
+    }
+    return next();
+  } catch {
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
 }
 

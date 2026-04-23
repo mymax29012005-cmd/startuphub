@@ -25,6 +25,16 @@ const envSchema = z.object({
 
   NODE_ENV: z.string().default("development"),
   CORS_ORIGIN: z.string().optional(),
+
+  // Public URL used in emails (e.g. https://startup-hub.ru)
+  PUBLIC_APP_URL: z.string().url().optional(),
+
+  // SMTP (optional; if missing, emails won't be sent in dev)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

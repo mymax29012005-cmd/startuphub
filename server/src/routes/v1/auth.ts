@@ -3,6 +3,7 @@ import bcryptjs from "bcryptjs";
 import { z } from "zod";
 
 import { env } from "../../lib/config";
+import { getPublicAppUrl, makeEmailVerifyToken, sendVerifyEmail, verifyTokenHash } from "../../lib/email";
 import { getPrisma } from "../../lib/prisma";
 import { signJwt } from "../../lib/jwt";
 import { requireAuth } from "../../middleware/auth";
@@ -22,8 +23,7 @@ function normPhone(v: string | undefined) {
 
 const registerSchema = z.object({
   name: z.string().min(2).max(64),
-  email: z.string().email().optional(),
-  phone: z.string().min(6).max(24).optional(),
+  email: z.string().email(),
   password: z.string().min(8).max(128),
   accountType: z.enum(["founder", "investor", "partner", "buyer"]),
 });
@@ -42,34 +42,33 @@ authRouter.post("/register", async (req, res) => {
 
   const { name, password, accountType } = parsed.data;
   const email = normEmail(parsed.data.email);
-  const phone = normPhone(parsed.data.phone);
-  if (!email && !phone)
-    return res.status(400).json({ error: "Нужно указать email или телефон" });
-  if (email && phone)
-    return res
-      .status(400)
-      .json({ error: "Нужно указать только email или только телефон" });
+  if (!email) return res.status(400).json({ error: "Нужно указать email" });
 
   const prisma = getPrisma();
   try {
-    if (email) {
-      const exists = await prisma.user.findFirst({ where: { email }, select: { id: true } });
-      if (exists) return res.status(409).json({ error: "Этот email уже используется" });
-    }
-    if (phone) {
-      const exists = await prisma.user.findFirst({ where: { phone }, select: { id: true } });
-      if (exists) return res.status(409).json({ error: "Этот телефон уже используется" });
-    }
+    const exists = await prisma.user.findFirst({ where: { email }, select: { id: true } });
+    if (exists) return res.status(409).json({ error: "Этот email уже используется" });
 
     const passwordHash = await bcryptjs.hash(password, 10);
+
+    const verify =
+      email != null
+        ? (() => {
+            const { token, tokenHash } = makeEmailVerifyToken();
+            const expires = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24h
+            return { token, tokenHash, expires };
+          })()
+        : null;
 
     const user = await prisma.user.create({
       data: {
         name,
         email: email ?? null,
-        phone: phone ?? null,
         passwordHash,
         accountType,
+        ...(verify
+          ? { emailVerifiedAt: null, emailVerifyTokenHash: verify.tokenHash, emailVerifyTokenExpires: verify.expires }
+          : {}),
       },
       select: {
         id: true,
@@ -80,6 +79,7 @@ authRouter.post("/register", async (req, res) => {
         phone: true,
         avatarUrl: true,
         bio: true,
+        emailVerifiedAt: true,
       },
     });
 
@@ -98,6 +98,18 @@ authRouter.post("/register", async (req, res) => {
       maxAge: 1000 * 60 * 60 * 24 * 30,
     });
 
+    if (email && verify) {
+      const verifyUrl = `${getPublicAppUrl()}/verify-email?token=${encodeURIComponent(verify.token)}`;
+      try {
+        await sendVerifyEmail(email, verifyUrl);
+      } catch {
+        // Ignore mail errors to not block registration.
+      }
+      // In non-prod, help testing if SMTP isn't configured.
+      const includeUrl = env.NODE_ENV !== "production";
+      return res.status(201).json({ ...user, ...(includeUrl ? { emailVerifyUrl: verifyUrl } : {}) });
+    }
+
     return res.status(201).json(user);
   } catch (e: any) {
     // Prisma unique constraint error (race condition).
@@ -105,9 +117,66 @@ authRouter.post("/register", async (req, res) => {
       const target = (e?.meta?.target ?? []) as unknown;
       const arr = Array.isArray(target) ? (target as string[]) : typeof target === "string" ? [target] : [];
       if (arr.includes("email")) return res.status(409).json({ error: "Этот email уже используется" });
-      if (arr.includes("phone")) return res.status(409).json({ error: "Этот телефон уже используется" });
       return res.status(409).json({ error: "Пользователь уже существует" });
     }
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
+});
+
+authRouter.get("/verify-email", async (req, res) => {
+  const parsed = z.object({ token: z.string().min(10) }).safeParse(req.query);
+  if (!parsed.success) return res.status(400).json({ error: "Неверные данные" });
+  const prisma = getPrisma();
+  const now = new Date();
+  const tokenHash = verifyTokenHash(parsed.data.token);
+
+  try {
+    const u = await prisma.user.findFirst({
+      where: { emailVerifyTokenHash: tokenHash },
+      select: { id: true, emailVerifiedAt: true, emailVerifyTokenExpires: true },
+    });
+    if (!u) return res.status(400).json({ error: "Ссылка недействительна" });
+    if (u.emailVerifiedAt) return res.json({ ok: true, already: true });
+    if (u.emailVerifyTokenExpires && u.emailVerifyTokenExpires < now) {
+      return res.status(400).json({ error: "Ссылка истекла. Запросите письмо ещё раз." });
+    }
+
+    await prisma.user.update({
+      where: { id: u.id },
+      data: { emailVerifiedAt: now, emailVerifyTokenHash: null, emailVerifyTokenExpires: null },
+    });
+    return res.json({ ok: true });
+  } catch {
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
+});
+
+authRouter.post("/verify-email/resend", requireAuth, async (req, res) => {
+  const prisma = getPrisma();
+  try {
+    const u = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: { id: true, email: true, emailVerifiedAt: true },
+    });
+    if (!u) return res.status(404).json({ error: "Пользователь не найден" });
+    if (!u.email) return res.status(400).json({ error: "У пользователя нет email" });
+    if (u.emailVerifiedAt) return res.json({ ok: true, already: true });
+
+    const { token, tokenHash } = makeEmailVerifyToken();
+    const expires = new Date(Date.now() + 1000 * 60 * 60 * 24);
+    await prisma.user.update({
+      where: { id: u.id },
+      data: { emailVerifyTokenHash: tokenHash, emailVerifyTokenExpires: expires },
+    });
+    const verifyUrl = `${getPublicAppUrl()}/verify-email?token=${encodeURIComponent(token)}`;
+    try {
+      await sendVerifyEmail(u.email, verifyUrl);
+    } catch {
+      // ignore
+    }
+    const includeUrl = env.NODE_ENV !== "production";
+    return res.json({ ok: true, ...(includeUrl ? { emailVerifyUrl: verifyUrl } : {}) });
+  } catch {
     return res.status(503).json({ error: "База данных недоступна" });
   }
 });
@@ -183,6 +252,7 @@ authRouter.get("/me", requireAuth, async (req, res) => {
         avatarUrl: true,
         bio: true,
         createdAt: true,
+        emailVerifiedAt: true,
       },
     });
 

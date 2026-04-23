@@ -22,7 +22,7 @@ function hintForStartupDbError(e: unknown): string | undefined {
 }
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
 import { allowedCategories } from "../../lib/categories";
-import { requireAuth, tryAuth } from "../../middleware/auth";
+import { requireAuth, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
 
 export const startupsRouter = Router();
 
@@ -260,7 +260,7 @@ startupsRouter.get("/:startupId", tryAuth, async (req, res) => {
   }
 });
 
-startupsRouter.post("/", requireAuth, async (req, res) => {
+startupsRouter.post("/", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const parsed = createStartupSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -361,7 +361,7 @@ startupsRouter.delete("/:startupId", requireAuth, async (req, res) => {
   }
 });
 
-startupsRouter.put("/:startupId", requireAuth, async (req, res) => {
+startupsRouter.put("/:startupId", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const startupId =
     typeof req.params.startupId === "string" ? req.params.startupId : req.params.startupId[0];
@@ -466,7 +466,7 @@ const createAuctionSchema = z.object({
   startPrice: z.coerce.number().positive(),
 });
 
-startupsRouter.post("/:startupId/auction", requireAuth, async (req, res) => {
+startupsRouter.post("/:startupId/auction", requireAuth, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const startupId =
     typeof req.params.startupId === "string" ? req.params.startupId : req.params.startupId[0];

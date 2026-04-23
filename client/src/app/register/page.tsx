@@ -46,6 +46,7 @@ export default function RegisterPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailVerifyUrl, setEmailVerifyUrl] = useState<string | null>(null);
   const [ruCities, setRuCities] = useState<string[] | null>(null);
 
   const displayNamesRu = useMemo(() => {
@@ -167,6 +168,8 @@ export default function RegisterPage() {
         setError((data?.error as string) ?? "Не удалось создать аккаунт");
         return;
       }
+      const verifyUrl = (data as any)?.emailVerifyUrl;
+      if (typeof verifyUrl === "string" && verifyUrl.length > 10) setEmailVerifyUrl(verifyUrl);
       setStep(2);
     } catch {
       setError("Сетевая ошибка");
@@ -388,6 +391,23 @@ export default function RegisterPage() {
         ) : (
           <div className="max-w-2xl mx-auto bg-[#12121A] border border-white/10 rounded-3xl p-10">
             <h2 className="text-2xl font-semibold mb-8 text-center">Расскажите о себе</h2>
+
+            {email.trim() ? (
+              <div className="mb-8 rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-gray-200">
+                <div className="font-semibold text-white">Подтвердите email</div>
+                <div className="mt-2 text-gray-300">
+                  Мы отправили письмо с подтверждением на <span className="text-white">{email.trim()}</span>.
+                </div>
+                {emailVerifyUrl ? (
+                  <div className="mt-3 text-xs text-white/50">
+                    Dev-ссылка (если SMTP не настроен):{" "}
+                    <a className="text-violet-300 hover:text-white underline break-all" href={emailVerifyUrl}>
+                      {emailVerifyUrl}
+                    </a>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="grid md:grid-cols-2 gap-10">
               <div className="flex flex-col items-center">
