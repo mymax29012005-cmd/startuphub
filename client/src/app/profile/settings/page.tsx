@@ -259,11 +259,20 @@ export default function ProfileSettingsPage() {
     try {
       const controller = new AbortController();
       const t = window.setTimeout(() => controller.abort(), 12_000);
-      const r = await fetch("/api/v1/auth/me/delete", {
+      // Prefer POST endpoint (some proxies restrict DELETE),
+      // but fall back to DELETE if server isn't updated yet.
+      let r = await fetch("/api/v1/auth/me/delete", {
         method: "POST",
         credentials: "include",
         signal: controller.signal,
       });
+      if (r.status === 404) {
+        r = await fetch("/api/v1/auth/me", {
+          method: "DELETE",
+          credentials: "include",
+          signal: controller.signal,
+        });
+      }
       window.clearTimeout(t);
       const data = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) {
