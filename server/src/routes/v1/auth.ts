@@ -215,7 +215,24 @@ authRouter.post("/login", async (req, res) => {
         deletedReason: true,
       },
     });
-    if (!user) return res.status(401).json({ error: "Неверные данные для входа" });
+    if (!user) {
+      // If user was deleted by admin and contacts were archived, show reason.
+      const deleted = email
+        ? await prisma.user.findFirst({
+            where: { deletedEmail: { equals: email, mode: "insensitive" as const }, deletedAt: { not: null } as any },
+            select: { deletedAt: true, deletedReason: true },
+          } as any)
+        : phone
+          ? await prisma.user.findFirst({
+              where: { deletedPhone: phone, deletedAt: { not: null } as any },
+              select: { deletedAt: true, deletedReason: true },
+            } as any)
+          : null;
+      if (deleted?.deletedAt) {
+        return res.status(403).json({ error: "Аккаунт удалён", reason: deleted.deletedReason ?? "Удалён администратором" });
+      }
+      return res.status(401).json({ error: "Неверные данные для входа" });
+    }
 
     if (user.deletedAt) {
       return res.status(403).json({ error: "Аккаунт удалён", reason: user.deletedReason ?? "Удалён администратором" });

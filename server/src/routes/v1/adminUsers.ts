@@ -182,11 +182,20 @@ adminUsersRouter.delete("/:id", async (req, res) => {
       await tx.attachment.deleteMany({ where: { ownerId: id } });
 
       // Finally, soft-delete user so we can show message on login.
+      const prev = await tx.user.findUnique({
+        where: { id },
+        select: { email: true, phone: true },
+      });
+
       await tx.user.update({
         where: { id },
         data: {
           deletedAt: now,
           deletedReason: parsed.data.reason,
+          deletedEmail: prev?.email ?? null,
+          deletedPhone: prev?.phone ?? null,
+          email: null,
+          phone: null,
           bannedAt: null,
           bannedReason: null,
           emailVerifyTokenHash: null,

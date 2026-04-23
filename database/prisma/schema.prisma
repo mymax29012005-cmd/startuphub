@@ -100,6 +100,8 @@ model User {
 
   deletedAt     DateTime?
   deletedReason String?
+  deletedEmail  String?
+  deletedPhone  String?
 
   avatarUrl    String?
   bio          String?
