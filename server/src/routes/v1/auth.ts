@@ -46,7 +46,10 @@ authRouter.post("/register", async (req, res) => {
 
   const prisma = getPrisma();
   try {
-    const exists = await prisma.user.findFirst({ where: { email }, select: { id: true } });
+    const exists = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+      select: { id: true },
+    });
     if (exists) return res.status(409).json({ error: "Этот email уже используется" });
 
     const passwordHash = await bcryptjs.hash(password, 10);
@@ -195,7 +198,7 @@ authRouter.post("/login", async (req, res) => {
   const prisma = getPrisma();
 
   try {
-  const where = email ? { email } : { phone };
+    const where = email ? { email: { equals: email, mode: "insensitive" as const } } : { phone };
     const user = await prisma.user.findFirst({ where });
     if (!user) return res.status(401).json({ error: "Неверные данные для входа" });
 
