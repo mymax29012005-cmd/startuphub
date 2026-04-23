@@ -341,6 +341,18 @@ authRouter.delete("/me", requireAuth, async (req, res) => {
   }
 });
 
+// Some reverse proxies restrict DELETE methods. Provide POST alternative.
+authRouter.post("/me/delete", requireAuth, async (req, res) => {
+  const prisma = getPrisma();
+  try {
+    await prisma.user.delete({ where: { id: req.user!.userId } });
+    res.clearCookie(env.COOKIE_NAME, { path: "/" });
+    return res.status(200).json({ ok: true });
+  } catch (_e) {
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
+});
+
 authRouter.patch("/me/password", requireAuth, async (req, res) => {
   const parsed = z
     .object({

@@ -257,7 +257,7 @@ export default function ProfileSettingsPage() {
     setSaving(true);
     setError(null);
     try {
-      const r = await fetch("/api/v1/auth/me", { method: "DELETE", credentials: "include" });
+      const r = await fetch("/api/v1/auth/me/delete", { method: "POST", credentials: "include" });
       const data = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) {
         setError(data?.error ?? "Не удалось удалить аккаунт");
