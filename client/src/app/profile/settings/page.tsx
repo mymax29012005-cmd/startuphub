@@ -257,15 +257,23 @@ export default function ProfileSettingsPage() {
     setSaving(true);
     setError(null);
     try {
-      const r = await fetch("/api/v1/auth/me/delete", { method: "POST", credentials: "include" });
+      const controller = new AbortController();
+      const t = window.setTimeout(() => controller.abort(), 12_000);
+      const r = await fetch("/api/v1/auth/me/delete", {
+        method: "POST",
+        credentials: "include",
+        signal: controller.signal,
+      });
+      window.clearTimeout(t);
       const data = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) {
         setError(data?.error ?? "Не удалось удалить аккаунт");
         return;
       }
-      router.push("/");
+      // Hard redirect so state/cookies are definitely reset in all setups.
+      window.location.href = "/";
     } catch {
-      setError("Сетевая ошибка");
+      setError("Не удалось удалить аккаунт (проверь соединение).");
     } finally {
       setSaving(false);
     }
@@ -615,7 +623,7 @@ export default function ProfileSettingsPage() {
               onClick={() => void onDeleteAccount()}
               className="mt-3 w-full py-4 text-sm text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-400/40 rounded-2xl"
             >
-              Удалить аккаунт
+              {saving ? "Удаляем…" : "Удалить аккаунт"}
             </button>
           </form>
         )}
