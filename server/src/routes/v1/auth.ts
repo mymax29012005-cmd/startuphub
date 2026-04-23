@@ -100,12 +100,11 @@ authRouter.post("/register", async (req, res) => {
 
     if (email && verify) {
       const verifyUrl = `${getPublicAppUrl()}/verify-email?token=${encodeURIComponent(verify.token)}`;
-      try {
-        await sendVerifyEmail(email, verifyUrl);
-      } catch (e) {
+      // Never block registration on SMTP.
+      void sendVerifyEmail(email, verifyUrl).catch((e) => {
         // eslint-disable-next-line no-console
         console.error("[email] failed to send verify email:", e);
-      }
+      });
       // In non-prod, help testing if SMTP isn't configured.
       const includeUrl = env.NODE_ENV !== "production";
       return res.status(201).json({ ...user, ...(includeUrl ? { emailVerifyUrl: verifyUrl } : {}) });
@@ -170,12 +169,11 @@ authRouter.post("/verify-email/resend", requireAuth, async (req, res) => {
       data: { emailVerifyTokenHash: tokenHash, emailVerifyTokenExpires: expires },
     });
     const verifyUrl = `${getPublicAppUrl()}/verify-email?token=${encodeURIComponent(token)}`;
-    try {
-      await sendVerifyEmail(u.email, verifyUrl);
-    } catch (e) {
+    // Never block response on SMTP.
+    void sendVerifyEmail(u.email, verifyUrl).catch((e) => {
       // eslint-disable-next-line no-console
       console.error("[email] failed to resend verify email:", e);
-    }
+    });
     const includeUrl = env.NODE_ENV !== "production";
     return res.json({ ok: true, ...(includeUrl ? { emailVerifyUrl: verifyUrl } : {}) });
   } catch {

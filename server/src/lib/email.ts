@@ -40,6 +40,10 @@ export async function sendVerifyEmail(toEmail: string, verifyUrl: string) {
     port: env.SMTP_PORT!,
     secure: env.SMTP_PORT === 465,
     auth: { user: env.SMTP_USER!, pass: env.SMTP_PASS! },
+    // Prevent request hangs on flaky SMTP.
+    connectionTimeout: 5_000,
+    greetingTimeout: 5_000,
+    socketTimeout: 10_000,
   });
 
   const html = `
@@ -58,12 +62,20 @@ export async function sendVerifyEmail(toEmail: string, verifyUrl: string) {
     </div>
   `;
 
-  await transporter.sendMail({
+  const sendPromise = transporter.sendMail({
     from: env.SMTP_FROM!,
     to: toEmail,
     subject: "Подтвердите почту — StartupHub",
     html,
   });
+
+  // Extra safety: hard timeout even if underlying socket hangs.
+  await Promise.race([
+    sendPromise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("SMTP sendMail timeout")), 12_000),
+    ),
+  ]);
 
   return { sent: true as const };
 }

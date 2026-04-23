@@ -298,11 +298,11 @@ moderationRouter.get("/my", requireAuth, async (req, res) => {
     ]);
 
     const items = [
-      ...startups.map((x) => ({ type: "startup" as const, id: x.id, title: x.title, ...x })),
-      ...ideas.map((x) => ({ type: "idea" as const, id: x.id, title: x.title, ...x })),
-      ...inv.map((x) => ({ type: "investor" as const, id: x.id, title: (x.profileExtra as any)?.investorName ?? `Инвестор: ${x.industry}`, ...x })),
-      ...partners.map((x) => ({ type: "partner" as const, id: x.id, title: (x.profileExtra as any)?.partnerName ?? `Партнёр: ${x.industry}`, ...x })),
-      ...auctions.map((x) => ({ type: "auction" as const, id: x.id, title: `Аукцион: ${x.startup.title}`, ...x })),
+      ...startups.map((x) => ({ ...x, type: "startup" as const, id: x.id, title: x.title })),
+      ...ideas.map((x) => ({ ...x, type: "idea" as const, id: x.id, title: x.title })),
+      ...inv.map((x) => ({ ...x, type: "investor" as const, id: x.id, title: (x.profileExtra as any)?.investorName ?? `Инвестор: ${x.industry}` })),
+      ...partners.map((x) => ({ ...x, type: "partner" as const, id: x.id, title: (x.profileExtra as any)?.partnerName ?? `Партнёр: ${x.industry}` })),
+      ...auctions.map((x) => ({ ...x, type: "auction" as const, id: x.id, title: `Аукцион: ${x.startup.title}` })),
     ].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
 
     return res.json(items);
