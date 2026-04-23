@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
 import { allowedCategories } from "../../lib/categories";
-import { requireAuth, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
+import { requireAuth, requireNotBanned, requireNotDeleted, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
 
 export const investorsRouter = Router();
 
@@ -130,7 +130,7 @@ investorsRouter.get("/:requestId", tryAuth, async (req, res) => {
   }
 });
 
-investorsRouter.post("/", requireAuth, requireVerifiedEmail, async (req, res) => {
+investorsRouter.post("/", requireAuth, requireNotDeleted, requireNotBanned, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const parsed = createInvestorSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -197,7 +197,7 @@ investorsRouter.delete("/:requestId", requireAuth, async (req, res) => {
   }
 });
 
-investorsRouter.put("/:requestId", requireAuth, requireVerifiedEmail, async (req, res) => {
+investorsRouter.put("/:requestId", requireAuth, requireNotDeleted, requireNotBanned, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const requestId =
     typeof req.params.requestId === "string" ? req.params.requestId : req.params.requestId[0];

@@ -43,7 +43,9 @@ export default function LoginPage() {
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) {
-        setError((data?.error as string) ?? "Не удалось войти");
+        const base = (data?.error as string) ?? "Не удалось войти";
+        const reason = typeof data?.reason === "string" && data.reason.trim() ? String(data.reason).trim() : "";
+        setError(reason ? `${base}: ${reason}` : base);
         return;
       }
       router.push("/profile");

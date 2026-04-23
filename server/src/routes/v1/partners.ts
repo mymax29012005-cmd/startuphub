@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
 import { allowedCategories } from "../../lib/categories";
-import { requireAuth, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
+import { requireAuth, requireNotBanned, requireNotDeleted, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
 
 export const partnersRouter = Router();
 
@@ -137,7 +137,7 @@ partnersRouter.get("/:requestId", tryAuth, async (req, res) => {
   }
 });
 
-partnersRouter.post("/", requireAuth, requireVerifiedEmail, async (req, res) => {
+partnersRouter.post("/", requireAuth, requireNotDeleted, requireNotBanned, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const parsed = createPartnerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -204,7 +204,7 @@ partnersRouter.delete("/:requestId", requireAuth, async (req, res) => {
   }
 });
 
-partnersRouter.put("/:requestId", requireAuth, requireVerifiedEmail, async (req, res) => {
+partnersRouter.put("/:requestId", requireAuth, requireNotDeleted, requireNotBanned, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const requestId =
     typeof req.params.requestId === "string" ? req.params.requestId : req.params.requestId[0];

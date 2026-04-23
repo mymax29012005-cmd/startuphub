@@ -199,8 +199,27 @@ authRouter.post("/login", async (req, res) => {
 
   try {
     const where = email ? { email: { equals: email, mode: "insensitive" as const } } : { phone };
-    const user = await prisma.user.findFirst({ where });
+    const user = await prisma.user.findFirst({
+      where,
+      select: {
+        id: true,
+        role: true,
+        accountType: true,
+        name: true,
+        email: true,
+        phone: true,
+        avatarUrl: true,
+        bio: true,
+        passwordHash: true,
+        deletedAt: true,
+        deletedReason: true,
+      },
+    });
     if (!user) return res.status(401).json({ error: "Неверные данные для входа" });
+
+    if (user.deletedAt) {
+      return res.status(403).json({ error: "Аккаунт удалён", reason: user.deletedReason ?? "Удалён администратором" });
+    }
 
     const ok = await bcryptjs.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ error: "Неверные данные для входа" });

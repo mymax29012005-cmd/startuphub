@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
-import { requireAuth, requireVerifiedEmail } from "../../middleware/auth";
+import { requireAuth, requireNotBanned, requireNotDeleted, requireVerifiedEmail } from "../../middleware/auth";
 
 export const startupAnalysisRouter = Router();
 
@@ -12,7 +12,7 @@ const createStartupAnalysisSchema = z.object({
 });
 
 // Save computed analysis for the current user.
-startupAnalysisRouter.post("/", requireAuth, requireVerifiedEmail, async (req, res) => {
+startupAnalysisRouter.post("/", requireAuth, requireNotDeleted, requireNotBanned, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const parsed = createStartupAnalysisSchema.safeParse(req.body);
   if (!parsed.success) {

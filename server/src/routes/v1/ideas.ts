@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
 import { allowedCategories } from "../../lib/categories";
-import { requireAuth, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
+import { requireAuth, requireNotBanned, requireNotDeleted, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
 
 export const ideasRouter = Router();
 
@@ -196,7 +196,7 @@ ideasRouter.get("/:ideaId", tryAuth, async (req, res) => {
   }
 });
 
-ideasRouter.post("/", requireAuth, requireVerifiedEmail, async (req, res) => {
+ideasRouter.post("/", requireAuth, requireNotDeleted, requireNotBanned, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const parsed = createIdeaSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -282,7 +282,7 @@ ideasRouter.delete("/:ideaId", requireAuth, async (req, res) => {
   }
 });
 
-ideasRouter.put("/:ideaId", requireAuth, requireVerifiedEmail, async (req, res) => {
+ideasRouter.put("/:ideaId", requireAuth, requireNotDeleted, requireNotBanned, requireVerifiedEmail, async (req, res) => {
   const prisma = getPrisma();
   const ideaId = typeof req.params.ideaId === "string" ? req.params.ideaId : req.params.ideaId[0];
   const parsed = updateIdeaSchema.safeParse(req.body);

@@ -95,6 +95,12 @@ model User {
   emailVerifyTokenHash    String?
   emailVerifyTokenExpires DateTime?
 
+  bannedAt     DateTime?
+  bannedReason String?
+
+  deletedAt     DateTime?
+  deletedReason String?
+
   avatarUrl    String?
   bio          String?
 

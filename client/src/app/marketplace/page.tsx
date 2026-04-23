@@ -9,7 +9,7 @@ import { allowedCategories } from "@/lib/categories";
 import { formatLabelsByLang, partnerRoleLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import type { IdeaProfileExtra, InvestorProfileExtra, PartnerProfileExtra } from "@/lib/marketplaceExtras";
 
-type TabKey = "startups" | "ideas" | "investors" | "partners" | "my" | "moderation";
+type TabKey = "startups" | "ideas" | "investors" | "partners" | "my" | "moderation" | "users";
 
 type StartupItem = {
   id: string;
@@ -77,7 +77,7 @@ const partnerRoles = ["supplier", "reseller", "integration", "cofounder"] as con
 
 function tabFromSearchParams(sp: URLSearchParams): TabKey {
   const t = sp.get("tab");
-  if (t === "ideas" || t === "investors" || t === "partners" || t === "startups" || t === "my" || t === "moderation") return t;
+  if (t === "ideas" || t === "investors" || t === "partners" || t === "startups" || t === "my" || t === "moderation" || t === "users") return t;
   return "startups";
 }
 
@@ -107,6 +107,25 @@ type MySubmissionItem = {
   rejectedReason: string | null;
   updatedAt: string;
   createdAt: string;
+};
+
+type AdminUserRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  role: "user" | "admin";
+  accountType: string;
+  createdAt: string;
+  emailVerifiedAt: string | null;
+  bannedAt: string | null;
+  bannedReason: string | null;
+  deletedAt: string | null;
+  deletedReason: string | null;
+  startupsCount: number;
+  ideasCount: number;
+  investorRequestsCount: number;
+  partnerRequestsCount: number;
 };
 
 
@@ -166,10 +185,24 @@ function MarketplaceInner() {
 
   const [toast, setToast] = useState<{ text: string; kind: "ok" | "err" } | null>(null);
 
+  const [usersQ, setUsersQ] = useState("");
+  const [users, setUsers] = useState<AdminUserRow[] | null>(null);
+  const [usersTotal, setUsersTotal] = useState<number>(0);
+  const [usersBusyId, setUsersBusyId] = useState<string | null>(null);
+  const [usersShowDeleted, setUsersShowDeleted] = useState(false);
+
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [userDialogMode, setUserDialogMode] = useState<"ban" | "delete">("ban");
+  const [userDialogReason, setUserDialogReason] = useState("");
+  const [userDialogTarget, setUserDialogTarget] = useState<AdminUserRow | null>(null);
+
   const visibleTabs = useMemo(() => {
     const out: Array<{ key: TabKey; label: string }> = [...baseTabs];
     if (me?.id && me?.role !== "admin") out.push({ key: "my", label: "Ожидают подтверждения" });
-    if (me?.role === "admin") out.push({ key: "moderation", label: "На проверке" });
+    if (me?.role === "admin") {
+      out.push({ key: "moderation", label: "На проверке" });
+      out.push({ key: "users", label: "Список пользователей" });
+    }
     return out;
   }, [me?.id, me?.role]);
 
@@ -259,7 +292,37 @@ function MarketplaceInner() {
         if (!r.ok) throw new Error("db");
         setMySubmissions((await r.json()) as MySubmissionItem[]);
       }
+      if (tab === "users" && users === null) {
+        const qs = new URLSearchParams();
+        if (usersQ.trim()) qs.set("q", usersQ.trim());
+        if (usersShowDeleted) qs.set("showDeleted", "true");
+        const r = await fetch(`/api/v1/admin/users?${qs.toString()}`, { credentials: "include", cache: "no-store" });
+        const data = (await r.json().catch(() => ({}))) as { items?: AdminUserRow[]; total?: number; error?: string };
+        if (!r.ok) throw new Error(data.error ?? "db");
+        setUsers(Array.isArray(data.items) ? data.items : []);
+        setUsersTotal(typeof data.total === "number" ? data.total : 0);
+      }
     } catch {
+      setDbError(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadUsers() {
+    setDbError(false);
+    setLoading(true);
+    try {
+      const qs = new URLSearchParams();
+      if (usersQ.trim()) qs.set("q", usersQ.trim());
+      if (usersShowDeleted) qs.set("showDeleted", "true");
+      const r = await fetch(`/api/v1/admin/users?${qs.toString()}`, { credentials: "include", cache: "no-store" });
+      const data = (await r.json().catch(() => ({}))) as { items?: AdminUserRow[]; total?: number; error?: string };
+      if (!r.ok) throw new Error(data.error ?? "Ошибка");
+      setUsers(Array.isArray(data.items) ? data.items : []);
+      setUsersTotal(typeof data.total === "number" ? data.total : 0);
+    } catch (e) {
+      setToast({ kind: "err", text: e instanceof Error ? e.message : "Ошибка" });
       setDbError(true);
     } finally {
       setLoading(false);
@@ -288,6 +351,8 @@ function MarketplaceInner() {
   useEffect(() => {
     if (activeTab === "moderation") {
       void loadModerationQueue();
+    } else if (activeTab === "users") {
+      void loadUsers();
     } else {
       void ensureLoaded(activeTab);
     }
@@ -709,6 +774,102 @@ function MarketplaceInner() {
                 ].join(" ")}
               >
                 Отправить
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {userDialogOpen && userDialogTarget ? (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/70 px-4 py-8" role="presentation" onClick={() => setUserDialogOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#12121A] p-6 sm:p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-xl font-bold text-white">{userDialogMode === "ban" ? "Заблокировать пользователя" : "Удалить пользователя"}</div>
+                <div className="mt-1 text-sm text-gray-400">
+                  {userDialogMode === "ban"
+                    ? "Пользователь не сможет писать в чат и отправлять карточки."
+                    : "Аккаунт будет помечен удалённым, а все данные пользователя (карточки/чаты/избранное) будут удалены. При попытке входа увидит причину."}
+                </div>
+                <div className="mt-3 text-sm text-white/80">
+                  {userDialogTarget.name} — {userDialogTarget.email ?? userDialogTarget.phone ?? userDialogTarget.id}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 hover:bg-white/10"
+                onClick={() => setUserDialogOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-6">
+              <div className="text-xs text-white/40 mb-2">Причина (обязательно)</div>
+              <textarea
+                value={userDialogReason}
+                onChange={(e) => setUserDialogReason(e.target.value)}
+                className="w-full min-h-[120px] rounded-3xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-white placeholder-white/30 outline-none focus:border-violet-500/40"
+                placeholder={userDialogMode === "ban" ? "Например: спам / мошенничество / нарушение правил…" : "Например: мультиаккаунт / спам / нарушение правил…"}
+              />
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setUserDialogOpen(false)}
+                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-gray-200 hover:bg-white/10"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                disabled={!userDialogReason.trim() || usersBusyId === userDialogTarget.id}
+                onClick={async () => {
+                  const reason = userDialogReason.trim();
+                  if (!reason) return;
+                  setUsersBusyId(userDialogTarget.id);
+                  try {
+                    const r =
+                      userDialogMode === "ban"
+                        ? await fetch(`/api/v1/admin/users/${encodeURIComponent(userDialogTarget.id)}/ban`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ reason }),
+                          })
+                        : await fetch(`/api/v1/admin/users/${encodeURIComponent(userDialogTarget.id)}`, {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ reason }),
+                          });
+                    const data = (await r.json().catch(() => ({}))) as { error?: string };
+                    if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                    setUserDialogOpen(false);
+                    setUserDialogReason("");
+                    setUserDialogTarget(null);
+                    await loadUsers();
+                    setToast({ kind: "ok", text: userDialogMode === "ban" ? "Пользователь заблокирован" : "Пользователь удалён" });
+                  } catch (e) {
+                    setToast({ kind: "err", text: e instanceof Error ? e.message : "Ошибка" });
+                  } finally {
+                    setUsersBusyId(null);
+                  }
+                }}
+                className={[
+                  "rounded-2xl px-5 py-3 text-sm font-semibold disabled:opacity-60",
+                  userDialogMode === "ban"
+                    ? "bg-amber-500/15 hover:bg-amber-500/20 text-amber-200 border border-amber-500/20"
+                    : "bg-rose-500/15 hover:bg-rose-500/20 text-rose-200 border border-rose-500/20",
+                ].join(" ")}
+              >
+                {usersBusyId === userDialogTarget.id ? "…" : userDialogMode === "ban" ? "Заблокировать" : "Удалить"}
               </button>
             </div>
           </div>
@@ -1222,6 +1383,142 @@ function MarketplaceInner() {
                         })()}
                       </>
                     ) : null}
+
+                {activeTab === "users" ? (
+                  <>
+                    <div className="rounded-3xl border border-white/10 bg-[#161618] p-5">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                          <div className="min-w-0">
+                            <div className="text-xs text-white/40 mb-1">Поиск</div>
+                            <input
+                              value={usersQ}
+                              onChange={(e) => setUsersQ(e.target.value)}
+                              className="min-w-0 w-full sm:w-[360px] rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm"
+                              placeholder="email / имя / телефон"
+                            />
+                          </div>
+                          <label className="flex items-center gap-2 text-sm text-gray-300">
+                            <input
+                              type="checkbox"
+                              checked={usersShowDeleted}
+                              onChange={(e) => setUsersShowDeleted(e.target.checked)}
+                              className="accent-violet-500"
+                            />
+                            Показывать удалённых
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => void loadUsers()}
+                            className="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/15"
+                          >
+                            Обновить
+                          </button>
+                        </div>
+                        <div className="text-xs text-white/40">Всего: {usersTotal}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-col gap-4">
+                      {(users ?? []).map((u) => {
+                        const banned = !!u.bannedAt;
+                        const deleted = !!u.deletedAt;
+                        const badge = deleted ? "Удалён" : banned ? "Заблокирован" : "Активен";
+                        const badgeCls = deleted
+                          ? "bg-rose-500/15 text-rose-200"
+                          : banned
+                            ? "bg-amber-500/15 text-amber-200"
+                            : "bg-emerald-500/15 text-emerald-200";
+                        return (
+                          <div key={u.id} className="rounded-3xl border border-white/10 bg-[#161618] p-6">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
+                                  <span className={["rounded-xl px-2 py-1", badgeCls].join(" ")}>{badge}</span>
+                                  {u.role === "admin" ? <span className="rounded-xl bg-violet-500/15 px-2 py-1 text-violet-200">ADMIN</span> : null}
+                                  {u.emailVerifiedAt ? (
+                                    <span className="rounded-xl bg-emerald-500/10 px-2 py-1 text-emerald-200">email ok</span>
+                                  ) : (
+                                    <span className="rounded-xl bg-white/5 px-2 py-1 text-white/70">email pending</span>
+                                  )}
+                                </div>
+                                <div className="mt-2 truncate text-xl font-semibold text-white">{u.name}</div>
+                                <div className="mt-1 text-sm text-gray-300">
+                                  {u.email ?? "—"} {u.phone ? <span className="text-gray-500">· {u.phone}</span> : null}
+                                </div>
+                                <div className="mt-3 text-xs text-white/50">
+                                  Стартапы: {u.startupsCount} · Идеи: {u.ideasCount} · Инвесторы: {u.investorRequestsCount} · Партнёры: {u.partnerRequestsCount}
+                                </div>
+                                {u.bannedAt ? <div className="mt-2 text-sm text-amber-200">Причина блокировки: {u.bannedReason ?? "—"}</div> : null}
+                                {u.deletedAt ? <div className="mt-2 text-sm text-rose-200">Причина удаления: {u.deletedReason ?? "—"}</div> : null}
+                              </div>
+                              <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                                {!deleted ? (
+                                  banned ? (
+                                    <button
+                                      type="button"
+                                      disabled={usersBusyId === u.id}
+                                      onClick={async () => {
+                                        setUsersBusyId(u.id);
+                                        try {
+                                          const r = await fetch(`/api/v1/admin/users/${encodeURIComponent(u.id)}/unban`, {
+                                            method: "POST",
+                                            credentials: "include",
+                                          });
+                                          const data = (await r.json().catch(() => ({}))) as { error?: string };
+                                          if (!r.ok) throw new Error(data.error ?? "Ошибка");
+                                          await loadUsers();
+                                          setToast({ kind: "ok", text: "Пользователь разблокирован" });
+                                        } catch (e) {
+                                          setToast({ kind: "err", text: e instanceof Error ? e.message : "Ошибка" });
+                                        } finally {
+                                          setUsersBusyId(null);
+                                        }
+                                      }}
+                                      className="rounded-2xl bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
+                                    >
+                                      Разбанить
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      disabled={usersBusyId === u.id}
+                                      onClick={() => {
+                                        setUserDialogMode("ban");
+                                        setUserDialogTarget(u);
+                                        setUserDialogReason("Нарушение правил публикации");
+                                        setUserDialogOpen(true);
+                                      }}
+                                      className="rounded-2xl bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-500/20 disabled:opacity-60"
+                                    >
+                                      Забанить
+                                    </button>
+                                  )
+                                ) : null}
+                                <button
+                                  type="button"
+                                  disabled={usersBusyId === u.id || u.role === "admin"}
+                                  onClick={() => {
+                                    setUserDialogMode("delete");
+                                    setUserDialogTarget(u);
+                                    setUserDialogReason("Нарушение правил платформы");
+                                    setUserDialogOpen(true);
+                                  }}
+                                  className="rounded-2xl bg-rose-500/15 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-500/20 disabled:opacity-60"
+                                >
+                                  Удалить
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {(users ?? []).length === 0 ? (
+                        <div className="rounded-3xl border border-white/10 bg-[#161618] p-6 text-gray-400">Пользователи не найдены.</div>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
 
                 {activeTab === "startups"
                   ? startupCards.map((it) => (

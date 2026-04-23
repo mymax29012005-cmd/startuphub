@@ -14,6 +14,7 @@ import { chatsRouter } from "./v1/chats";
 import { uploadsRouter } from "./v1/uploads";
 import { moderationRouter } from "./v1/moderation";
 import { notificationsRouter } from "./v1/notifications";
+import { adminUsersRouter } from "./v1/adminUsers";
 
 export const apiV1Router = Router();
 
@@ -31,4 +32,5 @@ apiV1Router.use("/startup-analysis", startupAnalysisRouter);
 apiV1Router.use("/uploads", uploadsRouter);
 apiV1Router.use("/moderation", moderationRouter);
 apiV1Router.use("/notifications", notificationsRouter);
+apiV1Router.use("/admin/users", adminUsersRouter);
 
