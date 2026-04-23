@@ -32,6 +32,9 @@ export async function sendVerifyEmail(toEmail: string, verifyUrl: string) {
     return { sent: false as const };
   }
 
+  // eslint-disable-next-line no-console
+  console.log("[email] sending verification email to", toEmail, "via", env.SMTP_HOST, ":", env.SMTP_PORT);
+
   const transporter = nodemailer.createTransport({
     host: env.SMTP_HOST!,
     port: env.SMTP_PORT!,
