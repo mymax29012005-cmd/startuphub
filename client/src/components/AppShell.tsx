@@ -5,6 +5,7 @@ import type React from "react";
 
 import { Footer } from "./Footer";
 import { Header } from "./Header";
+import { EmailVerifyBanner } from "./EmailVerifyBanner";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
@@ -19,6 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       {hideHeader ? null : <Header />}
+      {hideHeader ? null : <EmailVerifyBanner />}
       <main className={hideHeader ? "flex-1" : "flex-1 pt-[var(--site-header-height)]"}>{children}</main>
       {hideFooter ? null : <Footer />}
     </div>

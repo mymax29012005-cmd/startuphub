@@ -8,6 +8,7 @@ import { City, Country } from "country-state-city";
 import { accountTypeLabelsByLang } from "@/lib/labelMaps";
 import { composeBio } from "@/lib/profileBio";
 import { useI18n } from "@/i18n/I18nProvider";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 
 type AccountType = "founder" | "investor" | "partner" | "buyer";
 
@@ -26,6 +27,8 @@ export default function RegisterPage() {
   // Step 1
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("founder");
   const [countryIso, setCountryIso] = useState("RU");
   const [country, setCountry] = useState("Россия");
@@ -149,6 +152,14 @@ export default function RegisterPage() {
 
   async function onStep1Continue() {
     setError(null);
+    if (!password || password.length < 8) {
+      setError("Пароль должен быть минимум 8 символов");
+      return;
+    }
+    if (password !== password2) {
+      setError("Пароли не совпадают");
+      return;
+    }
     setLoading(true);
     try {
       const r = await fetch("/api/v1/auth/register", {
@@ -161,6 +172,7 @@ export default function RegisterPage() {
           email: email.trim() ? email.trim() : undefined,
           password,
           accountType,
+          turnstileToken: turnstileToken || undefined,
         }),
       });
       const data = await r.json().catch(() => ({}));
@@ -302,6 +314,17 @@ export default function RegisterPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Повторите пароль</label>
+                <input
+                  type="password"
+                  value={password2}
+                  onChange={(e) => setPassword2(e.target.value)}
+                  className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
+                  placeholder="Повторите пароль"
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">Я</label>
@@ -365,6 +388,16 @@ export default function RegisterPage() {
 
               {error ? <div className="text-sm text-red-300">{error}</div> : null}
 
+              {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+                <div className="pt-1">
+                  <TurnstileWidget
+                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                    onToken={(t) => setTurnstileToken(t)}
+                    className="rounded-2xl overflow-hidden"
+                  />
+                </div>
+              ) : null}
+
               <div className="pt-2">
                 <button
                   type="button"
@@ -398,6 +431,7 @@ export default function RegisterPage() {
                 <div className="mt-2 text-gray-300">
                   Мы отправили письмо с подтверждением на <span className="text-white">{email.trim()}</span>.
                 </div>
+                <div className="mt-2 text-xs text-white/60">Если письма нет — проверьте папку “Спам”.</div>
                 {emailVerifyUrl ? (
                   <div className="mt-3 text-xs text-white/50">
                     Dev-ссылка (если SMTP не настроен):{" "}

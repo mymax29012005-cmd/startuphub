@@ -95,6 +95,11 @@ model User {
   emailVerifyTokenHash    String?
   emailVerifyTokenExpires DateTime?
 
+  passwordResetCodeHash    String?
+  passwordResetCodeExpires DateTime?
+  passwordResetAttempts    Int      @default(0)
+  passwordResetRequestedAt DateTime?
+
   bannedAt     DateTime?
   bannedReason String?
 

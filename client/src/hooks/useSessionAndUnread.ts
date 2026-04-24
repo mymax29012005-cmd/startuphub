@@ -9,6 +9,7 @@ export type AuthUser = {
   accountType: "founder" | "investor" | "partner" | "buyer";
   name: string;
   email?: string | null;
+  emailVerifiedAt?: string | null;
   phone?: string | null;
   avatarUrl?: string | null;
 };

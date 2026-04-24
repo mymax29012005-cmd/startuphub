@@ -35,6 +35,9 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().optional(),
+
+  // Cloudflare Turnstile (optional)
+  TURNSTILE_SECRET: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

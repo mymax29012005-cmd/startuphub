@@ -3,7 +3,9 @@ import bcryptjs from "bcryptjs";
 import { z } from "zod";
 
 import { env } from "../../lib/config";
-import { getPublicAppUrl, makeEmailVerifyToken, sendVerifyEmail, verifyTokenHash } from "../../lib/email";
+import crypto from "crypto";
+
+import { getPublicAppUrl, makeEmailVerifyToken, sendPasswordResetCode, sendVerifyEmail, verifyTokenHash } from "../../lib/email";
 import { getPrisma } from "../../lib/prisma";
 import { signJwt } from "../../lib/jwt";
 import { requireAuth } from "../../middleware/auth";
@@ -26,6 +28,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
   accountType: z.enum(["founder", "investor", "partner", "buyer"]),
+  turnstileToken: z.string().min(10).optional(),
 });
 
 const loginSchema = z.object({
@@ -34,18 +37,47 @@ const loginSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
+const resetRequestSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetConfirmSchema = z.object({
+  email: z.string().email(),
+  code: z.string().min(4).max(12),
+  newPassword: z.string().min(8).max(128),
+});
+
 authRouter.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Неверные данные", details: parsed.error.flatten() });
   }
 
-  const { name, password, accountType } = parsed.data;
+  const { name, password, accountType, turnstileToken } = parsed.data;
   const email = normEmail(parsed.data.email);
   if (!email) return res.status(400).json({ error: "Нужно указать email" });
 
   const prisma = getPrisma();
   try {
+    if (env.TURNSTILE_SECRET) {
+      if (!turnstileToken) return res.status(400).json({ error: "Подтвердите, что вы не бот" });
+      const ip = (req.headers["cf-connecting-ip"] as string) || (req.headers["x-forwarded-for"] as string) || req.ip;
+      const form = new URLSearchParams();
+      form.set("secret", env.TURNSTILE_SECRET);
+      form.set("response", turnstileToken);
+      if (ip) form.set("remoteip", String(ip).split(",")[0]!.trim());
+
+      const vr = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: form.toString(),
+      }).catch(() => null);
+      const vdata = (await vr?.json().catch(() => null)) as any;
+      if (!vr || !vdata?.success) {
+        return res.status(400).json({ error: "Проверка капчи не пройдена" });
+      }
+    }
+
     const exists = await prisma.user.findFirst({
       where: { email: { equals: email, mode: "insensitive" } },
       select: { id: true },
@@ -179,6 +211,108 @@ authRouter.post("/verify-email/resend", requireAuth, async (req, res) => {
     });
     const includeUrl = env.NODE_ENV !== "production";
     return res.json({ ok: true, ...(includeUrl ? { emailVerifyUrl: verifyUrl } : {}) });
+  } catch {
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
+});
+
+function makeResetCode() {
+  // 6-digit numeric code (OTP)
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+function hashResetCode(code: string) {
+  return crypto.createHash("sha256").update(code).digest("hex");
+}
+
+authRouter.post("/password/reset/request", async (req, res) => {
+  const parsed = resetRequestSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Неверные данные", details: parsed.error.flatten() });
+
+  const email = normEmail(parsed.data.email);
+  if (!email) return res.json({ ok: true });
+
+  const prisma = getPrisma();
+  try {
+    const u = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" as const }, deletedAt: null },
+      select: { id: true, email: true },
+    });
+
+    // Always return ok to avoid leaking whether user exists.
+    if (!u?.email) return res.json({ ok: true });
+
+    const code = makeResetCode();
+    const expires = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+    await prisma.user.update({
+      where: { id: u.id },
+      data: {
+        passwordResetCodeHash: hashResetCode(code),
+        passwordResetCodeExpires: expires,
+        passwordResetAttempts: 0,
+        passwordResetRequestedAt: new Date(),
+      },
+      select: { id: true },
+    });
+
+    void sendPasswordResetCode(u.email, code).catch((e) => {
+      // eslint-disable-next-line no-console
+      console.error("[email] failed to send password reset code:", e);
+    });
+
+    return res.json({ ok: true });
+  } catch {
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
+});
+
+authRouter.post("/password/reset/confirm", async (req, res) => {
+  const parsed = resetConfirmSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Неверные данные", details: parsed.error.flatten() });
+
+  const email = normEmail(parsed.data.email);
+  const code = String(parsed.data.code || "").trim();
+  if (!email) return res.status(400).json({ error: "Неверные данные" });
+
+  const prisma = getPrisma();
+  try {
+    const u = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" as const }, deletedAt: null },
+      select: {
+        id: true,
+        passwordResetCodeHash: true,
+        passwordResetCodeExpires: true,
+        passwordResetAttempts: true,
+      },
+    });
+    // Same response for missing user/code
+    if (!u?.passwordResetCodeHash || !u.passwordResetCodeExpires) return res.status(400).json({ error: "Неверный код" });
+    if (u.passwordResetCodeExpires < new Date()) return res.status(400).json({ error: "Код истёк. Запросите новый." });
+    if ((u.passwordResetAttempts ?? 0) >= 8) return res.status(429).json({ error: "Слишком много попыток. Запросите новый код." });
+
+    const ok = hashResetCode(code) === u.passwordResetCodeHash;
+    if (!ok) {
+      await prisma.user.update({
+        where: { id: u.id },
+        data: { passwordResetAttempts: (u.passwordResetAttempts ?? 0) + 1 },
+        select: { id: true },
+      });
+      return res.status(400).json({ error: "Неверный код" });
+    }
+
+    const nextHash = await bcryptjs.hash(parsed.data.newPassword, 10);
+    await prisma.user.update({
+      where: { id: u.id },
+      data: {
+        passwordHash: nextHash,
+        passwordResetCodeHash: null,
+        passwordResetCodeExpires: null,
+        passwordResetAttempts: 0,
+        passwordResetRequestedAt: null,
+      },
+      select: { id: true },
+    });
+
+    return res.json({ ok: true });
   } catch {
     return res.status(503).json({ error: "База данных недоступна" });
   }
