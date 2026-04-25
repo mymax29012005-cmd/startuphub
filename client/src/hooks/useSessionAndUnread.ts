@@ -43,10 +43,36 @@ export function useSessionAndUnread() {
       }
     }
     void loadMe();
+
+    function onSessionEvent() {
+      void loadMe();
+    }
+    window.addEventListener("startuphub:session", onSessionEvent);
     return () => {
       cancelled = true;
+      window.removeEventListener("startuphub:session", onSessionEvent);
     };
   }, [pathname]);
+
+  // Пока email не подтверждён — периодически обновляем /me (например после перехода по ссылке из письма).
+  useEffect(() => {
+    if (!user?.id || user.emailVerifiedAt) return;
+    const tmr = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      void fetch("/api/v1/auth/me", {
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Cache-Control": "no-store" },
+      })
+        .then(async (r) => {
+          if (!r.ok) return;
+          const data = (await r.json()) as AuthUser;
+          setUser(data);
+        })
+        .catch(() => {});
+    }, 45_000);
+    return () => window.clearInterval(tmr);
+  }, [user?.id, user?.emailVerifiedAt]);
 
   useEffect(() => {
     let cancelled = false;

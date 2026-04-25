@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type LoginMode = "email" | "phone";
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -39,6 +41,7 @@ export default function LoginPage() {
           email: mode === "email" && email.trim() ? email.trim() : undefined,
           phone: mode === "phone" && phone.trim() ? phone.trim() : undefined,
           password,
+          turnstileToken: turnstileToken || undefined,
         }),
       });
       const data = await r.json().catch(() => ({}));
@@ -146,6 +149,16 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
             </div>
+
+            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+              <div>
+                <TurnstileWidget
+                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                  onToken={(t) => setTurnstileToken(t)}
+                  className="rounded-2xl overflow-hidden"
+                />
+              </div>
+            ) : null}
 
             <div className="flex items-center justify-between text-sm">
               <Link className="text-violet-400 hover:text-violet-300 font-medium" href="/forgot-password">

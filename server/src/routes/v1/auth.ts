@@ -8,6 +8,7 @@ import crypto from "crypto";
 import { getPublicAppUrl, makeEmailVerifyToken, sendPasswordResetCode, sendVerifyEmail, verifyTokenHash } from "../../lib/email";
 import { getPrisma } from "../../lib/prisma";
 import { signJwt } from "../../lib/jwt";
+import { verifyTurnstileIfConfigured } from "../../lib/turnstile";
 import { requireAuth } from "../../middleware/auth";
 import { upload } from "../../upload/multer";
 
@@ -35,6 +36,7 @@ const loginSchema = z.object({
   email: z.string().email().optional(),
   phone: z.string().min(6).max(24).optional(),
   password: z.string().min(8).max(128),
+  turnstileToken: z.string().min(10).optional(),
 });
 
 const resetRequestSchema = z.object({
@@ -59,24 +61,8 @@ authRouter.post("/register", async (req, res) => {
 
   const prisma = getPrisma();
   try {
-    if (env.TURNSTILE_SECRET) {
-      if (!turnstileToken) return res.status(400).json({ error: "Подтвердите, что вы не бот" });
-      const ip = (req.headers["cf-connecting-ip"] as string) || (req.headers["x-forwarded-for"] as string) || req.ip;
-      const form = new URLSearchParams();
-      form.set("secret", env.TURNSTILE_SECRET);
-      form.set("response", turnstileToken);
-      if (ip) form.set("remoteip", String(ip).split(",")[0]!.trim());
-
-      const vr = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: form.toString(),
-      }).catch(() => null);
-      const vdata = (await vr?.json().catch(() => null)) as any;
-      if (!vr || !vdata?.success) {
-        return res.status(400).json({ error: "Проверка капчи не пройдена" });
-      }
-    }
+    const cap = await verifyTurnstileIfConfigured(req, turnstileToken);
+    if (!cap.ok) return res.status(cap.status).json({ error: cap.message });
 
     const exists = await prisma.user.findFirst({
       where: { email: { equals: email, mode: "insensitive" } },
@@ -326,12 +312,15 @@ authRouter.post("/login", async (req, res) => {
 
   const email = normEmail(parsed.data.email);
   const phone = normPhone(parsed.data.phone);
-  const { password } = parsed.data;
+  const { password, turnstileToken } = parsed.data;
   if (!email && !phone)
     return res.status(400).json({ error: "Нужно указать email или телефон" });
   const prisma = getPrisma();
 
   try {
+    const cap = await verifyTurnstileIfConfigured(req, turnstileToken);
+    if (!cap.ok) return res.status(cap.status).json({ error: cap.message });
+
     const where = email ? { email: { equals: email, mode: "insensitive" as const } } : { phone };
     const user = await prisma.user.findFirst({
       where,

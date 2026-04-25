@@ -24,6 +24,22 @@ function smtpConfigured() {
   return !!(env.SMTP_HOST && env.SMTP_PORT && env.SMTP_USER && env.SMTP_PASS && env.SMTP_FROM);
 }
 
+function createSmtpTransport() {
+  const port = env.SMTP_PORT!;
+  const secure = port === 465;
+  return nodemailer.createTransport({
+    host: env.SMTP_HOST!,
+    port,
+    secure,
+    requireTLS: !secure && port === 587,
+    auth: { user: env.SMTP_USER!, pass: env.SMTP_PASS! },
+    connectionTimeout: 5_000,
+    greetingTimeout: 5_000,
+    socketTimeout: 12_000,
+    tls: { minVersion: "TLSv1.2" as const },
+  });
+}
+
 export async function sendVerifyEmail(toEmail: string, verifyUrl: string) {
   if (!smtpConfigured()) {
     // Dev fallback: avoid throwing, but make it obvious in logs.
@@ -35,16 +51,7 @@ export async function sendVerifyEmail(toEmail: string, verifyUrl: string) {
   // eslint-disable-next-line no-console
   console.log("[email] sending verification email to", toEmail, "via", env.SMTP_HOST, ":", env.SMTP_PORT);
 
-  const transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST!,
-    port: env.SMTP_PORT!,
-    secure: env.SMTP_PORT === 465,
-    auth: { user: env.SMTP_USER!, pass: env.SMTP_PASS! },
-    // Prevent request hangs on flaky SMTP.
-    connectionTimeout: 5_000,
-    greetingTimeout: 5_000,
-    socketTimeout: 10_000,
-  });
+  const transporter = createSmtpTransport();
 
   const html = `
     <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height: 1.5;">
@@ -69,9 +76,13 @@ export async function sendVerifyEmail(toEmail: string, verifyUrl: string) {
   const sendPromise = transporter.sendMail({
     from: env.SMTP_FROM!,
     to: toEmail,
+    replyTo: env.SMTP_FROM!,
     subject: "Подтвердите почту — StartupHub",
     html,
     text,
+    headers: {
+      "X-Entity-Ref-ID": `verify-${Date.now()}`,
+    },
   });
 
   // Extra safety: hard timeout even if underlying socket hangs.
@@ -95,15 +106,7 @@ export async function sendPasswordResetCode(toEmail: string, code: string) {
   // eslint-disable-next-line no-console
   console.log("[email] sending password reset code to", toEmail, "via", env.SMTP_HOST, ":", env.SMTP_PORT);
 
-  const transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST!,
-    port: env.SMTP_PORT!,
-    secure: env.SMTP_PORT === 465,
-    auth: { user: env.SMTP_USER!, pass: env.SMTP_PASS! },
-    connectionTimeout: 5_000,
-    greetingTimeout: 5_000,
-    socketTimeout: 10_000,
-  });
+  const transporter = createSmtpTransport();
 
   const html = `
     <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height: 1.5;">
@@ -125,9 +128,13 @@ export async function sendPasswordResetCode(toEmail: string, code: string) {
   const sendPromise = transporter.sendMail({
     from: env.SMTP_FROM!,
     to: toEmail,
+    replyTo: env.SMTP_FROM!,
     subject: "Сброс пароля — StartupHub",
     html,
     text,
+    headers: {
+      "X-Entity-Ref-ID": `reset-${Date.now()}`,
+    },
   });
 
   await Promise.race([
