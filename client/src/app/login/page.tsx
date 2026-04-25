@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 
 import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -21,12 +21,19 @@ export default function LoginPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const needsCaptcha = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const captchaOk = !needsCaptcha || (turnstileToken && turnstileToken.length > 10);
 
   const canSubmit = useMemo(() => {
     if (!password || password.length < 8) return false;
     if (mode === "email") return email.trim().length > 0;
     return phone.trim().length > 0;
   }, [email, mode, password, phone]);
+
+  const onTurnstileToken = useCallback((tkn: string) => {
+    setTurnstileToken(tkn);
+    if (tkn) setError(null);
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -154,9 +161,10 @@ export default function LoginPage() {
               <div>
                 <TurnstileWidget
                   siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-                  onToken={(t) => setTurnstileToken(t)}
+                  onToken={onTurnstileToken}
                   className="rounded-2xl overflow-hidden"
                 />
+                {!captchaOk ? <div className="mt-2 text-xs text-white/50">Идёт проверка капчи…</div> : null}
               </div>
             ) : null}
 
@@ -171,7 +179,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading || !canSubmit}
+              disabled={loading || !canSubmit || !captchaOk}
               className="w-full py-5 sm:py-6 text-lg sm:text-xl font-semibold rounded-3xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition disabled:opacity-60"
             >
               {loading ? "…" : t("auth.submitLogin")}

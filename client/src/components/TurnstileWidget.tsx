@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useId, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
 declare global {
   interface Window {
@@ -45,8 +45,15 @@ export function TurnstileWidget({
   onToken: (token: string) => void;
   className?: string;
 }) {
-  const id = useId();
+  const containerIdRef = useRef<string | null>(null);
+  if (!containerIdRef.current) {
+    // stable id across rerenders; avoid widget remount "blinking"
+    containerIdRef.current = `ts-${Math.random().toString(16).slice(2)}${Date.now().toString(16)}`;
+  }
+  const id = containerIdRef.current;
   const widgetIdRef = useRef<string | null>(null);
+  const onTokenRef = useRef(onToken);
+  onTokenRef.current = onToken;
 
   useEffect(() => {
     let cancelled = false;
@@ -62,10 +69,10 @@ export function TurnstileWidget({
         sitekey: siteKey,
         theme: "dark",
         callback: (token: unknown) => {
-          if (typeof token === "string" && token.length > 5) onToken(token);
+          if (typeof token === "string" && token.length > 5) onTokenRef.current(token);
         },
-        "expired-callback": () => onToken(""),
-        "error-callback": () => onToken(""),
+        "expired-callback": () => onTokenRef.current(""),
+        "error-callback": () => onTokenRef.current(""),
       });
     }
 
@@ -80,7 +87,7 @@ export function TurnstileWidget({
         }
       }
     };
-  }, [id, onToken, siteKey]);
+  }, [id, siteKey]);
 
   return <div id={id} className={className} />;
 }
