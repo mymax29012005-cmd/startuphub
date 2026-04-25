@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useMemo, useState } from "react";
 
-import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type LoginMode = "email" | "phone";
@@ -17,12 +16,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const needsCaptcha = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
-  const captchaOk = !needsCaptcha || (turnstileToken && turnstileToken.length > 10);
 
   const canSubmit = useMemo(() => {
     if (!password || password.length < 8) return false;
@@ -30,10 +26,7 @@ export default function LoginPage() {
     return phone.trim().length > 0;
   }, [email, mode, password, phone]);
 
-  const onTurnstileToken = useCallback((tkn: string) => {
-    setTurnstileToken(tkn);
-    if (tkn) setError(null);
-  }, []);
+  const onAnyInput = useCallback(() => setError(null), []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,7 +41,6 @@ export default function LoginPage() {
           email: mode === "email" && email.trim() ? email.trim() : undefined,
           phone: mode === "phone" && phone.trim() ? phone.trim() : undefined,
           password,
-          turnstileToken: turnstileToken || undefined,
         }),
       });
       const data = await r.json().catch(() => ({}));
@@ -125,7 +117,10 @@ export default function LoginPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    onAnyInput();
+                    setEmail(e.target.value);
+                  }}
                   className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                   placeholder="you@example.com"
                   autoComplete="email"
@@ -137,7 +132,10 @@ export default function LoginPage() {
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    onAnyInput();
+                    setPhone(e.target.value);
+                  }}
                   className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                   placeholder="+7 (999) 123-45-67"
                   autoComplete="tel"
@@ -150,23 +148,15 @@ export default function LoginPage() {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  onAnyInput();
+                  setPassword(e.target.value);
+                }}
                 className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 sm:px-6 sm:py-5 focus:outline-none focus:border-violet-500"
                 placeholder="Пароль"
                 autoComplete="current-password"
               />
             </div>
-
-            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
-              <div>
-                <TurnstileWidget
-                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-                  onToken={onTurnstileToken}
-                  className="rounded-2xl overflow-hidden"
-                />
-                {!captchaOk ? <div className="mt-2 text-xs text-white/50">Идёт проверка капчи…</div> : null}
-              </div>
-            ) : null}
 
             <div className="flex items-center justify-between text-sm">
               <Link className="text-violet-400 hover:text-violet-300 font-medium" href="/forgot-password">
@@ -179,7 +169,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading || !canSubmit || !captchaOk}
+              disabled={loading || !canSubmit}
               className="w-full py-5 sm:py-6 text-lg sm:text-xl font-semibold rounded-3xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition disabled:opacity-60"
             >
               {loading ? "…" : t("auth.submitLogin")}

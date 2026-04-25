@@ -36,7 +36,6 @@ const loginSchema = z.object({
   email: z.string().email().optional(),
   phone: z.string().min(6).max(24).optional(),
   password: z.string().min(8).max(128),
-  turnstileToken: z.string().min(10).optional(),
 });
 
 const resetRequestSchema = z.object({
@@ -312,15 +311,12 @@ authRouter.post("/login", async (req, res) => {
 
   const email = normEmail(parsed.data.email);
   const phone = normPhone(parsed.data.phone);
-  const { password, turnstileToken } = parsed.data;
+  const { password } = parsed.data;
   if (!email && !phone)
     return res.status(400).json({ error: "Нужно указать email или телефон" });
   const prisma = getPrisma();
 
   try {
-    const cap = await verifyTurnstileIfConfigured(req, turnstileToken);
-    if (!cap.ok) return res.status(cap.status).json({ error: cap.message });
-
     const where = email ? { email: { equals: email, mode: "insensitive" as const } } : { phone };
     const user = await prisma.user.findFirst({
       where,
