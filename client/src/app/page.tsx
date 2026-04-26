@@ -306,18 +306,18 @@ export default function Home() {
               className="how-stack-card-wrap"
               style={{ "--how-index": s.n } as React.CSSProperties}
             >
-              <div className="how-stack-card-inner glass card-hover">
+              <div className="how-stack-card-inner card-hover">
                 <div className="how-stack-card-copy flex flex-col justify-center px-8 py-10 sm:px-10 sm:py-12 md:px-14 md:py-14 lg:py-16">
                   <div className="flex items-center gap-3">
                     <div className={`inline-flex size-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold ${s.nBg}`}>
                       {s.n}
                     </div>
-                    <span className="text-sm font-medium uppercase tracking-[0.2em] text-white/40">Шаг {s.n}</span>
+                    <span className="text-sm font-medium uppercase tracking-[0.2em] text-white/55">Шаг {s.n}</span>
                   </div>
                   <h3 className="mt-8 text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
                     {s.title}
                   </h3>
-                  <p className="mt-6 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg md:text-xl">{s.text}</p>
+                  <p className="mt-6 max-w-xl text-base leading-relaxed text-white/[0.88] sm:text-lg md:text-xl">{s.text}</p>
                 </div>
                 <div className={`how-stack-card-visual how-stack-card-visual--${s.n}`} aria-hidden />
               </div>

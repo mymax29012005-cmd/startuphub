@@ -170,6 +170,9 @@ select option {
   min-height: calc(100dvh - var(--site-header-height) - var(--how-index) * var(--how-top-offset) - 1.75rem);
   overflow: hidden;
   border-radius: 1.75rem;
+  /* Непрозрачная карточка: текст читается поверх любого фона секции */
+  background-color: #13131a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
     0 -14px 55px rgba(0, 0, 0, 0.48),
     0 36px 90px rgba(0, 0, 0, 0.4);
@@ -185,12 +188,16 @@ select option {
 .how-stack-card-copy {
   flex: 1 1 52%;
   min-width: 0;
+  background-color: #14141c;
+  background-image: linear-gradient(180deg, #17171f 0%, #121218 100%);
 }
 
 .how-stack-card-visual {
   flex: 1 1 48%;
   min-height: 220px;
   position: relative;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 @media (min-width: 768px) {
@@ -199,63 +206,232 @@ select option {
   }
 }
 
-.how-stack-card-visual--1 {
-  background:
-    radial-gradient(ellipse 90% 80% at 18% 28%, rgba(124, 58, 237, 0.55), transparent 58%),
-    radial-gradient(circle at 88% 72%, rgba(225, 29, 72, 0.38), transparent 52%),
-    linear-gradient(155deg, #0f0818 0%, #151028 45%, #0a101c 100%);
-}
-
-.how-stack-card-visual--2 {
-  background:
-    radial-gradient(circle at 75% 22%, rgba(225, 29, 72, 0.5), transparent 55%),
-    radial-gradient(ellipse 70% 60% at 12% 78%, rgba(124, 58, 237, 0.35), transparent 55%),
-    linear-gradient(165deg, #180810 0%, #1c0a16 50%, #0c1218 100%);
-}
-
-.how-stack-card-visual--3 {
-  background:
-    radial-gradient(circle at 30% 35%, rgba(0, 245, 212, 0.42), transparent 50%),
-    radial-gradient(circle at 82% 65%, rgba(124, 58, 237, 0.4), transparent 55%),
-    linear-gradient(145deg, #061416 0%, #0e1422 48%, #0a0a12 100%);
-}
-
-.how-stack-card-visual--4 {
-  background:
-    radial-gradient(circle at 70% 30%, rgba(245, 158, 11, 0.45), transparent 52%),
-    radial-gradient(circle at 20% 70%, rgba(225, 29, 72, 0.28), transparent 55%),
-    linear-gradient(160deg, #141008 0%, #1a120e 50%, #0c1018 100%);
-}
-
-.how-stack-card-visual--5 {
-  background:
-    radial-gradient(ellipse 80% 70% at 25% 40%, rgba(239, 68, 68, 0.42), transparent 58%),
-    radial-gradient(circle at 85% 75%, rgba(124, 58, 237, 0.32), transparent 50%),
-    linear-gradient(150deg, #160c0c 0%, #1a1014 45%, #0a0f16 100%);
-}
-
-.how-stack-card-visual--6 {
-  background:
-    radial-gradient(circle at 40% 25%, rgba(59, 130, 246, 0.48), transparent 54%),
-    radial-gradient(circle at 78% 80%, rgba(0, 245, 212, 0.28), transparent 52%),
-    linear-gradient(170deg, #080c18 0%, #101a28 50%, #070a12 100%);
-}
-
+/* Псевдоэлементы — метафоры под текст слева (только CSS) */
+.how-stack-card-visual::before,
 .how-stack-card-visual::after {
   content: "";
   position: absolute;
-  inset: 0;
-  opacity: 0.35;
-  background-image:
-    linear-gradient(105deg, rgba(255, 255, 255, 0.07) 0%, transparent 42%),
-    repeating-linear-gradient(
-      -12deg,
-      transparent,
-      transparent 18px,
-      rgba(255, 255, 255, 0.03) 18px,
-      rgba(255, 255, 255, 0.03) 19px
-    );
   pointer-events: none;
+}
+
+/* 1 — профиль и доверие: «портрет» + кольца + значок */
+.how-stack-card-visual--1 {
+  background-color: #15101c;
+  background-image:
+    radial-gradient(ellipse 120% 90% at 78% 85%, rgba(225, 29, 72, 0.18), transparent 50%),
+    linear-gradient(158deg, #15101c 0%, #100c16 55%, #0e1018 100%);
+}
+
+.how-stack-card-visual--1::before {
+  width: clamp(140px, 42vw, 220px);
+  aspect-ratio: 1;
+  height: auto;
+  max-height: 58%;
+  border-radius: 50%;
+  top: 46%;
+  left: 40%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 50% 100%, rgba(124, 58, 237, 0.35) 0%, transparent 55%),
+    linear-gradient(165deg, rgba(90, 70, 140, 0.9) 0%, rgba(30, 22, 48, 0.95) 100%);
+  box-shadow:
+    0 0 0 2px rgba(167, 139, 250, 0.45),
+    0 0 0 10px rgba(124, 58, 237, 0.12),
+    0 0 0 22px rgba(124, 58, 237, 0.06),
+    0 20px 50px rgba(0, 0, 0, 0.45);
+  z-index: 0;
+}
+
+.how-stack-card-visual--1::after {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  bottom: 14%;
+  right: 12%;
+  background: linear-gradient(135deg, rgba(0, 245, 212, 0.35) 0%, rgba(124, 58, 237, 0.45) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 1;
+}
+
+/* 2 — витрина проекта: софит + «подиум» */
+.how-stack-card-visual--2 {
+  background-color: #181016;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
+    linear-gradient(168deg, #181016 0%, #120e14 55%, #101418 100%);
+}
+
+.how-stack-card-visual--2::before {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 88%;
+  height: 72%;
+  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(225, 29, 72, 0.38) 0%, rgba(225, 29, 72, 0.08) 42%, transparent 100%);
+  opacity: 0.85;
+  z-index: 0;
+}
+
+.how-stack-card-visual--2::after {
+  left: 50%;
+  bottom: 10%;
+  transform: translateX(-50%);
+  width: 78%;
+  height: 18%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 50%, transparent 100%);
+  border: 1px solid rgba(251, 113, 133, 0.22);
+  box-shadow: 0 -12px 40px rgba(225, 29, 72, 0.15);
+  z-index: 1;
+}
+
+/* 3 — заметность: радар + «цель» в центре */
+.how-stack-card-visual--3 {
+  background-color: #0e1418;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(0, 245, 212, 0.08) 0%, transparent 32%),
+    linear-gradient(148deg, #0e1418 0%, #0a1218 50%, #0c0c12 100%);
+}
+
+.how-stack-card-visual--3::before {
+  inset: 8%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at 50% 50%,
+    transparent 0,
+    transparent 26px,
+    rgba(0, 245, 212, 0.11) 26px,
+    rgba(0, 245, 212, 0.11) 28px
+  );
+  mask-image: radial-gradient(circle at 50% 50%, black 58%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, black 58%, transparent 72%);
+  z-index: 0;
+}
+
+.how-stack-card-visual--3::after {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 245, 212, 0.85);
+  box-shadow: 0 0 0 4px rgba(0, 245, 212, 0.25), 0 0 28px rgba(0, 245, 212, 0.45);
+  z-index: 1;
+}
+
+/* 4 — отклики: два «облака» сообщений */
+.how-stack-card-visual--4 {
+  background-color: #16120e;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(245, 158, 11, 0.12), transparent 45%),
+    linear-gradient(162deg, #16120e 0%, #12100c 50%, #101418 100%);
+}
+
+.how-stack-card-visual--4::before {
+  width: 58%;
+  height: 36%;
+  left: 8%;
+  bottom: 16%;
+  border-radius: 22px 22px 22px 6px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  box-shadow: 10px 10px 0 rgba(245, 158, 11, 0.06);
+  z-index: 0;
+}
+
+.how-stack-card-visual--4::after {
+  width: 46%;
+  height: 30%;
+  right: 10%;
+  top: 22%;
+  border-radius: 20px 20px 8px 20px;
+  background: linear-gradient(215deg, rgba(255, 255, 255, 0.08) 0%, rgba(225, 29, 72, 0.12) 100%);
+  border: 1px solid rgba(251, 113, 133, 0.22);
+  z-index: 1;
+}
+
+/* 5 — диалог и сотрудничество: два узла + «мост» */
+.how-stack-card-visual--5 {
+  background-color: #160f0f;
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 38%,
+      rgba(255, 255, 255, 0.04) 50%,
+      transparent 62%,
+      transparent 100%
+    ),
+    linear-gradient(152deg, #160f0f 0%, #120e12 48%, #0e1016 100%);
+}
+
+.how-stack-card-visual--5::before {
+  width: clamp(120px, 34vw, 168px);
+  height: clamp(120px, 34vw, 168px);
+  border-radius: 50%;
+  top: 44%;
+  left: 28%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.12), transparent 50%),
+    linear-gradient(145deg, rgba(239, 68, 68, 0.55) 0%, rgba(120, 40, 50, 0.85) 100%);
+  border: 1px solid rgba(252, 165, 165, 0.35);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  z-index: 0;
+}
+
+.how-stack-card-visual--5::after {
+  width: clamp(120px, 34vw, 168px);
+  height: clamp(120px, 34vw, 168px);
+  border-radius: 50%;
+  top: 44%;
+  left: 72%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 65% 35%, rgba(255, 255, 255, 0.1), transparent 50%),
+    linear-gradient(315deg, rgba(124, 58, 237, 0.65) 0%, rgba(60, 30, 90, 0.9) 100%);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  z-index: 0;
+}
+
+/* 6 — рост: столбики + тренд вверх */
+.how-stack-card-visual--6 {
+  background-color: #0e1018;
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% 100%, rgba(0, 245, 212, 0.12), transparent 55%),
+    linear-gradient(172deg, #0e1018 0%, #0c1420 52%, #080a10 100%);
+}
+
+.how-stack-card-visual--6::before {
+  left: 12%;
+  right: 12%;
+  bottom: 14%;
+  height: 48%;
+  background-image:
+    linear-gradient(to top, rgba(59, 130, 246, 0.75) 0%, rgba(59, 130, 246, 0.75) 100%),
+    linear-gradient(to top, rgba(59, 130, 246, 0.85) 0%, rgba(59, 130, 246, 0.85) 100%),
+    linear-gradient(to top, rgba(0, 245, 212, 0.7) 0%, rgba(0, 245, 212, 0.7) 100%),
+    linear-gradient(to top, rgba(0, 245, 212, 0.82) 0%, rgba(0, 245, 212, 0.82) 100%),
+    linear-gradient(to top, rgba(147, 197, 253, 0.88) 0%, rgba(147, 197, 253, 0.88) 100%);
+  background-size: 11% 38%, 11% 52%, 11% 66%, 11% 78%, 11% 100%;
+  background-position: 8% 100%, 28% 100%, 48% 100%, 68% 100%, 88% 100%;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+.how-stack-card-visual--6::after {
+  width: 0;
+  height: 0;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 26px solid transparent;
+  border-right: 26px solid transparent;
+  border-bottom: 36px solid rgba(0, 245, 212, 0.35);
+  filter: drop-shadow(0 6px 16px rgba(59, 130, 246, 0.35));
+  z-index: 1;
 }
 
 .gradient-text {
