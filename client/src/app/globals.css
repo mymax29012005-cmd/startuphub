@@ -127,79 +127,29 @@ select option {
   }
 }
 
-/* Home "How it works" vertical timeline with center arrow */
-.how-timeline {
+/* Home "How it works" — stacking cards (scroll stack, Bramus-style) */
+.how-stack {
   position: relative;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.how-stack-step {
+  min-height: 115vh;
   display: flex;
-  flex-direction: column;
-  gap: 56px;
-  padding: 6px 0 26px;
+  justify-content: center;
+  padding: 0 2px 6vh;
 }
 
-.how-timeline::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 4px;
-  height: calc(100% - 22px);
-  transform: translateX(-50%);
-  border-radius: 9999px;
-  background: linear-gradient(180deg, rgba(124, 58, 237, 0.85), rgba(225, 29, 72, 0.55), rgba(0, 245, 212, 0.35));
-  box-shadow: 0 0 26px rgba(124, 58, 237, 0.25);
-}
-
-.how-timeline::after {
-  /* Arrow down */
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 14px solid transparent;
-  border-right: 14px solid transparent;
-  border-top: 18px solid rgba(124, 58, 237, 0.9);
-  filter: drop-shadow(0 0 18px rgba(124, 58, 237, 0.35));
-}
-
-.how-card {
-  width: 46%;
-  opacity: 0;
-  transform: translateY(60px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-
-.how-card.how-show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.how-left {
+.how-stack-card {
+  position: sticky;
   align-self: flex-start;
-}
-.how-right {
-  align-self: flex-end;
-}
-
-@media (max-width: 900px) {
-  .how-timeline::before {
-    left: 18px;
-    transform: none;
-  }
-  .how-timeline::after {
-    left: 18px;
-    transform: translateX(-50%);
-  }
-  .how-card {
-    width: 100%;
-    padding-left: 62px;
-  }
-  .how-left,
-  .how-right {
-    align-self: flex-start;
-  }
+  width: 100%;
+  max-width: 640px;
+  box-shadow:
+    0 -8px 40px rgba(0, 0, 0, 0.4),
+    0 28px 70px rgba(0, 0, 0, 0.38);
 }
 
 .gradient-text {

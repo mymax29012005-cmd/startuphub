@@ -114,24 +114,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stats?.startupsCount, stats?.ideasCount, stats?.investorsCount, stats?.partnersCount]);
 
-  useEffect(() => {
-    // "How it works" scroll reveal (like redesign.html)
-    const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-how-card]"));
-    if (!cards.length) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          const el = e.target as HTMLElement;
-          if (e.isIntersecting) el.classList.add("how-show");
-          else el.classList.remove("how-show");
-        }
-      },
-      { threshold: 0.28 },
-    );
-    cards.forEach((c) => obs.observe(c));
-    return () => obs.disconnect();
-  }, []);
-
   function fmtMoney(v: number) {
     return Number(v || 0).toLocaleString("ru-RU");
   }
@@ -198,12 +180,12 @@ export default function Home() {
                 <span className="hero-shine gradient-text block" data-text="Найди инвестиции.">
                   Найди инвестиции.
                 </span>
-                <span className="hero-shine" data-text="Продай долю.">
-                  Продай долю.
+                <span className="hero-shine block" data-text="Собери сильных партнёров.">
+                  Собери сильных партнёров.
                 </span>
               </h1>
               <p className="max-w-xl text-base leading-relaxed text-white/80 sm:text-lg md:text-xl">
-                Платформа для стартаперов, инвесторов и покупателей бизнеса. Находи идеи, финансирование и партнёров в одном
+                Startup Hub — платформа, где основатели находят инвестиции, партнёров и возможности для роста проекта в одном
                 месте.
               </p>
               <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
@@ -214,10 +196,10 @@ export default function Home() {
                   Разместить проект
                 </Link>
                 <Link
-                  href="/auction"
+                  href="/marketplace?tab=startups"
                   className="inline-flex items-center justify-center rounded-full border-2 border-[#7c3aed] px-8 py-4 text-center font-semibold text-white transition hover:bg-[#7c3aed]/15 md:px-10 md:py-5 md:text-lg"
                 >
-                  Смотреть аукционы
+                  Смотреть проекты
                 </Link>
               </div>
             </div>
@@ -266,64 +248,66 @@ export default function Home() {
 
       <section className="section-dark">
         <div className="mx-auto max-w-6xl px-4 py-20">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Как это работает</h2>
-            <p className="text-white/60 text-lg">
-              Платформа объединяет основателей стартапов, инвесторов и предпринимателей. Всё необходимое для развития проекта — в одном месте.
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">Как Startup Hub помогает проекту расти</h2>
+            <p className="text-white/60 text-lg max-w-3xl mx-auto">
+              Размещайте проект, получайте внимание инвесторов и партнёров, договаривайтесь о сотрудничестве и быстрее переходите от
+              идеи к росту.
             </p>
           </div>
-          <div className="how-timeline mt-10">
+          <div className="how-stack mt-6 md:mt-10">
             {[
               {
                 n: 1,
                 nBg: "bg-[#7c3aed]/20 text-[#a78bfa]",
-                title: "Создайте профиль",
-                text: "Расскажите о себе, своём опыте и направлениях деятельности. Профиль помогает участникам платформы быстро понять, с кем они взаимодействуют.",
+                title: "Создайте профиль, которому доверяют",
+                text: "Сильный профиль помогает быстрее заинтересовать инвесторов и партнёров. Чем понятнее вы показываете опыт, роль и цели, тем выше шанс на серьёзный диалог.",
               },
               {
                 n: 2,
                 nBg: "bg-[#e11d48]/20 text-[#fb7185]",
-                title: "Опубликуйте проект",
-                text: "Разместите стартап, идею или действующий продукт. Опишите потенциал проекта, цели и условия сотрудничества.",
+                title: "Покажите проект в выгодном свете",
+                text: "Понятная подача идеи увеличивает шанс на отклик. Когда ценность, рынок и потенциал роста сформулированы ясно, проект воспринимается сильнее.",
               },
               {
                 n: 3,
                 nBg: "bg-[#00f5d4]/15 text-[#00f5d4]",
-                title: "Представьте проект сообществу",
-                text: "Ваш проект становится доступен предпринимателям, инвесторам и специалистам, которые ищут новые возможности и перспективные идеи.",
+                title: "Станьте заметнее для нужных людей",
+                text: "Проект видят инвесторы, предприниматели и потенциальные партнёры. Это помогает быстрее выйти не на случайную аудиторию, а на тех, кому ваша идея действительно интересна.",
               },
               {
                 n: 4,
                 nBg: "bg-[#f59e0b]/20 text-[#fbbf24]",
-                title: "Получайте предложения",
-                text: "Участники платформы могут предложить инвестиции, партнёрство или участие в развитии проекта.",
+                title: "Получайте предложения и отклики",
+                text: "Платформа помогает быстрее выйти на диалог, а не искать контакты вручную. Вместо долгого холодного поиска вы сразу переходите к заинтересованным людям.",
               },
               {
                 n: 5,
                 nBg: "bg-[#ef4444]/20 text-[#fca5a5]",
-                title: "Заключайте договорённости",
-                text: "Обсуждайте условия сотрудничества и находите решения, которые помогут вашему проекту расти.",
+                title: "Обсуждайте сотрудничество предметно",
+                text: "Можно быстрее переходить к конкретике, условиям и следующему шагу. Это сокращает путь от первого интереса до реальных договорённостей.",
               },
               {
                 n: 6,
                 nBg: "bg-[#3b82f6]/20 text-[#93c5fd]",
-                title: "Развивайте бизнес",
-                text: "Используйте платформу как точку взаимодействия с людьми, которые могут ускорить развитие вашего стартапа.",
+                title: "Превращайте интерес в рост",
+                text: "Конечная цель — не просто просмотры, а реальные партнёрства, инвестиции и развитие проекта. Платформа должна ощущаться как инструмент роста, а не просто витрина объявлений.",
               },
             ].map((s, idx) => (
-              <div
-                key={s.n}
-                data-how-card
-                className={[
-                  "how-card glass border border-white/10 rounded-3xl p-8 card-hover",
-                  idx % 2 === 0 ? "how-left" : "how-right",
-                ].join(" ")}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`inline-flex items-center justify-center w-11 h-11 rounded-2xl font-bold ${s.nBg}`}>{s.n}</div>
+              <div key={s.n} className="how-stack-step">
+                <div
+                  className="how-stack-card glass border border-white/10 rounded-3xl p-7 sm:p-9 card-hover"
+                  style={{
+                    zIndex: idx + 1,
+                    top: `max(1rem, calc(var(--site-header-height) + ${0.5 + idx * 0.45}rem))`,
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`inline-flex items-center justify-center w-11 h-11 rounded-2xl font-bold ${s.nBg}`}>{s.n}</div>
+                  </div>
+                  <div className="mt-6 text-xl font-bold text-white sm:text-2xl">{s.title}</div>
+                  <div className="mt-3 text-white/65 leading-relaxed">{s.text}</div>
                 </div>
-                <div className="mt-6 text-2xl font-bold text-white">{s.title}</div>
-                <div className="mt-3 text-white/65 leading-relaxed">{s.text}</div>
               </div>
             ))}
           </div>
@@ -342,9 +326,10 @@ export default function Home() {
 
       <section className="hero-bg relative flex min-h-[calc(100dvh-var(--site-header-height))] flex-col justify-center overflow-hidden">
         <div className="relative mx-auto w-full max-w-6xl px-4 py-14 text-center sm:px-6">
-          <div className="text-3xl font-bold text-white mb-2 sm:text-4xl md:text-5xl">Готов запустить свой проект</div>
-          <div className="text-3xl font-bold text-white mb-6 sm:text-4xl md:text-5xl">или найти инвестицию?</div>
-          <div className="text-base text-white/70 mb-10 sm:text-xl md:text-2xl">Присоединяйся к тысячам основателей и инвесторов уже сегодня</div>
+          <div className="text-3xl font-bold text-white mb-6 sm:text-4xl md:text-5xl">Готов вывести проект на новый этап?</div>
+          <div className="text-base text-white/70 mb-10 max-w-3xl mx-auto sm:text-xl md:text-2xl">
+            Разместите стартап, найдите инвесторов и партнёров и начните двигаться к росту быстрее — в одном пространстве.
+          </div>
           <Link
             href="/register"
             className="inline-flex w-full sm:w-auto items-center justify-center px-10 sm:px-12 py-5 rounded-2xl font-semibold bg-white text-black hover:opacity-95 transition"
