@@ -214,44 +214,41 @@ select option {
   pointer-events: none;
 }
 
-/* 1 — профиль и доверие: «портрет» + кольца + значок */
+/* 1 — профиль: силуэт «голова + плечи» (классическая иконка пользователя) */
 .how-stack-card-visual--1 {
   background-color: #15101c;
   background-image:
-    radial-gradient(ellipse 120% 90% at 78% 85%, rgba(225, 29, 72, 0.18), transparent 50%),
+    radial-gradient(ellipse 120% 90% at 78% 85%, rgba(225, 29, 72, 0.14), transparent 50%),
     linear-gradient(158deg, #15101c 0%, #100c16 55%, #0e1018 100%);
 }
 
 .how-stack-card-visual--1::before {
-  width: clamp(140px, 42vw, 220px);
-  aspect-ratio: 1;
-  height: auto;
-  max-height: 58%;
+  /* голова */
+  width: clamp(68px, 19vw, 88px);
+  height: clamp(68px, 19vw, 88px);
   border-radius: 50%;
-  top: 46%;
-  left: 40%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.14) 0%, transparent 45%),
-    radial-gradient(circle at 50% 100%, rgba(124, 58, 237, 0.35) 0%, transparent 55%),
-    linear-gradient(165deg, rgba(90, 70, 140, 0.9) 0%, rgba(30, 22, 48, 0.95) 100%);
-  box-shadow:
-    0 0 0 2px rgba(167, 139, 250, 0.45),
-    0 0 0 10px rgba(124, 58, 237, 0.12),
-    0 0 0 22px rgba(124, 58, 237, 0.06),
-    0 20px 50px rgba(0, 0, 0, 0.45);
+  top: 32%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: transparent;
+  border: 3px solid rgba(216, 200, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.35);
   z-index: 0;
 }
 
 .how-stack-card-visual--1::after {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  bottom: 14%;
-  right: 12%;
-  background: linear-gradient(135deg, rgba(0, 245, 212, 0.35) 0%, rgba(124, 58, 237, 0.45) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  z-index: 1;
+  /* плечи / торс */
+  width: clamp(96px, 27vw, 128px);
+  height: clamp(46px, 13vw, 58px);
+  top: calc(32% + clamp(54px, 15.2vw, 72px));
+  left: 50%;
+  transform: translateX(-50%);
+  background: transparent;
+  border: 3px solid rgba(216, 200, 255, 0.9);
+  border-radius: 48% 48% 0 0;
+  border-bottom: none;
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.22);
+  z-index: 0;
 }
 
 /* 2 — витрина проекта: софит + «подиум» */
@@ -285,6 +282,23 @@ select option {
   border: 1px solid rgba(251, 113, 133, 0.22);
   box-shadow: 0 -12px 40px rgba(225, 29, 72, 0.15);
   z-index: 1;
+}
+
+.how-stack-spotlight-label {
+  position: absolute;
+  left: 50%;
+  top: 26%;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-size: clamp(1.75rem, 5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow:
+    0 0 28px rgba(225, 29, 72, 0.55),
+    0 2px 16px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
 }
 
 /* 3 — заметность: радар + «цель» в центре */
@@ -353,7 +367,7 @@ select option {
   z-index: 1;
 }
 
-/* 5 — диалог и сотрудничество: два узла + «мост» */
+/* 5 — сотрудничество: две фигурки + облачки (разметка в page.tsx) */
 .how-stack-card-visual--5 {
   background-color: #160f0f;
   background-image:
@@ -368,32 +382,9 @@ select option {
     linear-gradient(152deg, #160f0f 0%, #120e12 48%, #0e1016 100%);
 }
 
-.how-stack-card-visual--5::before {
-  width: clamp(120px, 34vw, 168px);
-  height: clamp(120px, 34vw, 168px);
-  border-radius: 50%;
-  top: 44%;
-  left: 28%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.12), transparent 50%),
-    linear-gradient(145deg, rgba(239, 68, 68, 0.55) 0%, rgba(120, 40, 50, 0.85) 100%);
-  border: 1px solid rgba(252, 165, 165, 0.35);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
-  z-index: 0;
-}
-
+.how-stack-card-visual--5::before,
 .how-stack-card-visual--5::after {
-  width: clamp(120px, 34vw, 168px);
-  height: clamp(120px, 34vw, 168px);
-  border-radius: 50%;
-  top: 44%;
-  left: 72%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle at 65% 35%, rgba(255, 255, 255, 0.1), transparent 50%),
-    linear-gradient(315deg, rgba(124, 58, 237, 0.65) 0%, rgba(60, 30, 90, 0.9) 100%);
-  border: 1px solid rgba(167, 139, 250, 0.35);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
-  z-index: 0;
+  display: none;
 }
 
 /* 6 — рост: столбики + тренд вверх */
@@ -422,16 +413,148 @@ select option {
 }
 
 .how-stack-card-visual--6::after {
-  width: 0;
-  height: 0;
-  top: 16%;
+  display: none;
+}
+
+/* Мини-иконка человека (голова + плечи) — переиспользуется на шагах 3 и 5 */
+.how-human {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.how-human::before,
+.how-human::after {
+  content: "";
+  position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  border-left: 26px solid transparent;
-  border-right: 26px solid transparent;
-  border-bottom: 36px solid rgba(0, 245, 212, 0.35);
-  filter: drop-shadow(0 6px 16px rgba(59, 130, 246, 0.35));
+  box-sizing: border-box;
+}
+
+.how-human--mini {
+  width: 22px;
+  height: 36px;
+}
+
+.how-human--mini::before {
+  top: 0;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid rgba(230, 236, 255, 0.92);
+  background: transparent;
+}
+
+.how-human--mini::after {
+  top: 9px;
+  width: 18px;
+  height: 12px;
+  border-radius: 10px 10px 0 0;
+  border: 2px solid rgba(230, 236, 255, 0.92);
+  border-bottom: none;
+  background: transparent;
+}
+
+/* Шаг 3: люди на разных «орбитах» радара */
+.how-radar-1 {
+  top: 22%;
+  left: 28%;
+}
+
+.how-radar-2 {
+  top: 20%;
+  left: 66%;
+}
+
+.how-radar-3 {
+  top: 46%;
+  left: 18%;
+}
+
+.how-radar-4 {
+  top: 50%;
+  left: 48%;
+}
+
+.how-radar-5 {
+  top: 38%;
+  left: 78%;
+}
+
+/* Шаг 5: две фигуры, над ними речь / мысль */
+.how-stack-pair-dialog {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-end;
+  padding: 10% 8% 16%;
+  pointer-events: none;
+}
+
+.how-stack-pair-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(8px, 2vw, 14px);
+}
+
+.how-stack-pair-col .how-human {
+  position: relative;
   z-index: 1;
+}
+
+.how-bubble {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+}
+
+.how-bubble--speech {
+  width: clamp(52px, 14vw, 68px);
+  height: clamp(36px, 10vw, 46px);
+  border-radius: 14px;
+  border: 2px solid rgba(251, 191, 36, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.how-bubble--speech::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 9px solid rgba(251, 191, 36, 0.55);
+}
+
+.how-bubble--thought {
+  width: clamp(50px, 13vw, 64px);
+  height: clamp(38px, 10vw, 44px);
+  border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%;
+  border: 2px solid rgba(196, 181, 255, 0.55);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.how-bubble--thought::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  bottom: -6px;
+  left: 44%;
+  background: rgba(196, 181, 255, 0.55);
+  box-shadow:
+    -9px 6px 0 0 rgba(196, 181, 255, 0.38),
+    -17px 13px 0 0 rgba(196, 181, 255, 0.22);
 }
 
 .gradient-text {
