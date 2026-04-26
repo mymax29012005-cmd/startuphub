@@ -871,7 +871,17 @@ function AnalyzerInner() {
                         Назад
                       </Button>
                       {step < 3 ? (
-                        <Button type="button" className="h-11 px-6" onClick={() => setStep((s) => Math.min(3, s + 1))}>
+                        <Button
+                          type="button"
+                          className="h-11 px-6"
+                          onClick={() => {
+                            if (step === 0 && !me) {
+                              router.push(`/login?returnTo=${encodeURIComponent("/startup-analyzer")}`);
+                              return;
+                            }
+                            setStep((s) => Math.min(3, s + 1));
+                          }}
+                        >
                           Далее
                         </Button>
                       ) : null}

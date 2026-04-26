@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
 import { useI18n } from "@/i18n/I18nProvider";
@@ -91,7 +92,11 @@ export default function FavoritesPage() {
       <Card className="p-5 sm:p-6">
         {!me ? (
           <div className="text-[rgba(234,240,255,0.72)]">
-            {t("pages.loginToSaveFavorites")}
+            {t("pages.loginToSaveFavoritesPrefix")}
+            <Link href="/login" className="font-medium text-violet-400 underline-offset-2 hover:text-violet-300 hover:underline">
+              {t("pages.loginToSaveFavoritesLink")}
+            </Link>
+            {t("pages.loginToSaveFavoritesSuffix")}
           </div>
         ) : loading ? (
           <div className="text-[rgba(234,240,255,0.72)]">{t("common.loading")}</div>

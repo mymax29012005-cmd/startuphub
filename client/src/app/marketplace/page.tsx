@@ -9,7 +9,7 @@ import { allowedCategories } from "@/lib/categories";
 import { formatLabelsByLang, partnerRoleLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import type { IdeaProfileExtra, InvestorProfileExtra, PartnerProfileExtra } from "@/lib/marketplaceExtras";
 
-type TabKey = "startups" | "ideas" | "investors" | "partners" | "my" | "moderation" | "users";
+type TabKey = "startups" | "ideas" | "investors" | "partners" | "auctions" | "my" | "moderation" | "users";
 
 type StartupItem = {
   id: string;
@@ -64,11 +64,12 @@ type StartupCardVM = {
   location?: string;
 };
 
-const baseTabs: Array<{ key: Exclude<TabKey, "my" | "moderation">; label: string }> = [
+const baseTabs: Array<{ key: Exclude<TabKey, "my" | "moderation" | "users">; label: string; disabled?: boolean }> = [
   { key: "startups", label: "Стартапы" },
   { key: "ideas", label: "Идеи" },
   { key: "investors", label: "Инвесторы" },
   { key: "partners", label: "Партнёры" },
+  { key: "auctions", label: "Аукционы", disabled: true },
 ];
 
 const stageFilterValues = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
@@ -77,7 +78,17 @@ const partnerRoles = ["supplier", "reseller", "integration", "cofounder"] as con
 
 function tabFromSearchParams(sp: URLSearchParams): TabKey {
   const t = sp.get("tab");
-  if (t === "ideas" || t === "investors" || t === "partners" || t === "startups" || t === "my" || t === "moderation" || t === "users") return t;
+  if (
+    t === "ideas" ||
+    t === "investors" ||
+    t === "partners" ||
+    t === "startups" ||
+    t === "auctions" ||
+    t === "my" ||
+    t === "moderation" ||
+    t === "users"
+  )
+    return t;
   return "startups";
 }
 
@@ -144,12 +155,6 @@ function MarketplaceInner() {
     };
   }, []);
 
-  useEffect(() => {
-    if (searchParams.get("tab") === "auctions") {
-      router.replace("/auction");
-    }
-  }, [router, searchParams]);
-
   const [loading, setLoading] = useState(false);
   const [dbError, setDbError] = useState(false);
 
@@ -196,7 +201,7 @@ function MarketplaceInner() {
   const [userDialogTarget, setUserDialogTarget] = useState<AdminUserRow | null>(null);
 
   const visibleTabs = useMemo(() => {
-    const out: Array<{ key: TabKey; label: string }> = [...baseTabs];
+    const out: Array<{ key: TabKey; label: string; disabled?: boolean }> = [...baseTabs];
     if (me?.id && me?.role !== "admin") out.push({ key: "my", label: "Ожидают подтверждения" });
     if (me?.role === "admin") {
       out.push({ key: "moderation", label: "На проверке" });
@@ -263,6 +268,7 @@ function MarketplaceInner() {
   }, [me?.role, activeTab]);
 
   async function ensureLoaded(tab: TabKey) {
+    if (tab === "auctions") return;
     setDbError(false);
     setLoading(true);
     try {
@@ -352,6 +358,8 @@ function MarketplaceInner() {
       void loadModerationQueue();
     } else if (activeTab === "users") {
       void loadUsers();
+    } else if (activeTab === "auctions") {
+      setLoading(false);
     } else {
       void ensureLoaded(activeTab);
     }
@@ -516,13 +524,15 @@ function MarketplaceInner() {
         ? (queue?.length ?? 0) === 0
         : activeTab === "users"
           ? false
-        : activeTab === "startups"
-          ? startupCards.length === 0
-          : activeTab === "ideas"
-            ? filteredIdeas.length === 0
-            : activeTab === "investors"
-              ? filteredInvestors.length === 0
-              : filteredPartners.length === 0;
+          : activeTab === "auctions"
+            ? false
+            : activeTab === "startups"
+              ? startupCards.length === 0
+              : activeTab === "ideas"
+                ? filteredIdeas.length === 0
+                : activeTab === "investors"
+                  ? filteredInvestors.length === 0
+                  : filteredPartners.length === 0;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -573,17 +583,23 @@ function MarketplaceInner() {
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-visible pr-2 py-2 sm:gap-6 md:gap-8">
           {visibleTabs.map((t) => {
             const active = t.key === activeTab;
+            const tabDisabled = "disabled" in t && t.disabled;
             return (
               <Link
                 key={t.key}
                 href={`/marketplace?tab=${t.key}`}
                 scroll={false}
                 className={[
-                  "relative overflow-visible whitespace-nowrap px-3 py-2 text-sm transition sm:px-6 sm:py-3 sm:text-lg",
+                  "relative overflow-visible px-3 py-2 text-sm transition sm:px-6 sm:py-3 sm:text-lg",
+                  tabDisabled ? "cursor-default whitespace-normal text-center" : "whitespace-nowrap",
                   active ? "border-b-[3px] border-[#7C3AED] font-semibold text-white" : "text-gray-400 hover:text-white",
+                  tabDisabled && !active ? "text-white/45 hover:text-white/55" : "",
                 ].join(" ")}
               >
-                {t.label}
+                <span className={tabDisabled ? "block leading-tight" : undefined}>{t.label}</span>
+                {tabDisabled ? (
+                  <span className="mt-0.5 block text-[10px] font-normal leading-tight text-white/35 sm:text-xs">Скоро · soon</span>
+                ) : null}
                 {t.key === "moderation" && moderationCount > 0 ? (
                   <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.65)]" />
                 ) : null}
@@ -889,6 +905,11 @@ function MarketplaceInner() {
               </div>
               {modMsg ? <div className="mt-3 text-xs text-emerald-300">{modMsg}</div> : null}
             </div>
+          ) : activeTab === "auctions" ? (
+            <div className="text-sm text-gray-300">
+              <div className="font-semibold text-white">Аукционы</div>
+              <div className="mt-2 text-gray-400">Раздел временно недоступен. Скоро · soon</div>
+            </div>
           ) : (
             <>
               <h3 className="mb-6 flex items-center gap-2 font-semibold">⚙ Фильтры</h3>
@@ -1030,7 +1051,12 @@ function MarketplaceInner() {
           {dbError ? <div className="py-12 text-gray-400">База данных недоступна</div> : null}
 
           {!loading && !dbError ? (
-            activeTab !== "my" && activeTab !== "moderation" && listIsEmpty ? (
+            activeTab === "auctions" ? (
+              <div className="col-span-full rounded-3xl border border-white/10 bg-[#12121A]/60 px-6 py-16 text-center">
+                <div className="text-lg font-semibold text-white">Аукционы</div>
+                <p className="mt-3 text-sm text-white/55">Раздел в разработке. Скоро · soon</p>
+              </div>
+            ) : activeTab !== "my" && activeTab !== "moderation" && listIsEmpty ? (
               <div className="col-span-full py-12 text-center text-gray-400">В этой категории пока ничего нет</div>
             ) : (
               <div className="flex flex-col gap-4">

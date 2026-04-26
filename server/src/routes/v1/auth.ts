@@ -24,10 +24,19 @@ function normPhone(v: string | undefined) {
   return x ? x : undefined;
 }
 
+/** Как на клиенте регистрации: длина, регистр латиницы, спецсимвол. */
+const registrationPasswordSchema = z
+  .string()
+  .min(8, "Пароль: минимум 8 символов")
+  .max(128)
+  .refine((p) => /[A-Z]/.test(p), "Пароль: нужна заглавная латинская буква")
+  .refine((p) => /[a-z]/.test(p), "Пароль: нужна строчная латинская буква")
+  .refine((p) => /[^A-Za-z0-9]/.test(p), "Пароль: нужен знак (не буква и не цифра)");
+
 const registerSchema = z.object({
   name: z.string().min(2).max(64),
   email: z.string().email(),
-  password: z.string().min(8).max(128),
+  password: registrationPasswordSchema,
   accountType: z.enum(["founder", "investor", "partner", "buyer"]),
   turnstileToken: z.string().min(10).optional(),
 });
@@ -45,7 +54,7 @@ const resetRequestSchema = z.object({
 const resetConfirmSchema = z.object({
   email: z.string().email(),
   code: z.string().min(4).max(12),
-  newPassword: z.string().min(8).max(128),
+  newPassword: registrationPasswordSchema,
 });
 
 authRouter.post("/register", async (req, res) => {

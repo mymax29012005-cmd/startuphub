@@ -3,7 +3,6 @@
 import Link from "next/link";
 import React from "react";
 
-import type { AuctionCardModel } from "@/components/cards/AuctionCard";
 import { stageLabelsByLang } from "@/lib/labelMaps";
 
 export type SpotlightStartup = {
@@ -33,13 +32,10 @@ export type SpotlightInvestor = {
 };
 
 type Props = {
-  auction: AuctionCardModel | null;
   startup: SpotlightStartup | null;
   idea: SpotlightIdea | null;
   investor: SpotlightInvestor | null;
   fmtMoney: (v: number) => string;
-  auctionTimeLabel: (a: AuctionCardModel) => string;
-  auctionGradient: (category: string) => string;
 };
 
 function initials(title: string, category: string) {
@@ -49,15 +45,7 @@ function initials(title: string, category: string) {
   return c.slice(0, 2).toUpperCase() || "SH";
 }
 
-export function PlatformSpotlightSection({
-  auction,
-  startup,
-  idea,
-  investor,
-  fmtMoney,
-  auctionTimeLabel,
-  auctionGradient,
-}: Props) {
+export function PlatformSpotlightSection({ startup, idea, investor, fmtMoney }: Props) {
   const stStage = startup ? stageLabelsByLang.ru?.[startup.stage] ?? startup.stage : "";
   const idStage = idea ? stageLabelsByLang.ru?.[idea.stage] ?? idea.stage : "";
 
@@ -68,12 +56,12 @@ export function PlatformSpotlightSection({
           <div>
             <h2 className="text-3xl font-bold text-white md:text-4xl">Сейчас на платформе</h2>
             <p className="mt-2 max-w-2xl text-sm text-white/55 md:text-base">
-              Аукцион и свежие карточки стартапа, идеи и запрос инвестора — в одном ряду
+              Карточки стартапа, идеи и запрос инвестора — в одном ряду. Аукционы скоро.
             </p>
           </div>
           <div className="flex flex-wrap gap-4 text-sm">
-            <Link href="/auction" className="font-medium text-white/60 transition hover:text-white">
-              Все аукционы →
+            <Link href="/marketplace?tab=auctions" className="font-medium text-white/45 transition hover:text-white/80">
+              Аукционы — скоро →
             </Link>
             <Link href="/marketplace" className="font-medium text-white/60 transition hover:text-white">
               Маркетплейс →
@@ -82,34 +70,13 @@ export function PlatformSpotlightSection({
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Аукцион — сохраняем прежнюю логику оформления блока */}
           <div className="min-w-0">
-            {auction ? (
-              <Link
-                href={`/auction/${auction.id}`}
-                className="card-hover block overflow-hidden rounded-3xl border border-white/10 bg-[#12121A] shadow-lg"
-              >
-                <div className={`relative h-44 bg-gradient-to-r ${auctionGradient(auction.startup.category)}`}>
-                  {auctionTimeLabel(auction) ? (
-                    <div className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full border border-white/10 bg-black/55 px-3 py-1 text-xs text-white/85">
-                      {auctionTimeLabel(auction)}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="p-6">
-                  <div className="text-lg font-bold leading-snug text-white">{auction.startup.title}</div>
-                  <div className="mt-2 text-sm text-white/50">{auction.startup.category}</div>
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="text-sm text-white/75">Текущая ставка:</div>
-                    <div className="font-bold text-[#00f5d4]">{fmtMoney(auction.currentPrice)} ₽</div>
-                  </div>
-                </div>
-              </Link>
-            ) : (
-              <div className="rounded-3xl border border-white/10 bg-[#12121A]/80 p-8 text-center text-sm text-white/50">
-                Нет активных аукционов
+            <div className="card-hover group min-w-0 cursor-default overflow-hidden rounded-3xl border border-white/10 bg-[#12121A] opacity-95">
+              <div className="relative h-[180px] bg-gradient-to-br from-[#6366f1] via-[#a855f7] to-[#ec4899]" aria-hidden />
+              <div className="flex min-h-[140px] items-center justify-center p-6">
+                <h3 className="text-center text-lg font-semibold leading-snug text-white">Аукцион — скоро / soon</h3>
               </div>
-            )}
+            </div>
           </div>
 
           {startup ? (

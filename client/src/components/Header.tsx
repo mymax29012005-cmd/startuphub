@@ -49,6 +49,18 @@ export function Header() {
                 ) : (
                   t(item.labelKey)
                 );
+              if ("disabled" in item && item.disabled) {
+                return (
+                  <span
+                    key={item.href}
+                    className="flex cursor-default flex-col items-center whitespace-nowrap text-sm font-medium text-white/40"
+                    aria-disabled
+                  >
+                    <span>{label}</span>
+                    <span className="text-[10px] font-normal leading-tight text-white/35">{t("nav.auctionsSoon")}</span>
+                  </span>
+                );
+              }
               return (
                 <Link
                   key={item.href}
@@ -140,6 +152,18 @@ export function Header() {
                 ) : (
                   t(item.labelKey)
                 );
+              if ("disabled" in item && item.disabled) {
+                return (
+                  <span
+                    key={item.href}
+                    className="cursor-default rounded-full border border-white/10 bg-white/5 px-3 py-2 text-center text-xs text-white/45"
+                    aria-disabled
+                  >
+                    <span className="block">{label}</span>
+                    <span className="block text-[10px] text-white/35">{t("nav.auctionsSoon")}</span>
+                  </span>
+                );
+              }
               return (
                 <Link
                   key={item.href}

@@ -1,16 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import React, { useCallback, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useCallback, useMemo, useState } from "react";
 
 import { useI18n } from "@/i18n/I18nProvider";
 
 type LoginMode = "email" | "phone";
 
-export default function LoginPage() {
+function safeReturnTo(raw: string | null): string | null {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v.startsWith("/") || v.startsWith("//")) return null;
+  if (v.includes("://")) return null;
+  return v;
+}
+
+function LoginInner() {
   const { t } = useI18n();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const afterLoginHref = useMemo(() => safeReturnTo(searchParams.get("returnTo")) ?? "/profile", [searchParams]);
 
   const [mode, setMode] = useState<LoginMode>("email");
   const [email, setEmail] = useState("");
@@ -50,7 +60,7 @@ export default function LoginPage() {
         setError(reason ? `${base}: ${reason}` : base);
         return;
       }
-      router.push("/profile");
+      router.push(afterLoginHref);
     } catch {
       setError("Сетевая ошибка");
     } finally {
@@ -196,5 +206,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#0A0A0F] text-sm text-white/60">Загрузка…</div>
+      }
+    >
+      <LoginInner />
+    </Suspense>
   );
 }

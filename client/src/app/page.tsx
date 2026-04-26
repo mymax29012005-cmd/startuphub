@@ -3,7 +3,6 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
-import type { AuctionCardModel } from "@/components/cards/AuctionCard";
 import {
   PlatformSpotlightSection,
   type SpotlightIdea,
@@ -61,13 +60,12 @@ const HOW_IT_WORKS_CARDS = [
 export default function Home() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [auctions, setAuctions] = useState<AuctionCardModel[]>([]);
   const [spotStartup, setSpotStartup] = useState<SpotlightStartup | null>(null);
   const [spotIdea, setSpotIdea] = useState<SpotlightIdea | null>(null);
   const [spotInvestor, setSpotInvestor] = useState<SpotlightInvestor | null>(null);
-  const [counters, setCounters] = useState<{ activeProjects: number; projectsTotal: number; investorsPartners: number }>({
-    activeProjects: 0,
+  const [counters, setCounters] = useState<{ projectsTotal: number; startupsCount: number; investorsPartners: number }>({
     projectsTotal: 0,
+    startupsCount: 0,
     investorsPartners: 0,
   });
 
@@ -95,9 +93,6 @@ export default function Home() {
     let cancelled = false;
     async function run() {
       try {
-        const aR = await fetch("/api/v1/auctions", { cache: "no-store" });
-        const a = await aR.json();
-        if (!cancelled) setAuctions((a ?? []).slice(0, 3));
         const [stR, idR, invR] = await Promise.all([
           fetch("/api/v1/startups", { cache: "no-store" }),
           fetch("/api/v1/ideas", { cache: "no-store" }),
@@ -126,7 +121,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const targetActiveProjects = Math.max(0, stats?.startupsCount ?? 0);
+    const targetStartupsCount = Math.max(0, stats?.startupsCount ?? 0);
     const targetProjectsTotal = Math.max(0, (stats?.startupsCount ?? 0) + (stats?.ideasCount ?? 0));
     const targetInvestorsPartners = Math.max(0, (stats?.investorsCount ?? 0) + (stats?.partnersCount ?? 0));
 
@@ -138,8 +133,8 @@ export default function Home() {
       const t = Math.min(1, (now - start) / ms);
       const ease = 1 - Math.pow(1 - t, 3);
       const next = {
-        activeProjects: Math.round(from.activeProjects + (targetActiveProjects - from.activeProjects) * ease),
         projectsTotal: Math.round(from.projectsTotal + (targetProjectsTotal - from.projectsTotal) * ease),
+        startupsCount: Math.round(from.startupsCount + (targetStartupsCount - from.startupsCount) * ease),
         investorsPartners: Math.round(from.investorsPartners + (targetInvestorsPartners - from.investorsPartners) * ease),
       };
       setCounters(next);
@@ -155,49 +150,6 @@ export default function Home() {
 
   function fmtMoney(v: number) {
     return Number(v || 0).toLocaleString("ru-RU");
-  }
-
-  function fmtDateTime(iso?: string | null) {
-    if (!iso) return "";
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "";
-    return d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-  }
-
-  function fmtTimeLeft(a: AuctionCardModel) {
-    const endsIso = a.endsAt ?? null;
-    const startsIso = a.startsAt ?? null;
-    const now = Date.now();
-
-    const ends = endsIso ? new Date(endsIso).getTime() : NaN;
-    const starts = startsIso ? new Date(startsIso).getTime() : NaN;
-
-    if (!Number.isNaN(ends) && ends > now) {
-      const mins = Math.max(0, Math.floor((ends - now) / 60000));
-      const days = Math.floor(mins / (60 * 24));
-      const hours = Math.floor((mins % (60 * 24)) / 60);
-      const mm = mins % 60;
-      if (days >= 1) return `Осталось ${days} ${days === 1 ? "день" : days < 5 ? "дня" : "дней"}`;
-      if (hours >= 1) return `Осталось ${hours}ч ${mm}м`;
-      return `Осталось ${mm}м`;
-    }
-
-    if (!Number.isNaN(starts) && starts > now) {
-      const mins = Math.max(0, Math.floor((starts - now) / 60000));
-      const hours = Math.floor(mins / 60);
-      const mm = mins % 60;
-      if (hours >= 1) return `Старт через ${hours}ч ${mm}м`;
-      return `Старт через ${mm}м`;
-    }
-
-    return "";
-  }
-
-  function auctionGradientByCategory(category: string) {
-    const c = (category || "").toLowerCase();
-    if (c.includes("ai") || c.includes("ии") || c.includes("ml")) return "from-[#7c3aed] to-[#e11d48]";
-    if (c.includes("eco") || c.includes("эко") || c.includes("green")) return "from-[#f59e0b] to-[#fb7185]";
-    return "from-[#2563eb] to-[#06b6d4]";
   }
 
   return (
@@ -248,18 +200,18 @@ export default function Home() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="text-white/60 text-sm">Активных проектов</div>
+                    <div className="text-white/60 text-sm">Всего проектов</div>
                     <div className="counter stat-number stat-green text-3xl font-bold">
-                      {loading && !stats ? "—" : counters.activeProjects.toLocaleString("ru-RU")}
+                      {loading && !stats ? "—" : counters.projectsTotal.toLocaleString("ru-RU")}
                     </div>
                   </div>
                   <div className="w-3 h-3 bg-[#00f5d4] rounded-full shadow-[0_0_20px_rgba(0,245,212,0.8)]" />
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="text-white/60 text-sm">Количество проектов</div>
+                    <div className="text-white/60 text-sm">Активных стартапов</div>
                     <div className="counter stat-number stat-rose text-3xl font-bold">
-                      {loading && !stats ? "—" : counters.projectsTotal.toLocaleString("ru-RU")}
+                      {loading && !stats ? "—" : counters.startupsCount.toLocaleString("ru-RU")}
                     </div>
                   </div>
                   <div className="w-3 h-3 bg-[#e11d48] rounded-full shadow-[0_0_20px_rgba(225,29,72,0.75)]" />
@@ -347,15 +299,7 @@ export default function Home() {
         </ul>
       </section>
 
-      <PlatformSpotlightSection
-        auction={auctions[0] ?? null}
-        startup={spotStartup}
-        idea={spotIdea}
-        investor={spotInvestor}
-        fmtMoney={fmtMoney}
-        auctionTimeLabel={fmtTimeLeft}
-        auctionGradient={auctionGradientByCategory}
-      />
+      <PlatformSpotlightSection startup={spotStartup} idea={spotIdea} investor={spotInvestor} fmtMoney={fmtMoney} />
 
       <section className="hero-bg relative flex min-h-[calc(100dvh-var(--site-header-height))] flex-col justify-center overflow-hidden">
         <div className="relative mx-auto w-full max-w-6xl px-4 py-14 text-center sm:px-6">

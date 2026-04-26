@@ -132,6 +132,14 @@ export default function RegisterPage() {
     };
   }, [countryIso, ruCities]);
 
+  const passwordRules = useMemo(() => {
+    const len = password.length >= 8;
+    const upper = /[A-Z]/.test(password);
+    const lower = /[a-z]/.test(password);
+    const symbol = /[^A-Za-z0-9]/.test(password);
+    return { len, upper, lower, symbol, ok: len && upper && lower && symbol };
+  }, [password]);
+
   const accountTypeOptions = useMemo(() => {
     // В макете нет "Покупатель" — оставляем только 3 роли как в HTML, но backend всё равно принимает buyer.
     // Для простоты UI показываем 4, но можно скрыть buyer — пользователь просил "как в HTML", поэтому скроем buyer.
@@ -152,8 +160,8 @@ export default function RegisterPage() {
 
   async function onStep1Continue() {
     setError(null);
-    if (!password || password.length < 8) {
-      setError("Пароль должен быть минимум 8 символов");
+    if (!passwordRules.ok) {
+      setError("Пароль не соответствует требованиям ниже");
       return;
     }
     if (password !== password2) {
@@ -293,7 +301,9 @@ export default function RegisterPage() {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Email</label>
+                <label className="mb-2 block text-sm text-gray-400">
+                  Email <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="email"
                   value={email}
@@ -304,24 +314,56 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Пароль</label>
+                <label className="mb-2 block text-sm text-gray-400">
+                  Пароль <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
-                  placeholder="Минимум 8 символов"
+                  placeholder="Введите пароль"
+                  autoComplete="new-password"
                 />
+                <ul className="mt-3 space-y-1.5 text-left">
+                  <li className="flex items-start gap-2 text-xs text-white/65">
+                    <span className={passwordRules.len ? "text-emerald-400" : "text-rose-400"} aria-hidden>
+                      {passwordRules.len ? "✓" : "✕"}
+                    </span>
+                    <span>Не менее 8 символов</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-xs text-white/65">
+                    <span className={passwordRules.upper ? "text-emerald-400" : "text-rose-400"} aria-hidden>
+                      {passwordRules.upper ? "✓" : "✕"}
+                    </span>
+                    <span>Заглавная латинская буква (A–Z)</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-xs text-white/65">
+                    <span className={passwordRules.lower ? "text-emerald-400" : "text-rose-400"} aria-hidden>
+                      {passwordRules.lower ? "✓" : "✕"}
+                    </span>
+                    <span>Строчная латинская буква (a–z)</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-xs text-white/65">
+                    <span className={passwordRules.symbol ? "text-emerald-400" : "text-rose-400"} aria-hidden>
+                      {passwordRules.symbol ? "✓" : "✕"}
+                    </span>
+                    <span>Знак (символ, не буква и не цифра)</span>
+                  </li>
+                </ul>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Повторите пароль</label>
+                <label className="mb-2 block text-sm text-gray-400">
+                  Повторите пароль <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="password"
                   value={password2}
                   onChange={(e) => setPassword2(e.target.value)}
                   className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-6 py-5 focus:outline-none focus:border-violet-500"
                   placeholder="Повторите пароль"
+                  autoComplete="new-password"
                 />
               </div>
 

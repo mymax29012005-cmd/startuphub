@@ -8,6 +8,7 @@ const dictionaries: Record<Lang, any> = {
       home: "Главная",
       marketplace: "Маркетплейс",
       auctions: "Аукционы",
+      auctionsSoon: "Скоро · soon",
       startups: "Стартапы",
       ideas: "Идеи",
       auction: "Аукцион",
@@ -66,7 +67,9 @@ const dictionaries: Record<Lang, any> = {
       addPartner: "+ Разместить запрос",
 
       noActiveAuctions: "Активных аукционов пока нет.",
-      loginToSaveFavorites: "Чтобы сохранять избранное, пожалуйста, войдите в аккаунт.",
+      loginToSaveFavoritesPrefix: "Чтобы сохранять избранное, пожалуйста, ",
+      loginToSaveFavoritesLink: "войдите",
+      loginToSaveFavoritesSuffix: " в аккаунт.",
       emptyFavorites: "Пока нет сохранённых объектов.",
 
       emptyInvestors: "Пока нет размещённых запросов.",
@@ -352,6 +355,7 @@ const dictionaries: Record<Lang, any> = {
       home: "Home",
       marketplace: "Marketplace",
       auctions: "Auctions",
+      auctionsSoon: "Soon",
       startups: "Startups",
       ideas: "Ideas",
       auction: "Auction",
@@ -409,7 +413,9 @@ const dictionaries: Record<Lang, any> = {
       addPartner: "+ Create request",
 
       noActiveAuctions: "No active auctions yet.",
-      loginToSaveFavorites: "Please sign in to save favorites.",
+      loginToSaveFavoritesPrefix: "To save favorites, please ",
+      loginToSaveFavoritesLink: "sign in",
+      loginToSaveFavoritesSuffix: ".",
       emptyFavorites: "No saved items yet.",
 
       emptyInvestors: "No investment requests yet.",
@@ -658,6 +664,7 @@ const dictionaries: Record<Lang, any> = {
       home: "首页",
       marketplace: "市场",
       auctions: "拍卖",
+      auctionsSoon: "即将推出",
       startups: "初创公司",
       ideas: "创意",
       auction: "拍卖",
@@ -716,7 +723,9 @@ const dictionaries: Record<Lang, any> = {
       addPartner: "+ 创建请求",
 
       noActiveAuctions: "暂无进行中的拍卖。",
-      loginToSaveFavorites: "请登录以保存收藏。",
+      loginToSaveFavoritesPrefix: "要保存收藏，请",
+      loginToSaveFavoritesLink: "登录",
+      loginToSaveFavoritesSuffix: "。",
       emptyFavorites: "目前没有已保存的内容。",
 
       emptyInvestors: "暂无投资请求。",

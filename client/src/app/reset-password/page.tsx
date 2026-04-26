@@ -25,13 +25,21 @@ export default function ResetPasswordPage() {
     }
   }, []);
 
+  const passwordRules = useMemo(() => {
+    const len = newPassword.length >= 8;
+    const upper = /[A-Z]/.test(newPassword);
+    const lower = /[a-z]/.test(newPassword);
+    const symbol = /[^A-Za-z0-9]/.test(newPassword);
+    return { len, upper, lower, symbol, ok: len && upper && lower && symbol };
+  }, [newPassword]);
+
   const canSubmit = useMemo(() => {
     if (!email.trim() || !email.includes("@")) return false;
     if (!code.trim() || code.trim().length < 4) return false;
-    if (!newPassword || newPassword.length < 8) return false;
+    if (!passwordRules.ok) return false;
     if (newPassword !== newPassword2) return false;
     return true;
-  }, [code, email, newPassword, newPassword2]);
+  }, [code, email, newPassword, newPassword2, passwordRules.ok]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -115,19 +123,49 @@ export default function ResetPasswordPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Новый пароль</label>
+                <label className="mb-2 block text-sm text-gray-400">
+                  Новый пароль <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-5 py-4 focus:outline-none focus:border-violet-500"
-                  placeholder="Минимум 8 символов"
+                  placeholder="Введите пароль"
                   autoComplete="new-password"
                 />
+                <ul className="mt-3 space-y-1.5 text-left">
+                  <li className="flex items-start gap-2 text-xs text-white/65">
+                    <span className={passwordRules.len ? "text-emerald-400" : "text-rose-400"} aria-hidden>
+                      {passwordRules.len ? "✓" : "✕"}
+                    </span>
+                    <span>Не менее 8 символов</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-xs text-white/65">
+                    <span className={passwordRules.upper ? "text-emerald-400" : "text-rose-400"} aria-hidden>
+                      {passwordRules.upper ? "✓" : "✕"}
+                    </span>
+                    <span>Заглавная латинская буква (A–Z)</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-xs text-white/65">
+                    <span className={passwordRules.lower ? "text-emerald-400" : "text-rose-400"} aria-hidden>
+                      {passwordRules.lower ? "✓" : "✕"}
+                    </span>
+                    <span>Строчная латинская буква (a–z)</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-xs text-white/65">
+                    <span className={passwordRules.symbol ? "text-emerald-400" : "text-rose-400"} aria-hidden>
+                      {passwordRules.symbol ? "✓" : "✕"}
+                    </span>
+                    <span>Знак (символ, не буква и не цифра)</span>
+                  </li>
+                </ul>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Повторите пароль</label>
+                <label className="mb-2 block text-sm text-gray-400">
+                  Повторите пароль <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="password"
                   value={newPassword2}
