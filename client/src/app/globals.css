@@ -127,29 +127,135 @@ select option {
   }
 }
 
-/* Home "How it works" — stacking cards (scroll stack, Bramus-style) */
+/* Home "How it works" — stacking cards (Bramus codepen.io/bramus/pen/PobmGme: sticky top 0 + padding-top deck) */
 .how-stack {
-  position: relative;
-  max-width: 720px;
-  margin-left: auto;
-  margin-right: auto;
+  --how-top-offset: clamp(0.65rem, 1.85vw, 1.15rem);
+  list-style: none;
+  margin: 0;
+  padding: 0 1rem calc(var(--how-numcards, 6) * var(--how-top-offset));
 }
 
-.how-stack-step {
-  min-height: 115vh;
+@media (min-width: 640px) {
+  .how-stack {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .how-stack {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+.how-stack-card-wrap {
+  position: sticky;
+  /* Не уезжаем под фиксированный хедер — как полноэкранные карточки в референсе */
+  top: var(--site-header-height);
+  z-index: var(--how-index);
+  box-sizing: border-box;
+  min-height: 100dvh;
+  padding-top: calc(var(--how-index) * var(--how-top-offset));
   display: flex;
   justify-content: center;
-  padding: 0 2px 6vh;
+  align-items: flex-start;
+  padding-bottom: 1.25rem;
 }
 
-.how-stack-card {
-  position: sticky;
-  align-self: flex-start;
-  width: 100%;
-  max-width: 640px;
+.how-stack-card-inner {
+  display: flex;
+  flex-direction: column;
+  width: min(1180px, 100%);
+  min-height: calc(100dvh - var(--site-header-height) - var(--how-index) * var(--how-top-offset) - 1.75rem);
+  overflow: hidden;
+  border-radius: 1.75rem;
   box-shadow:
-    0 -8px 40px rgba(0, 0, 0, 0.4),
-    0 28px 70px rgba(0, 0, 0, 0.38);
+    0 -14px 55px rgba(0, 0, 0, 0.48),
+    0 36px 90px rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 768px) {
+  .how-stack-card-inner {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
+.how-stack-card-copy {
+  flex: 1 1 52%;
+  min-width: 0;
+}
+
+.how-stack-card-visual {
+  flex: 1 1 48%;
+  min-height: 220px;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .how-stack-card-visual {
+    min-height: 0;
+  }
+}
+
+.how-stack-card-visual--1 {
+  background:
+    radial-gradient(ellipse 90% 80% at 18% 28%, rgba(124, 58, 237, 0.55), transparent 58%),
+    radial-gradient(circle at 88% 72%, rgba(225, 29, 72, 0.38), transparent 52%),
+    linear-gradient(155deg, #0f0818 0%, #151028 45%, #0a101c 100%);
+}
+
+.how-stack-card-visual--2 {
+  background:
+    radial-gradient(circle at 75% 22%, rgba(225, 29, 72, 0.5), transparent 55%),
+    radial-gradient(ellipse 70% 60% at 12% 78%, rgba(124, 58, 237, 0.35), transparent 55%),
+    linear-gradient(165deg, #180810 0%, #1c0a16 50%, #0c1218 100%);
+}
+
+.how-stack-card-visual--3 {
+  background:
+    radial-gradient(circle at 30% 35%, rgba(0, 245, 212, 0.42), transparent 50%),
+    radial-gradient(circle at 82% 65%, rgba(124, 58, 237, 0.4), transparent 55%),
+    linear-gradient(145deg, #061416 0%, #0e1422 48%, #0a0a12 100%);
+}
+
+.how-stack-card-visual--4 {
+  background:
+    radial-gradient(circle at 70% 30%, rgba(245, 158, 11, 0.45), transparent 52%),
+    radial-gradient(circle at 20% 70%, rgba(225, 29, 72, 0.28), transparent 55%),
+    linear-gradient(160deg, #141008 0%, #1a120e 50%, #0c1018 100%);
+}
+
+.how-stack-card-visual--5 {
+  background:
+    radial-gradient(ellipse 80% 70% at 25% 40%, rgba(239, 68, 68, 0.42), transparent 58%),
+    radial-gradient(circle at 85% 75%, rgba(124, 58, 237, 0.32), transparent 50%),
+    linear-gradient(150deg, #160c0c 0%, #1a1014 45%, #0a0f16 100%);
+}
+
+.how-stack-card-visual--6 {
+  background:
+    radial-gradient(circle at 40% 25%, rgba(59, 130, 246, 0.48), transparent 54%),
+    radial-gradient(circle at 78% 80%, rgba(0, 245, 212, 0.28), transparent 52%),
+    linear-gradient(170deg, #080c18 0%, #101a28 50%, #070a12 100%);
+}
+
+.how-stack-card-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(105deg, rgba(255, 255, 255, 0.07) 0%, transparent 42%),
+    repeating-linear-gradient(
+      -12deg,
+      transparent,
+      transparent 18px,
+      rgba(255, 255, 255, 0.03) 18px,
+      rgba(255, 255, 255, 0.03) 19px
+    );
+  pointer-events: none;
 }
 
 .gradient-text {

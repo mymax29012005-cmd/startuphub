@@ -19,6 +19,45 @@ type Stats = {
   partnersCount: number;
 };
 
+const HOW_IT_WORKS_CARDS = [
+  {
+    n: 1,
+    nBg: "bg-[#7c3aed]/20 text-[#a78bfa]",
+    title: "Создайте профиль, которому доверяют",
+    text: "Сильный профиль помогает быстрее заинтересовать инвесторов и партнёров. Чем понятнее вы показываете опыт, роль и цели, тем выше шанс на серьёзный диалог.",
+  },
+  {
+    n: 2,
+    nBg: "bg-[#e11d48]/20 text-[#fb7185]",
+    title: "Покажите проект в выгодном свете",
+    text: "Понятная подача идеи увеличивает шанс на отклик. Когда ценность, рынок и потенциал роста сформулированы ясно, проект воспринимается сильнее.",
+  },
+  {
+    n: 3,
+    nBg: "bg-[#00f5d4]/15 text-[#00f5d4]",
+    title: "Станьте заметнее для нужных людей",
+    text: "Проект видят инвесторы, предприниматели и потенциальные партнёры. Это помогает быстрее выйти не на случайную аудиторию, а на тех, кому ваша идея действительно интересна.",
+  },
+  {
+    n: 4,
+    nBg: "bg-[#f59e0b]/20 text-[#fbbf24]",
+    title: "Получайте предложения и отклики",
+    text: "Платформа помогает быстрее выйти на диалог, а не искать контакты вручную. Вместо долгого холодного поиска вы сразу переходите к заинтересованным людям.",
+  },
+  {
+    n: 5,
+    nBg: "bg-[#ef4444]/20 text-[#fca5a5]",
+    title: "Обсуждайте сотрудничество предметно",
+    text: "Можно быстрее переходить к конкретике, условиям и следующему шагу. Это сокращает путь от первого интереса до реальных договорённостей.",
+  },
+  {
+    n: 6,
+    nBg: "bg-[#3b82f6]/20 text-[#93c5fd]",
+    title: "Превращайте интерес в рост",
+    text: "Конечная цель — не просто просмотры, а реальные партнёрства, инвестиции и развитие проекта. Платформа должна ощущаться как инструмент роста, а не просто витрина объявлений.",
+  },
+] as const;
+
 export default function Home() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -246,72 +285,45 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section-dark">
-        <div className="mx-auto max-w-6xl px-4 py-20">
-          <div className="text-center mb-12 md:mb-16">
+      <section className="section-dark overflow-x-clip">
+        <div className="mx-auto max-w-6xl px-4 pt-20 pb-8 md:pb-10">
+          <div className="text-center mb-10 md:mb-14">
             <h2 className="text-4xl font-bold text-white mb-4">Как Startup Hub помогает проекту расти</h2>
             <p className="text-white/60 text-lg max-w-3xl mx-auto">
               Размещайте проект, получайте внимание инвесторов и партнёров, договаривайтесь о сотрудничестве и быстрее переходите от
               идеи к росту.
             </p>
           </div>
-          <div className="how-stack mt-6 md:mt-10">
-            {[
-              {
-                n: 1,
-                nBg: "bg-[#7c3aed]/20 text-[#a78bfa]",
-                title: "Создайте профиль, которому доверяют",
-                text: "Сильный профиль помогает быстрее заинтересовать инвесторов и партнёров. Чем понятнее вы показываете опыт, роль и цели, тем выше шанс на серьёзный диалог.",
-              },
-              {
-                n: 2,
-                nBg: "bg-[#e11d48]/20 text-[#fb7185]",
-                title: "Покажите проект в выгодном свете",
-                text: "Понятная подача идеи увеличивает шанс на отклик. Когда ценность, рынок и потенциал роста сформулированы ясно, проект воспринимается сильнее.",
-              },
-              {
-                n: 3,
-                nBg: "bg-[#00f5d4]/15 text-[#00f5d4]",
-                title: "Станьте заметнее для нужных людей",
-                text: "Проект видят инвесторы, предприниматели и потенциальные партнёры. Это помогает быстрее выйти не на случайную аудиторию, а на тех, кому ваша идея действительно интересна.",
-              },
-              {
-                n: 4,
-                nBg: "bg-[#f59e0b]/20 text-[#fbbf24]",
-                title: "Получайте предложения и отклики",
-                text: "Платформа помогает быстрее выйти на диалог, а не искать контакты вручную. Вместо долгого холодного поиска вы сразу переходите к заинтересованным людям.",
-              },
-              {
-                n: 5,
-                nBg: "bg-[#ef4444]/20 text-[#fca5a5]",
-                title: "Обсуждайте сотрудничество предметно",
-                text: "Можно быстрее переходить к конкретике, условиям и следующему шагу. Это сокращает путь от первого интереса до реальных договорённостей.",
-              },
-              {
-                n: 6,
-                nBg: "bg-[#3b82f6]/20 text-[#93c5fd]",
-                title: "Превращайте интерес в рост",
-                text: "Конечная цель — не просто просмотры, а реальные партнёрства, инвестиции и развитие проекта. Платформа должна ощущаться как инструмент роста, а не просто витрина объявлений.",
-              },
-            ].map((s, idx) => (
-              <div key={s.n} className="how-stack-step">
-                <div
-                  className="how-stack-card glass border border-white/10 rounded-3xl p-7 sm:p-9 card-hover"
-                  style={{
-                    zIndex: idx + 1,
-                    top: `max(1rem, calc(var(--site-header-height) + ${0.5 + idx * 0.45}rem))`,
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`inline-flex items-center justify-center w-11 h-11 rounded-2xl font-bold ${s.nBg}`}>{s.n}</div>
-                  </div>
-                  <div className="mt-6 text-xl font-bold text-white sm:text-2xl">{s.title}</div>
-                  <div className="mt-3 text-white/65 leading-relaxed">{s.text}</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
+
+        <ul
+          className="how-stack"
+          style={{ "--how-numcards": HOW_IT_WORKS_CARDS.length } as React.CSSProperties}
+        >
+          {HOW_IT_WORKS_CARDS.map((s) => (
+            <li
+              key={s.n}
+              className="how-stack-card-wrap"
+              style={{ "--how-index": s.n } as React.CSSProperties}
+            >
+              <div className="how-stack-card-inner glass card-hover">
+                <div className="how-stack-card-copy flex flex-col justify-center px-8 py-10 sm:px-10 sm:py-12 md:px-14 md:py-14 lg:py-16">
+                  <div className="flex items-center gap-3">
+                    <div className={`inline-flex size-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold ${s.nBg}`}>
+                      {s.n}
+                    </div>
+                    <span className="text-sm font-medium uppercase tracking-[0.2em] text-white/40">Шаг {s.n}</span>
+                  </div>
+                  <h3 className="mt-8 text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
+                    {s.title}
+                  </h3>
+                  <p className="mt-6 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg md:text-xl">{s.text}</p>
+                </div>
+                <div className={`how-stack-card-visual how-stack-card-visual--${s.n}`} aria-hidden />
+              </div>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <PlatformSpotlightSection
