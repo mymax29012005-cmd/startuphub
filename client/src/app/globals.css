@@ -223,34 +223,34 @@ select option {
 }
 
 .how-stack-card-visual--1::before {
-  /* голова — заливка как у стандартной user-иконки */
-  width: clamp(68px, 19vw, 88px);
-  height: clamp(68px, 19vw, 88px);
+  /* голова — темнее, ниже по вертикали */
+  width: clamp(64px, 18vw, 84px);
+  height: clamp(64px, 18vw, 84px);
   border-radius: 50%;
-  top: 32%;
+  top: 40%;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(165deg, #f5f0ff 0%, #ddd6fe 40%, #c4b5fd 100%);
+  background: linear-gradient(165deg, #6b5a8c 0%, #4c3d6b 38%, #3d2f5a 100%);
   border: none;
   box-shadow:
-    inset 0 -6px 14px rgba(124, 58, 237, 0.25),
-    0 10px 28px rgba(0, 0, 0, 0.4);
+    inset 0 -4px 12px rgba(0, 0, 0, 0.35),
+    0 8px 22px rgba(0, 0, 0, 0.45);
   z-index: 0;
 }
 
 .how-stack-card-visual--1::after {
-  /* плечи / торс — заливка, плавный стык с головой */
-  width: clamp(96px, 27vw, 128px);
-  height: clamp(46px, 13vw, 58px);
-  top: calc(32% + clamp(54px, 15.2vw, 72px));
+  /* плечи / торс — ниже и массивнее */
+  width: clamp(102px, 29vw, 138px);
+  height: clamp(56px, 16vw, 76px);
+  top: calc(40% + clamp(50px, 14vw, 66px));
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(180deg, #c4b5fd 0%, #a78bfa 45%, #7c3aed 100%);
+  background: linear-gradient(180deg, #4a3d68 0%, #352850 42%, #2a1f42 100%);
   border: none;
-  border-radius: 48% 48% 0 0;
+  border-radius: 50% 50% 0 0;
   box-shadow:
-    inset 0 8px 18px rgba(255, 255, 255, 0.12),
-    0 12px 28px rgba(0, 0, 0, 0.35);
+    inset 0 6px 14px rgba(255, 255, 255, 0.04),
+    0 10px 26px rgba(0, 0, 0, 0.42);
   z-index: 0;
 }
 
@@ -285,28 +285,6 @@ select option {
   border: 1px solid rgba(251, 113, 133, 0.22);
   box-shadow: 0 -12px 40px rgba(225, 29, 72, 0.15);
   z-index: 1;
-}
-
-/* Подпись на нижнем «подиуме» (не в софите) */
-.how-stack-podium-label {
-  position: absolute;
-  left: 50%;
-  bottom: 10%;
-  transform: translateX(-50%);
-  width: 78%;
-  height: 18%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3;
-  margin: 0;
-  padding: 0;
-  font-size: clamp(1.35rem, 4.2vw, 2rem);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.94);
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.75);
-  pointer-events: none;
 }
 
 /* 3 — заметность: радар + «цель» в центре */
@@ -467,60 +445,6 @@ select option {
 }
 
 /* Крупные фигуры (шаг 5): залитые силуэты */
-.how-human--large {
-  width: 72px;
-  height: 112px;
-}
-
-.how-human--large::before {
-  top: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(165deg, #fdfcff 0%, #e9d5ff 45%, #c4b5fd 100%);
-  box-shadow:
-    inset 0 -8px 16px rgba(124, 58, 237, 0.28),
-    0 8px 22px rgba(0, 0, 0, 0.35);
-}
-
-.how-human--large::after {
-  top: 30px;
-  width: 58px;
-  height: 40px;
-  border-radius: 29px 29px 0 0;
-  border: none;
-  background: linear-gradient(180deg, #c4b5fd 0%, #8b5cf6 55%, #6d28d9 100%);
-  box-shadow:
-    inset 0 10px 18px rgba(255, 255, 255, 0.12),
-    0 10px 24px rgba(0, 0, 0, 0.38);
-}
-
-.how-human--medium {
-  width: 40px;
-  height: 64px;
-}
-
-.how-human--medium::before {
-  top: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(165deg, #fdfcff 0%, #ddd6fe 50%, #c4b5fd 100%);
-  box-shadow: inset 0 -4px 10px rgba(124, 58, 237, 0.25);
-}
-
-.how-human--medium::after {
-  top: 16px;
-  width: 32px;
-  height: 22px;
-  border-radius: 16px 16px 0 0;
-  border: none;
-  background: linear-gradient(180deg, #c4b5fd 0%, #7c3aed 100%);
-  box-shadow: inset 0 5px 10px rgba(255, 255, 255, 0.1);
-}
-
 /* Шаг 3: люди на разных «орбитах» радара */
 .how-radar-1 {
   top: 22%;
@@ -542,116 +466,89 @@ select option {
   left: 78%;
 }
 
-/* Шаг 5: слева крупнее и выше, справа ниже; мысль — строго над головой */
-.how-stack-pair-dialog {
+/* Шаг 5: переписка — по три пустых пузыря с каждой стороны, зеркально */
+.how-stack-chat {
   position: absolute;
   inset: 0;
   z-index: 2;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: stretch;
+  padding: 9% 6% 11%;
+  gap: 10%;
   pointer-events: none;
 }
 
-.how-stack-pair-left {
-  position: absolute;
-  left: 5%;
-  top: 6%;
+.how-stack-chat-col {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: clamp(10px, 2.5vw, 16px);
+  justify-content: center;
+  gap: clamp(11px, 2.8vw, 20px);
+  flex: 1;
+  min-width: 0;
 }
 
-.how-stack-pair-right {
-  position: absolute;
-  right: 6%;
-  top: 34%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(10px, 2.5vw, 16px);
+.how-stack-chat-col--l {
+  align-items: flex-start;
 }
 
-.how-stack-pair-left .how-human,
-.how-stack-pair-right .how-human {
-  position: relative;
-  z-index: 1;
+.how-stack-chat-col--r {
+  align-items: flex-end;
 }
 
-.how-bubble {
+.how-chat-bubble {
   position: relative;
   display: block;
   flex-shrink: 0;
-}
-
-.how-bubble--speech {
-  width: clamp(52px, 14vw, 68px);
-  height: clamp(36px, 10vw, 46px);
+  height: clamp(34px, 8.5vw, 46px);
   border-radius: 14px;
-  border: 2px solid rgba(251, 191, 36, 0.55);
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
 }
 
-.how-bubble--speech::after {
+.how-chat-bubble--row1 {
+  width: min(88%, 148px);
+}
+
+.how-chat-bubble--row2 {
+  width: min(68%, 118px);
+}
+
+.how-chat-bubble--row3 {
+  width: min(94%, 162px);
+}
+
+/* Хвост снизу слева (как исходящие слева) */
+.how-stack-chat-col--l .how-chat-bubble::after {
   content: "";
   position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top: 9px solid rgba(251, 191, 36, 0.55);
+  bottom: -4px;
+  left: 11px;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.055);
+  transform: rotate(52deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
 }
 
-.how-stack-pair-left .how-bubble--pair-lg {
-  width: clamp(76px, 20vw, 96px);
-  height: clamp(50px, 13vw, 62px);
-  border-radius: 16px;
-}
-
-.how-stack-pair-left .how-bubble--pair-lg::after {
-  bottom: -9px;
-  border-left-width: 8px;
-  border-right-width: 8px;
-  border-top-width: 10px;
-}
-
-.how-bubble--thought {
-  width: clamp(50px, 13vw, 64px);
-  height: clamp(38px, 10vw, 44px);
-  border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%;
-  border: 2px solid rgba(196, 181, 255, 0.55);
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-}
-
-.how-bubble--thought::after {
+/* Зеркально: хвост снизу справа */
+.how-stack-chat-col--r .how-chat-bubble::after {
   content: "";
   position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  bottom: -6px;
-  left: 44%;
-  background: rgba(196, 181, 255, 0.55);
-  box-shadow:
-    -9px 6px 0 0 rgba(196, 181, 255, 0.38),
-    -17px 13px 0 0 rgba(196, 181, 255, 0.22);
-}
-
-.how-stack-pair-right .how-bubble--pair-md {
-  width: clamp(58px, 15vw, 74px);
-  height: clamp(42px, 11vw, 50px);
-}
-
-/* Хвост «мысли» строго по центру над головой (от облака к голове) */
-.how-stack-pair-right .how-bubble--thought::after {
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: -7px;
-  box-shadow:
-    -6px 7px 0 0 rgba(196, 181, 255, 0.42),
-    -11px 15px 0 0 rgba(196, 181, 255, 0.28),
-    -16px 23px 0 0 rgba(196, 181, 255, 0.16);
+  bottom: -4px;
+  right: 11px;
+  left: auto;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.055);
+  transform: rotate(-52deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
 }
 
 .gradient-text {

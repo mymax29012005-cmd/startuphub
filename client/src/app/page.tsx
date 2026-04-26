@@ -320,7 +320,6 @@ export default function Home() {
                   <p className="mt-6 max-w-xl text-base leading-relaxed text-white/[0.88] sm:text-lg md:text-xl">{s.text}</p>
                 </div>
                 <div className={`how-stack-card-visual how-stack-card-visual--${s.n}`} aria-hidden>
-                  {s.n === 2 ? <span className="how-stack-podium-label">Проект</span> : null}
                   {s.n === 3 ? (
                     <>
                       <span className="how-human how-human--mini how-radar how-radar-1" />
@@ -330,14 +329,16 @@ export default function Home() {
                     </>
                   ) : null}
                   {s.n === 5 ? (
-                    <div className="how-stack-pair-dialog">
-                      <div className="how-stack-pair-left">
-                        <span className="how-bubble how-bubble--speech how-bubble--pair-lg" />
-                        <span className="how-human how-human--large" />
+                    <div className="how-stack-chat">
+                      <div className="how-stack-chat-col how-stack-chat-col--l">
+                        <span className="how-chat-bubble how-chat-bubble--row1" />
+                        <span className="how-chat-bubble how-chat-bubble--row2" />
+                        <span className="how-chat-bubble how-chat-bubble--row3" />
                       </div>
-                      <div className="how-stack-pair-right">
-                        <span className="how-bubble how-bubble--thought how-bubble--pair-md" />
-                        <span className="how-human how-human--medium" />
+                      <div className="how-stack-chat-col how-stack-chat-col--r">
+                        <span className="how-chat-bubble how-chat-bubble--row1" />
+                        <span className="how-chat-bubble how-chat-bubble--row2" />
+                        <span className="how-chat-bubble how-chat-bubble--row3" />
                       </div>
                     </div>
                   ) : null}
