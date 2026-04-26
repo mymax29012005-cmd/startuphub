@@ -330,7 +330,7 @@ const dictionaries: Record<Lang, any> = {
     footer: {
       description:
         "Платформа для публикации стартапов и идей, поиска инвесторов и партнёров, а также участия в аукционах.",
-      contacts: "Контакты: genstartup@yandex.ru",
+      contacts: "Контакты:",
       navTitle: "Навигация",
       helpTitle: "Помощь",
 
@@ -642,7 +642,7 @@ const dictionaries: Record<Lang, any> = {
     footer: {
       description:
         "A platform to publish startups and ideas, find investors and partners, and participate in auctions.",
-      contacts: "Contact: genstartup@yandex.ru",
+      contacts: "Contact:",
       navTitle: "Navigation",
       helpTitle: "Help",
 
@@ -939,7 +939,7 @@ const dictionaries: Record<Lang, any> = {
     },
     footer: {
       description: "发布初创公司和创意，寻找投资人和合作伙伴，并参与拍卖的平台。",
-      contacts: "联系方式: genstartup@yandex.ru",
+      contacts: "联系方式：",
       navTitle: "导航",
       helpTitle: "帮助",
 

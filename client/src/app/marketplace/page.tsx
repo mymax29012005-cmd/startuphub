@@ -64,6 +64,8 @@ type StartupCardVM = {
   location?: string;
 };
 
+const PAGE_SIZE = 25;
+
 const baseTabs: Array<{ key: Exclude<TabKey, "my" | "moderation">; label: string }> = [
   { key: "startups", label: "Стартапы" },
   { key: "ideas", label: "Идеи" },
@@ -133,6 +135,7 @@ function MarketplaceInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = useMemo(() => tabFromSearchParams(searchParams), [searchParams]);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (searchParams.get("tab") === "auctions") {
@@ -508,6 +511,58 @@ function MarketplaceInner() {
       return true;
     });
   }, [filterCtx, partners]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    activeTab,
+    search,
+    stage,
+    amountMin,
+    amountMax,
+    selectedIndustries.size,
+    selectedFormats.size,
+    selectedPartnerRoles.size,
+  ]);
+
+  const pagination = useMemo(() => {
+    const total =
+      activeTab === "startups"
+        ? startupCards.length
+        : activeTab === "ideas"
+          ? filteredIdeas.length
+          : activeTab === "investors"
+            ? filteredInvestors.length
+            : activeTab === "partners"
+              ? filteredPartners.length
+              : 0;
+
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const start = (safePage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+
+    const sliceStartups = startupCards.slice(start, end);
+    const sliceIdeas = filteredIdeas.slice(start, end);
+    const sliceInvestors = filteredInvestors.slice(start, end);
+    const slicePartners = filteredPartners.slice(start, end);
+
+    return {
+      total,
+      totalPages,
+      page: safePage,
+      items:
+        activeTab === "startups"
+          ? sliceStartups
+          : activeTab === "ideas"
+            ? sliceIdeas
+            : activeTab === "investors"
+              ? sliceInvestors
+              : activeTab === "partners"
+                ? slicePartners
+                : [],
+    } as const;
+  }, [activeTab, filteredIdeas, filteredInvestors, filteredPartners, page, startupCards]);
 
   const listIsEmpty =
     activeTab === "my"
@@ -1551,7 +1606,7 @@ function MarketplaceInner() {
                 ) : null}
 
                 {activeTab === "startups"
-                  ? startupCards.map((it) => (
+                  ? (pagination.items as StartupCardVM[]).map((it) => (
                       <Link
                         key={it.id}
                         href={it.href}
@@ -1591,11 +1646,58 @@ function MarketplaceInner() {
                       </Link>
                     ))
                   : null}
-                {activeTab === "ideas" ? filteredIdeas.map((x) => <MarketplaceIdeaRow key={x.id} idea={x} />) : null}
-                {activeTab === "investors" ? filteredInvestors.map((x) => <MarketplaceInvestorRow key={x.id} item={x} />) : null}
-                {activeTab === "partners" ? filteredPartners.map((x) => <MarketplacePartnerRow key={x.id} item={x} />) : null}
+                {activeTab === "ideas"
+                  ? (pagination.items as IdeaItem[]).map((x) => <MarketplaceIdeaRow key={x.id} idea={x} />)
+                  : null}
+                {activeTab === "investors"
+                  ? (pagination.items as InvestorItem[]).map((x) => <MarketplaceInvestorRow key={x.id} item={x} />)
+                  : null}
+                {activeTab === "partners"
+                  ? (pagination.items as PartnerItem[]).map((x) => <MarketplacePartnerRow key={x.id} item={x} />)
+                  : null}
               </div>
             )
+          ) : null}
+
+          {activeTab !== "my" &&
+          activeTab !== "moderation" &&
+          activeTab !== "users" &&
+          !loading &&
+          !dbError &&
+          pagination.totalPages > 1 ? (
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={pagination.page <= 1}
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 disabled:opacity-50"
+              >
+                ←
+              </button>
+
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPage(p)}
+                  className={[
+                    "rounded-2xl px-4 py-2 text-sm font-semibold transition",
+                    p === pagination.page ? "bg-violet-600 text-white" : "border border-white/10 bg-white/5 text-white/70 hover:bg-white/10",
+                  ].join(" ")}
+                >
+                  {p}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                disabled={pagination.page >= pagination.totalPages}
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 disabled:opacity-50"
+              >
+                →
+              </button>
+            </div>
           ) : null}
 
           <div className="mt-16 pb-24 text-center text-sm text-gray-500">

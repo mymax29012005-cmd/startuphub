@@ -13,6 +13,7 @@ export function Footer() {
   const { t } = useI18n();
   const { user, loading, unreadChats } = useSiteSession();
   const year = new Date().getFullYear();
+  const contacts = ["genstartup@yandex.ru", "support@startup-hub.ru"] as const;
 
   const helpLinks: { href: string; label: string }[] = [
     { href: "/terms", label: t("footer.help.rules") },
@@ -76,10 +77,20 @@ export function Footer() {
           ))}
         </nav>
 
-        <div className="mt-10 border-t border-white/5 pt-10 text-center text-xs text-zinc-500 space-y-3">
-          <p className="font-medium text-zinc-400">StartupHub © {year}</p>
-          <p className="mx-auto max-w-2xl leading-relaxed text-zinc-600">{t("footer.description")}</p>
-          <p className="text-zinc-600">{t("footer.contacts")}</p>
+        <div className="mt-10 border-t border-white/5 pt-10 text-center text-sm text-zinc-500 space-y-3">
+          <p className="font-medium text-zinc-300">StartupHub © {year}</p>
+          <p className="mx-auto max-w-2xl leading-relaxed text-zinc-500">{t("footer.description")}</p>
+          <p className="text-zinc-500">
+            <span>{t("footer.contacts")} </span>
+            {contacts.map((email, idx) => (
+              <span key={email}>
+                <a className="text-violet-300 hover:text-violet-200 underline-offset-2 hover:underline" href={`mailto:${email}`}>
+                  {email}
+                </a>
+                {idx === contacts.length - 1 ? null : <span className="text-zinc-600"> · </span>}
+              </span>
+            ))}
+          </p>
         </div>
       </div>
     </footer>

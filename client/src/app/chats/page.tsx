@@ -47,6 +47,7 @@ export default function ChatsPage() {
   const { t } = useI18n();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [q, setQ] = useState("");
+  const [supportUserId, setSupportUserId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +74,25 @@ export default function ChatsPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (state.status !== "ok") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/chats/support-user", { credentials: "include" });
+        if (!r.ok) return;
+        const data = (await r.json()) as { user?: { id: string } };
+        const id = data?.user?.id;
+        if (!cancelled && typeof id === "string" && id) setSupportUserId(id);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [state.status]);
 
   const rows = useMemo(() => {
     if (state.status !== "ok") return [];
@@ -138,6 +158,24 @@ export default function ChatsPage() {
                   {t("nav.login")}
                 </Link>
               </div>
+            ) : null}
+
+            {state.status === "ok" && supportUserId ? (
+              <Link
+                href={`/chat/${supportUserId}`}
+                className="flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/5 transition"
+              >
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl overflow-hidden flex items-center justify-center text-base sm:text-lg font-bold shrink-0 bg-gradient-to-br from-emerald-500 to-cyan-400 text-black/80">
+                  ?
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between gap-3">
+                    <div className="font-medium truncate">Поддержка</div>
+                    <div className="text-xs text-gray-500 shrink-0">online</div>
+                  </div>
+                  <div className="text-sm text-gray-400 truncate mt-0.5">Написать в поддержку</div>
+                </div>
+              </Link>
             ) : null}
 
             {state.status === "ok" && rows.length === 0 ? (

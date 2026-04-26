@@ -102,6 +102,21 @@ chatsRouter.get("/unread-count", async (req, res) => {
   }
 });
 
+chatsRouter.get("/support-user", async (_req, res) => {
+  const prisma = getPrisma();
+  try {
+    const admin = await prisma.user.findFirst({
+      where: { role: "admin" },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, avatarUrl: true },
+    });
+    if (!admin) return res.status(404).json({ error: "Админ не найден" });
+    return res.json({ user: admin });
+  } catch (_e) {
+    return res.status(503).json({ error: "База данных недоступна" });
+  }
+});
+
 chatsRouter.post("/open", async (req, res) => {
   const parsed = z.object({ otherUserId: z.string().uuid() }).safeParse(req.body);
   if (!parsed.success) {
