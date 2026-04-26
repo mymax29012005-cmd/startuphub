@@ -320,25 +320,24 @@ export default function Home() {
                   <p className="mt-6 max-w-xl text-base leading-relaxed text-white/[0.88] sm:text-lg md:text-xl">{s.text}</p>
                 </div>
                 <div className={`how-stack-card-visual how-stack-card-visual--${s.n}`} aria-hidden>
-                  {s.n === 2 ? <span className="how-stack-spotlight-label">проект</span> : null}
+                  {s.n === 2 ? <span className="how-stack-podium-label">Проект</span> : null}
                   {s.n === 3 ? (
                     <>
                       <span className="how-human how-human--mini how-radar how-radar-1" />
                       <span className="how-human how-human--mini how-radar how-radar-2" />
                       <span className="how-human how-human--mini how-radar how-radar-3" />
-                      <span className="how-human how-human--mini how-radar how-radar-4" />
                       <span className="how-human how-human--mini how-radar how-radar-5" />
                     </>
                   ) : null}
                   {s.n === 5 ? (
                     <div className="how-stack-pair-dialog">
-                      <div className="how-stack-pair-col">
-                        <span className="how-bubble how-bubble--speech" />
-                        <span className="how-human how-human--mini" />
+                      <div className="how-stack-pair-left">
+                        <span className="how-bubble how-bubble--speech how-bubble--pair-lg" />
+                        <span className="how-human how-human--large" />
                       </div>
-                      <div className="how-stack-pair-col">
-                        <span className="how-bubble how-bubble--thought" />
-                        <span className="how-human how-human--mini" />
+                      <div className="how-stack-pair-right">
+                        <span className="how-bubble how-bubble--thought how-bubble--pair-md" />
+                        <span className="how-human how-human--medium" />
                       </div>
                     </div>
                   ) : null}
