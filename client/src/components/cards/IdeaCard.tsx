@@ -9,11 +9,13 @@ import { Card } from "@/components/ui/Card";
 import { DeleteResourceButton } from "@/components/DeleteResourceButton";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
+import { formatIndustryLine } from "@/lib/industryHierarchy";
 
 export type IdeaCardModel = {
   id: string;
   title: string;
   description: string;
+  sector?: string;
   category: string;
   price: number;
   stage: string;
@@ -57,7 +59,7 @@ export function IdeaCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <Badge>{idea.category}</Badge>
+              <Badge>{formatIndustryLine(idea.sector, idea.category)}</Badge>
             </div>
             <div className="mt-3 text-white font-semibold leading-tight text-base sm:text-lg truncate">{idea.title}</div>
             <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] line-clamp-2">

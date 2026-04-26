@@ -9,6 +9,7 @@ import { accountTypeLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { extractTelegram, parseBioMeta, stripMetaLines } from "@/lib/profileBio";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { Lang } from "@/i18n/dictionaries";
+import { formatIndustryLine } from "@/lib/industryHierarchy";
 
 export type PublicUserActivity = {
   kind: string;
@@ -38,6 +39,7 @@ type StartupListItem = {
   id: string;
   title: string;
   description: string;
+  sector?: string;
   category: string;
   price: number;
   stage: string;
@@ -365,8 +367,8 @@ export function PublicUserProfile({ userId, viewerId }: Props) {
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-2xl whitespace-nowrap">
-                            {s.category}
+                          <div className="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-2xl max-w-[min(200px,45%)] truncate">
+                            {formatIndustryLine(s.sector, s.category)}
                           </div>
                         </div>
                       </div>

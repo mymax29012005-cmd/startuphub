@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/Button";
 import { DeleteResourceButton } from "@/components/DeleteResourceButton";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
+import { formatIndustryLine } from "@/lib/industryHierarchy";
 
 export type StartupCardModel = {
   id: string;
   title: string;
   description: string;
   tagline?: string;
+  sector?: string;
   category: string;
   price: number;
   stage: string;
@@ -63,11 +65,8 @@ export function StartupCard({
     (viewer!.role === "admin" || viewer!.id === startup.owner.id);
 
   const stageLabel = stageLabelsByLang[lang]?.[startup.stage] ?? startup.stage;
-  const tagParts = startup.category
-    .split(/[,•·|]/g)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const tags = tagParts.length ? tagParts.slice(0, 4) : [startup.category];
+  const industryLine = formatIndustryLine(startup.sector, startup.category);
+  const tags = industryLine ? [industryLine] : [];
 
   return (
     <div className="listing-card relative rounded-3xl border border-white/10 bg-[#12121A]">
@@ -79,7 +78,7 @@ export function StartupCard({
 
       <Link href={`/startups/${startup.id}`} className="block" aria-label={`Открыть ${startup.title}`}>
         <div
-          className={`relative flex h-[160px] sm:h-[180px] items-center justify-center bg-gradient-to-br ${coverGradient(startup.category)}`}
+          className={`relative flex h-[160px] sm:h-[180px] items-center justify-center bg-gradient-to-br ${coverGradient(`${startup.sector ?? ""} ${startup.category}`)}`}
         >
           <div className="text-4xl sm:text-5xl font-bold text-white/90">{initials(startup.title, startup.category)}</div>
           <div className="badge absolute right-3 top-3 sm:right-4 sm:top-4 rounded-full bg-emerald-500/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
@@ -138,9 +137,9 @@ export function StartupCard({
               <div className="text-base sm:text-lg font-semibold text-emerald-400">{startup.price.toLocaleString("ru-RU")} ₽</div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-gray-500">{startup.isOnline ? "Онлайн" : "Офлайн"}</div>
+              <div className="text-xs text-gray-500">Формат</div>
               <div className="mt-0.5 text-sm text-violet-400">
-                {formatLabelsByLang[lang]?.[startup.format] ?? startup.format}
+                {(formatLabelsByLang[lang] as Record<string, string> | undefined)?.[startup.format] ?? startup.format}
               </div>
             </div>
           </div>
@@ -169,13 +168,15 @@ export function StartupCard({
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {tags.map((t) => (
-              <span key={t} className="rounded-2xl bg-white/10 px-3 py-2 sm:px-4 text-xs">
-                {t}
-              </span>
-            ))}
-          </div>
+          {tags.length ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {tags.map((t) => (
+                <span key={t} className="rounded-2xl bg-white/10 px-3 py-2 sm:px-4 text-xs">
+                  {t}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
       </Link>
     </div>

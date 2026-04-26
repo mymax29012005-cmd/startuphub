@@ -2,12 +2,14 @@ import Link from "next/link";
 import React from "react";
 
 import { formatLabelsByLang, partnerRoleLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
+import { formatIndustryLine } from "@/lib/industryHierarchy";
 import { formatCheckRangeRub, formatMoneyRub, type IdeaProfileExtra, type InvestorProfileExtra, type PartnerProfileExtra } from "@/lib/marketplaceExtras";
 
 export type MarketplaceIdeaRowModel = {
   id: string;
   title: string;
   description: string;
+  sector: string;
   category: string;
   price: number;
   stage: string;
@@ -18,6 +20,7 @@ export type MarketplaceIdeaRowModel = {
 
 export type MarketplaceInvestorRowModel = {
   id: string;
+  sector: string;
   industry: string;
   description: string;
   amount: number;
@@ -29,6 +32,7 @@ export type MarketplaceInvestorRowModel = {
 export type MarketplacePartnerRowModel = {
   id: string;
   role: "supplier" | "reseller" | "integration" | "cofounder" | string;
+  sector: string;
   industry: string;
   description: string;
   author?: { name: string; avatarUrl: string | null };
@@ -81,7 +85,7 @@ export function MarketplaceIdeaRow({ idea }: { idea: MarketplaceIdeaRowModel }) 
         <div className="text-sm font-medium text-amber-300">
           {idea.format ? (formatLabelsByLang.ru?.[idea.format] ?? idea.format) : null}
         </div>
-        <div className="text-xs text-gray-500">Категория: {idea.category}</div>
+        <div className="text-xs text-gray-500">{formatIndustryLine(idea.sector, idea.category)}</div>
       </div>
     </Link>
   );
@@ -90,7 +94,7 @@ export function MarketplaceIdeaRow({ idea }: { idea: MarketplaceIdeaRowModel }) 
 export function MarketplaceInvestorRow({ item }: { item: MarketplaceInvestorRowModel }) {
   const pe = item.profileExtra ?? null;
   const name = (pe?.investorName?.trim() || item.author?.name || "Инвестор").trim();
-  const title = (pe?.investorTitle?.trim() || item.industry).trim();
+  const title = (pe?.investorTitle?.trim() || formatIndustryLine(item.sector, item.industry)).trim();
   const check = formatCheckRangeRub(pe, item.amount);
   const stages = (pe?.stages ?? []).slice(0, 4);
   const interests = (pe?.interests ?? []).slice(0, 4);
@@ -180,7 +184,7 @@ export function MarketplacePartnerRow({ item }: { item: MarketplacePartnerRowMod
       </div>
       <div className="flex w-full shrink-0 flex-col justify-center gap-3 sm:w-52 sm:text-right">
         <span className="inline-flex rounded-2xl bg-white/10 px-3 py-1 text-xs font-medium text-white/80 sm:self-end">
-          {item.industry}
+          {formatIndustryLine(item.sector, item.industry)}
         </span>
         <span className="text-sm text-gray-500">Роль в запросе: {partnerRoleLabelsByLang.ru?.[item.role as any] ?? item.role}</span>
       </div>

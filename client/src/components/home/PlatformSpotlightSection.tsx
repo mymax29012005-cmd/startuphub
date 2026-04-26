@@ -4,12 +4,14 @@ import Link from "next/link";
 import React from "react";
 
 import { stageLabelsByLang } from "@/lib/labelMaps";
+import { formatIndustryLine } from "@/lib/industryHierarchy";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export type SpotlightStartup = {
   id: string;
   title: string;
   description: string;
+  sector?: string;
   category: string;
   price: number;
   stage: string;
@@ -19,6 +21,7 @@ export type SpotlightIdea = {
   id: string;
   title: string;
   description: string;
+  sector?: string;
   category: string;
   price: number;
   stage: string;
@@ -26,6 +29,7 @@ export type SpotlightIdea = {
 
 export type SpotlightInvestor = {
   id: string;
+  sector?: string;
   industry: string;
   description: string;
   amount: number;
@@ -95,7 +99,7 @@ export function PlatformSpotlightSection({ startup, idea, investor, fmtMoney }: 
                     <div className="text-xs text-gray-500">Нужно привлечь</div>
                     <div className="text-lg font-semibold text-emerald-400">{fmtMoney(startup.price)} ₽</div>
                   </div>
-                  <div className="text-right text-xs text-gray-500">{startup.category}</div>
+                  <div className="text-right text-xs text-gray-500">{formatIndustryLine(startup.sector, startup.category)}</div>
                 </div>
               </div>
             </Link>
@@ -122,7 +126,7 @@ export function PlatformSpotlightSection({ startup, idea, investor, fmtMoney }: 
                     <div className="text-xs text-gray-500">Запрос</div>
                     <div className="text-lg font-semibold text-emerald-400">{fmtMoney(idea.price)} ₽</div>
                   </div>
-                  <div className="text-right text-xs text-violet-300">{idea.category}</div>
+                  <div className="text-right text-xs text-violet-300">{formatIndustryLine(idea.sector, idea.category)}</div>
                 </div>
               </div>
             </Link>
@@ -146,7 +150,7 @@ export function PlatformSpotlightSection({ startup, idea, investor, fmtMoney }: 
                   </div>
                 </div>
                 <p className="mt-4 line-clamp-3 text-sm text-gray-300">{investor.description}</p>
-                <div className="mt-2 text-xs text-gray-500">Фокус: {investor.industry}</div>
+                <div className="mt-2 text-xs text-gray-500">Фокус: {formatIndustryLine(investor.sector, investor.industry)}</div>
                 <div className="mt-2 text-sm font-semibold text-emerald-400">от {fmtMoney(investor.amount)} ₽</div>
                 <div className="mt-6 flex gap-3">
                   <Link

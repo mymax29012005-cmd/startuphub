@@ -4,14 +4,17 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
+import { IndustryPickers } from "@/components/forms/IndustryPickers";
 import { Button } from "@/components/ui/Button";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
-import { allowedCategories, asAllowedCategory } from "@/lib/categories";
+import { INDUSTRY_CATEGORIES_BY_SECTOR, INDUSTRY_SECTORS, type SectorId } from "@/lib/industryHierarchy";
 import { useI18n } from "@/i18n/I18nProvider";
 import { stageLabelsByLang } from "@/lib/labelMaps";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
+const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
+const defaultIndustry = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
 type Me = { id: string; role: "user" | "admin" };
 
 export default function AddInvestorPage() {
@@ -41,7 +44,8 @@ export default function AddInvestorPage() {
 
   const [investorName, setInvestorName] = useState("");
   const [investorTitle, setInvestorTitle] = useState("");
-  const [industry, setIndustry] = useState(allowedCategories[0]?.value ?? "SaaS");
+  const [sector, setSector] = useState<SectorId>(defaultSector);
+  const [industry, setIndustry] = useState(defaultIndustry);
   const [description, setDescription] = useState("");
 
   const [checkMin, setCheckMin] = useState("");
@@ -131,6 +135,7 @@ export default function AddInvestorPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
+          sector,
           industry,
           description,
           amount: amountForFilter,
@@ -182,17 +187,15 @@ export default function AddInvestorPage() {
                 <input className={fc} value={investorTitle} onChange={(e) => setInvestorTitle(e.target.value)} placeholder="Например: Angel Investor" />
               </label>
             </div>
-            <label>
-              <div className="mb-2 block text-sm text-gray-400">Категория фокуса</div>
-              <select className={fc} value={industry} onChange={(e) => setIndustry(asAllowedCategory(e.target.value))}>
-                {allowedCategories.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-2 text-sm text-gray-500">Используется как «вертикаль» и для фильтров маркетплейса.</p>
-            </label>
+            <IndustryPickers
+              sector={sector}
+              subcategoryId={industry}
+              onChange={({ sector: s, subcategoryId }) => {
+                setSector(s);
+                setIndustry(subcategoryId);
+              }}
+            />
+            <p className="text-sm text-gray-500">Отрасль и категория — для фильтров маркетплейса и подбора проектов.</p>
             <label>
               <div className="mb-2 block text-sm text-gray-400">Обо мне</div>
               <textarea
@@ -259,10 +262,14 @@ export default function AddInvestorPage() {
               <label>
                 <div className="mb-2 block text-sm text-gray-400">Количество сделок</div>
                 <input className={fc} value={dealsCount} onChange={(e) => setDealsCount(e.target.value.replace(/[^\d]/g, ""))} inputMode="numeric" placeholder="14" />
+                <p className="mt-1 text-xs text-gray-500">Сколько раз вы инвестировали в компании (завершённые сделки).</p>
               </label>
               <label>
                 <div className="mb-2 block text-sm text-gray-400">Успешных выходов</div>
                 <input className={fc} value={exitsCount} onChange={(e) => setExitsCount(e.target.value.replace(/[^\d]/g, ""))} inputMode="numeric" placeholder="3" />
+                <p className="mt-1 text-xs text-gray-500">
+                  Выходы, где инвестиция завершилась продажей доли, сделкой M&A или IPO — то есть был финансовый результат для инвестора.
+                </p>
               </label>
             </div>
             <label>

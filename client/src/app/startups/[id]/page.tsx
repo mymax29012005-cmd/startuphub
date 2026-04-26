@@ -11,6 +11,7 @@ import { RadarChart } from "@/components/analyzer/RadarChart";
 import { CashflowBars } from "@/components/analyzer/CashflowBars";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
+import { formatIndustryLine } from "@/lib/industryHierarchy";
 
 type StartupProfileExtra = {
   tagline?: string;
@@ -27,6 +28,7 @@ type StartupDetail = {
   title: string;
   description: string;
   profileExtra?: StartupProfileExtra | null;
+  sector?: string;
   category: string;
   price: number;
   stage: string;
@@ -56,6 +58,7 @@ type Me = { id: string; role: "user" | "admin" };
 function milestoneBulletLines(raw: string): string[] {
   const t = raw.trim();
   if (!t) return [];
+  if (t.includes(",")) return t.split(",").map((s) => s.trim()).filter(Boolean);
   const byNl = t.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
   if (byNl.length > 1) return byNl;
   const one = byNl[0] ?? "";
@@ -397,13 +400,13 @@ export default function StartupDetailPage({
       ) : (
         <div>
           <div
-            className={`relative mb-12 h-[min(460px,70vh)] overflow-hidden rounded-3xl bg-gradient-to-br ${heroGradient(startup.category)}`}
+            className={`relative mb-12 h-[min(460px,70vh)] overflow-hidden rounded-3xl bg-gradient-to-br ${heroGradient(`${startup.sector ?? ""} ${startup.category}`)}`}
           >
             <div className="absolute inset-0 bg-black/30" />
             <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 md:p-14">
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <span className="rounded-3xl bg-white/20 px-5 py-2 text-sm font-medium text-white backdrop-blur-md">
-                  {startup.category}
+                  {formatIndustryLine(startup.sector, startup.category)}
                 </span>
                 <span className="rounded-3xl bg-emerald-500/80 px-5 py-2 text-sm font-medium text-white backdrop-blur-md">
                   {stageLabelsByLang[lang]?.[startup.stage] ?? startup.stage}
@@ -447,7 +450,9 @@ export default function StartupDetailPage({
                   <div className="grid gap-4 sm:grid-cols-2">
                     {startup.profileExtra.valuationPreMoney != null ? (
                       <div className="rounded-xl border border-white/[0.08] bg-[#0d0d0f] p-5">
-                        <div className="text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">Оценка (pre-money)</div>
+                        <div className="text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">
+                    Оценка до сделки (без новых инвестиций)
+                  </div>
                         <div className="mt-2 text-xl font-semibold tabular-nums text-white sm:text-2xl">
                           {Math.round(Number(startup.profileExtra.valuationPreMoney)).toLocaleString("ru-RU")} ₽
                         </div>
@@ -468,7 +473,7 @@ export default function StartupDetailPage({
               {startup.profileExtra?.kpis?.length ? (
                 <section className="rounded-2xl border border-white/[0.06] bg-[#161618] p-6 sm:p-8">
                   <h2 className="mb-5 text-2xl font-semibold tracking-tight text-white">Ключевые показатели</h2>
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {startup.profileExtra.kpis.map((k, i) =>
                       k.value || k.label ? (
                         <div

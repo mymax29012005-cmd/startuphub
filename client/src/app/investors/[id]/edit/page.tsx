@@ -4,21 +4,25 @@ import React, { use as useReact, useMemo, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
+import { IndustryPickers } from "@/components/forms/IndustryPickers";
 import { Button } from "@/components/ui/Button";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
-import { allowedCategories, asAllowedCategory } from "@/lib/categories";
+import { INDUSTRY_CATEGORIES_BY_SECTOR, INDUSTRY_SECTORS, normalizeIndustryPair, type SectorId } from "@/lib/industryHierarchy";
 import { useI18n } from "@/i18n/I18nProvider";
 import { stageLabelsByLang } from "@/lib/labelMaps";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 import type { InvestorProfileExtra } from "@/lib/marketplaceExtras";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
+const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
+const defaultIndustry = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
 type InvestorStage = (typeof stages)[number];
 
 type Me = { id: string; role: "user" | "admin" };
 
 type InvestorDetail = {
   id: string;
+  sector?: string;
   industry: string;
   description: string;
   amount: number;
@@ -43,7 +47,8 @@ export default function EditInvestorPage({ params }: { params: Promise<{ id: str
 
   const [investorName, setInvestorName] = useState("");
   const [investorTitle, setInvestorTitle] = useState("");
-  const [industry, setIndustry] = useState(allowedCategories[0]?.value ?? "SaaS");
+  const [sector, setSector] = useState<SectorId>(defaultSector);
+  const [industry, setIndustry] = useState(defaultIndustry);
   const [description, setDescription] = useState("");
 
   const [checkMin, setCheckMin] = useState("");
@@ -97,7 +102,9 @@ export default function EditInvestorPage({ params }: { params: Promise<{ id: str
         const data = (await r.json()) as InvestorDetail;
         if (cancelled) return;
         setItem(data);
-        setIndustry(asAllowedCategory(data.industry ?? (allowedCategories[0]?.value ?? "SaaS")));
+        const ind = normalizeIndustryPair(data.sector, data.industry);
+        setSector(ind.sector);
+        setIndustry(ind.subcategoryId);
         setDescription(data.description ?? "");
         setAttachments(data.attachments ?? []);
         const pe = data.profileExtra ?? null;
@@ -176,6 +183,7 @@ export default function EditInvestorPage({ params }: { params: Promise<{ id: str
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
+          sector,
           industry,
           description,
           amount: amountForFilter,
@@ -236,16 +244,16 @@ export default function EditInvestorPage({ params }: { params: Promise<{ id: str
                   <input className={fc} value={investorTitle} onChange={(e) => setInvestorTitle(e.target.value)} placeholder="Например: Angel Investor" />
                 </label>
               </div>
-              <label>
-                <div className="mb-2 block text-sm text-gray-400">Категория фокуса</div>
-                <select className={fc} value={industry} onChange={(e) => setIndustry(asAllowedCategory(e.target.value))}>
-                  {allowedCategories.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div>
+                <IndustryPickers
+                  sector={sector}
+                  subcategoryId={industry}
+                  onChange={({ sector: s, subcategoryId }) => {
+                    setSector(s);
+                    setIndustry(subcategoryId);
+                  }}
+                />
+              </div>
               <label>
                 <div className="mb-2 block text-sm text-gray-400">Обо мне</div>
                 <textarea className={`${fc} min-h-[160px] rounded-3xl`} value={description} onChange={(e) => setDescription(e.target.value)} rows={6} />

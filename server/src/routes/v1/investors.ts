@@ -3,64 +3,67 @@ import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
-import { allowedCategories } from "../../lib/categories";
+import { isSectorId, isValidIndustryPair } from "../../lib/industryHierarchy";
 import { requireAuth, requireNotBanned, requireNotDeleted, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
 
 export const investorsRouter = Router();
 
-const createInvestorSchema = z.object({
-  industry: z
-    .string()
-    .min(2)
-    .max(60)
-    .refine((v) => (allowedCategories as readonly string[]).includes(v), {
-      message: "Недопустимая категория",
-    }),
-  description: z.string().min(10).max(2000),
-  amount: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
-  profileExtra: z
-    .object({
-      investorName: z.string().min(1).max(90),
-      investorTitle: z.string().max(90).optional(),
-      checkMin: z.coerce.number().positive().optional(),
-      checkMax: z.coerce.number().positive().optional(),
-      stages: z.array(z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"])).max(10).optional(),
-      dealsCount: z.coerce.number().int().min(0).max(9999).optional(),
-      exitsCount: z.coerce.number().int().min(0).max(9999).optional(),
-      interests: z.array(z.string().min(1).max(48)).max(24).optional(),
-    })
-    .optional(),
-  attachmentIds: z.array(z.string().uuid()).optional(),
-  submitMode: z.enum(["draft", "submit"]).optional(),
-});
+const createInvestorSchema = z
+  .object({
+    sector: z.string().min(2).max(40).refine((v) => isSectorId(v), { message: "Недопустимая отрасль" }),
+    industry: z.string().min(2).max(80),
+    description: z.string().min(10).max(2000),
+    amount: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
+    profileExtra: z
+      .object({
+        investorName: z.string().min(1).max(90),
+        investorTitle: z.string().max(90).optional(),
+        checkMin: z.coerce.number().positive().optional(),
+        checkMax: z.coerce.number().positive().optional(),
+        stages: z.array(z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"])).max(10).optional(),
+        dealsCount: z.coerce.number().int().min(0).max(9999).optional(),
+        exitsCount: z.coerce.number().int().min(0).max(9999).optional(),
+        interests: z.array(z.string().min(1).max(48)).max(24).optional(),
+      })
+      .optional(),
+    attachmentIds: z.array(z.string().uuid()).optional(),
+    submitMode: z.enum(["draft", "submit"]).optional(),
+  })
+  .refine((d) => isValidIndustryPair(d.sector, d.industry), {
+    message: "Категория не соответствует выбранной отрасли",
+    path: ["industry"],
+  });
 
-const updateInvestorSchema = z.object({
-  industry: z
-    .string()
-    .min(2)
-    .max(60)
-    .refine((v) => (allowedCategories as readonly string[]).includes(v), {
-      message: "Недопустимая категория",
-    })
-    .optional(),
-  description: z.string().min(10).max(2000).optional(),
-  amount: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число").optional(),
-  status: z.enum(["active", "paused", "closed"]).optional(),
-  profileExtra: z
-    .object({
-      investorName: z.string().min(1).max(90).optional(),
-      investorTitle: z.string().max(90).optional(),
-      checkMin: z.coerce.number().positive().optional().nullable(),
-      checkMax: z.coerce.number().positive().optional().nullable(),
-      stages: z.array(z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"])).max(10).optional(),
-      dealsCount: z.coerce.number().int().min(0).max(9999).optional().nullable(),
-      exitsCount: z.coerce.number().int().min(0).max(9999).optional().nullable(),
-      interests: z.array(z.string().min(1).max(48)).max(24).optional(),
-    })
-    .optional(),
-  attachmentIds: z.array(z.string().uuid()).optional(),
-  submitForModeration: z.boolean().optional(),
-});
+const updateInvestorSchema = z
+  .object({
+    sector: z.string().min(2).max(40).refine((v) => isSectorId(v), { message: "Недопустимая отрасль" }).optional(),
+    industry: z.string().min(2).max(80).optional(),
+    description: z.string().min(10).max(2000).optional(),
+    amount: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число").optional(),
+    status: z.enum(["active", "paused", "closed"]).optional(),
+    profileExtra: z
+      .object({
+        investorName: z.string().min(1).max(90).optional(),
+        investorTitle: z.string().max(90).optional(),
+        checkMin: z.coerce.number().positive().optional().nullable(),
+        checkMax: z.coerce.number().positive().optional().nullable(),
+        stages: z.array(z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"])).max(10).optional(),
+        dealsCount: z.coerce.number().int().min(0).max(9999).optional().nullable(),
+        exitsCount: z.coerce.number().int().min(0).max(9999).optional().nullable(),
+        interests: z.array(z.string().min(1).max(48)).max(24).optional(),
+      })
+      .optional(),
+    attachmentIds: z.array(z.string().uuid()).optional(),
+    submitForModeration: z.boolean().optional(),
+  })
+  .refine(
+    (d) => {
+      if (d.sector === undefined && d.industry === undefined) return true;
+      if (d.sector !== undefined && d.industry !== undefined) return isValidIndustryPair(d.sector, d.industry);
+      return false;
+    },
+    { message: "Укажите отрасль и категорию отрасли вместе", path: ["industry"] },
+  );
 
 investorsRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
@@ -83,6 +86,7 @@ investorsRouter.get("/", tryAuth, async (req, res) => {
     res.json(
       items.map((it) => ({
         id: it.id,
+        sector: (it as { sector?: string }).sector ?? "software_it",
         industry: it.industry,
         description: it.description,
         amount: Number(it.amount),
@@ -142,6 +146,7 @@ investorsRouter.post("/", requireAuth, requireNotDeleted, requireNotBanned, requ
     const nextStatus = req.user!.role === "admin" ? "published" : parsed.data.submitMode === "draft" ? "draft" : "pending_moderation";
     const created = await prisma.investorRequest.create({
       data: {
+        sector: parsed.data.sector,
         industry: parsed.data.industry,
         description: parsed.data.description,
         amount: parsed.data.amount,
@@ -220,6 +225,7 @@ investorsRouter.put("/:requestId", requireAuth, requireNotDeleted, requireNotBan
     const updated = await prisma.investorRequest.update({
       where: { id: row.id },
       data: {
+        ...(data.sector !== undefined ? { sector: data.sector } : {}),
         ...(data.industry !== undefined ? { industry: data.industry } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
         ...(data.amount !== undefined ? { amount: data.amount } : {}),

@@ -3,75 +3,78 @@ import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
-import { allowedCategories } from "../../lib/categories";
+import { isSectorId, isValidIndustryPair } from "../../lib/industryHierarchy";
 import { requireAuth, requireNotBanned, requireNotDeleted, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
 
 export const partnersRouter = Router();
 
-const createPartnerSchema = z.object({
-  role: z.enum(["supplier", "reseller", "integration", "cofounder"]),
-  industry: z
-    .string()
-    .min(2)
-    .max(60)
-    .refine((v) => (allowedCategories as readonly string[]).includes(v), {
-      message: "Недопустимая категория",
-    }),
-  description: z.string().min(10).max(2000),
-  profileExtra: z
-    .object({
-      partnerName: z.string().min(1).max(120),
-      partnerType: z.string().min(0).max(120).optional(),
-      helpText: z.string().min(0).max(4000).optional(),
-      services: z
-        .array(
-          z.object({
-            title: z.string().min(1).max(140),
-            note: z.string().min(0).max(200).optional(),
-          }),
-        )
-        .max(24)
-        .optional(),
-      fitFor: z.array(z.string().min(1).max(80)).max(24).optional(),
-      ctaText: z.string().min(0).max(80).optional(),
-    })
-    .optional(),
-  attachmentIds: z.array(z.string().uuid()).optional(),
-  submitMode: z.enum(["draft", "submit"]).optional(),
-});
+const createPartnerSchema = z
+  .object({
+    role: z.enum(["supplier", "reseller", "integration", "cofounder"]),
+    sector: z.string().min(2).max(40).refine((v) => isSectorId(v), { message: "Недопустимая отрасль" }),
+    industry: z.string().min(2).max(80),
+    description: z.string().min(10).max(2000),
+    profileExtra: z
+      .object({
+        partnerName: z.string().min(1).max(120),
+        partnerType: z.string().min(0).max(120).optional(),
+        helpText: z.string().min(0).max(4000).optional(),
+        services: z
+          .array(
+            z.object({
+              title: z.string().min(1).max(140),
+              note: z.string().min(0).max(200).optional(),
+            }),
+          )
+          .max(24)
+          .optional(),
+        fitFor: z.array(z.string().min(1).max(80)).max(24).optional(),
+        ctaText: z.string().min(0).max(80).optional(),
+      })
+      .optional(),
+    attachmentIds: z.array(z.string().uuid()).optional(),
+    submitMode: z.enum(["draft", "submit"]).optional(),
+  })
+  .refine((d) => isValidIndustryPair(d.sector, d.industry), {
+    message: "Категория не соответствует выбранной отрасли",
+    path: ["industry"],
+  });
 
-const updatePartnerSchema = z.object({
-  role: z.enum(["supplier", "reseller", "integration", "cofounder"]).optional(),
-  industry: z
-    .string()
-    .min(2)
-    .max(60)
-    .refine((v) => (allowedCategories as readonly string[]).includes(v), {
-      message: "Недопустимая категория",
-    })
-    .optional(),
-  description: z.string().min(10).max(2000).optional(),
-  profileExtra: z
-    .object({
-      partnerName: z.string().min(1).max(120).optional(),
-      partnerType: z.string().min(0).max(120).optional(),
-      helpText: z.string().min(0).max(4000).optional(),
-      services: z
-        .array(
-          z.object({
-            title: z.string().min(1).max(140),
-            note: z.string().min(0).max(200).optional(),
-          }),
-        )
-        .max(24)
-        .optional(),
-      fitFor: z.array(z.string().min(1).max(80)).max(24).optional(),
-      ctaText: z.string().min(0).max(80).optional(),
-    })
-    .optional(),
-  attachmentIds: z.array(z.string().uuid()).optional(),
-  submitForModeration: z.boolean().optional(),
-});
+const updatePartnerSchema = z
+  .object({
+    role: z.enum(["supplier", "reseller", "integration", "cofounder"]).optional(),
+    sector: z.string().min(2).max(40).refine((v) => isSectorId(v), { message: "Недопустимая отрасль" }).optional(),
+    industry: z.string().min(2).max(80).optional(),
+    description: z.string().min(10).max(2000).optional(),
+    profileExtra: z
+      .object({
+        partnerName: z.string().min(1).max(120).optional(),
+        partnerType: z.string().min(0).max(120).optional(),
+        helpText: z.string().min(0).max(4000).optional(),
+        services: z
+          .array(
+            z.object({
+              title: z.string().min(1).max(140),
+              note: z.string().min(0).max(200).optional(),
+            }),
+          )
+          .max(24)
+          .optional(),
+        fitFor: z.array(z.string().min(1).max(80)).max(24).optional(),
+        ctaText: z.string().min(0).max(80).optional(),
+      })
+      .optional(),
+    attachmentIds: z.array(z.string().uuid()).optional(),
+    submitForModeration: z.boolean().optional(),
+  })
+  .refine(
+    (d) => {
+      if (d.sector === undefined && d.industry === undefined) return true;
+      if (d.sector !== undefined && d.industry !== undefined) return isValidIndustryPair(d.sector, d.industry);
+      return false;
+    },
+    { message: "Укажите отрасль и категорию отрасли вместе", path: ["industry"] },
+  );
 
 partnersRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
@@ -95,6 +98,7 @@ partnersRouter.get("/", tryAuth, async (req, res) => {
       items.map((it) => ({
         id: it.id,
         role: it.role,
+        sector: (it as { sector?: string }).sector ?? "software_it",
         industry: it.industry,
         description: it.description,
         authorId: it.authorId,
@@ -150,6 +154,7 @@ partnersRouter.post("/", requireAuth, requireNotDeleted, requireNotBanned, requi
     const created = await prisma.partnerRequest.create({
       data: {
         role: parsed.data.role,
+        sector: parsed.data.sector,
         industry: parsed.data.industry,
         description: parsed.data.description,
         authorId: req.user!.userId,
@@ -228,6 +233,7 @@ partnersRouter.put("/:requestId", requireAuth, requireNotDeleted, requireNotBann
       where: { id: row.id },
       data: {
         ...(data.role !== undefined ? { role: data.role as any } : {}),
+        ...(data.sector !== undefined ? { sector: data.sector } : {}),
         ...(data.industry !== undefined ? { industry: data.industry } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
         ...(data.profileExtra !== undefined ? { profileExtra: data.profileExtra as any } : {}),

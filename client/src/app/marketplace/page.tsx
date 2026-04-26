@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 
 import { MarketplaceIdeaRow, MarketplaceInvestorRow, MarketplacePartnerRow } from "@/components/marketplace/MarketplaceRows";
-import { allowedCategories } from "@/lib/categories";
+import { formatIndustryLine, INDUSTRY_SECTORS } from "@/lib/industryHierarchy";
 import { formatLabelsByLang, partnerRoleLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import type { IdeaProfileExtra, InvestorProfileExtra, PartnerProfileExtra } from "@/lib/marketplaceExtras";
 
@@ -16,6 +16,7 @@ type StartupItem = {
   title: string;
   description: string;
   tagline?: string;
+  sector: string;
   category: string;
   price: number;
   stage: string;
@@ -27,6 +28,7 @@ type IdeaItem = {
   id: string;
   title: string;
   description: string;
+  sector: string;
   category: string;
   price: number;
   stage: string;
@@ -37,6 +39,7 @@ type IdeaItem = {
 
 type InvestorItem = {
   id: string;
+  sector: string;
   industry: string;
   description: string;
   amount: number;
@@ -48,6 +51,7 @@ type InvestorItem = {
 type PartnerItem = {
   id: string;
   role: "supplier" | "reseller" | "integration" | "cofounder";
+  sector: string;
   industry: string;
   description: string;
   author?: { name: string; avatarUrl: string | null };
@@ -414,8 +418,8 @@ function MarketplaceInner() {
     const list = startups ?? [];
     return list
       .filter((x) => {
-        if (!matchesBase(q, [x.title, x.description, x.tagline ?? "", x.category])) return false;
-        if (inds.size > 0 && !inds.has(x.category)) return false;
+        if (!matchesBase(q, [x.title, x.description, x.tagline ?? "", formatIndustryLine(x.sector, x.category)])) return false;
+        if (inds.size > 0 && !inds.has(x.sector)) return false;
         if (stage && x.stage !== stage) return false;
         if (!matchesAmount(min, max, x.price)) return false;
         if (formats.size > 0) {
@@ -449,13 +453,13 @@ function MarketplaceInner() {
         !matchesBase(q, [
           x.title,
           x.description,
-          x.category,
+          formatIndustryLine(x.sector, x.category),
           pe?.city ?? "",
           ...(pe?.helpTags ?? []),
         ])
       )
         return false;
-      if (inds.size > 0 && !inds.has(x.category)) return false;
+      if (inds.size > 0 && !inds.has(x.sector)) return false;
       if (stage && x.stage !== stage) return false;
       if (!matchesAmount(min, max, x.price)) return false;
       if (formats.size > 0) {
@@ -473,7 +477,7 @@ function MarketplaceInner() {
       const pe = x.profileExtra ?? null;
       if (
         !matchesBase(q, [
-          x.industry,
+          formatIndustryLine(x.sector, x.industry),
           x.description,
           pe?.investorName ?? "",
           pe?.investorTitle ?? "",
@@ -481,7 +485,7 @@ function MarketplaceInner() {
         ])
       )
         return false;
-      if (inds.size > 0 && !inds.has(x.industry)) return false;
+      if (inds.size > 0 && !inds.has(x.sector)) return false;
       if (!matchesAmount(min, max, investorComparableAmount(x))) return false;
       return true;
     });
@@ -495,7 +499,7 @@ function MarketplaceInner() {
       const svc = (pe?.services ?? []).map((s) => s.title);
       if (
         !matchesBase(q, [
-          x.industry,
+          formatIndustryLine(x.sector, x.industry),
           x.role,
           x.description,
           pe?.partnerName ?? "",
@@ -506,7 +510,7 @@ function MarketplaceInner() {
         ])
       )
         return false;
-      if (inds.size > 0 && !inds.has(x.industry)) return false;
+      if (inds.size > 0 && !inds.has(x.sector)) return false;
       if (partnerRolesSel.size > 0 && !partnerRolesSel.has(x.role)) return false;
       return true;
     });
@@ -949,19 +953,19 @@ function MarketplaceInner() {
               <h3 className="mb-6 flex items-center gap-2 font-semibold">⚙ Фильтры</h3>
 
           <div className="mb-6">
-            <p className="mb-3 text-sm text-gray-400">Категория (как в карточке)</p>
+            <p className="mb-3 text-sm text-gray-400">Отрасль</p>
             <div className="flex flex-wrap gap-2">
-              {allowedCategories.map((x) => {
-                const on = selectedIndustries.has(x.value);
+              {INDUSTRY_SECTORS.map((x) => {
+                const on = selectedIndustries.has(x.id);
                 return (
                   <button
-                    key={x.value}
+                    key={x.id}
                     type="button"
                     onClick={() => {
                       setSelectedIndustries((prev) => {
                         const next = new Set(prev);
-                        if (next.has(x.value)) next.delete(x.value);
-                        else next.add(x.value);
+                        if (next.has(x.id)) next.delete(x.id);
+                        else next.add(x.id);
                         return next;
                       });
                     }}

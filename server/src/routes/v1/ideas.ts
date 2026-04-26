@@ -3,71 +3,74 @@ import { z } from "zod";
 
 import { getPrisma } from "../../lib/prisma";
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
-import { allowedCategories } from "../../lib/categories";
+import { isSectorId, isValidIndustryPair } from "../../lib/industryHierarchy";
 import { requireAuth, requireNotBanned, requireNotDeleted, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
 
 export const ideasRouter = Router();
 
-const createIdeaSchema = z.object({
-  title: z.string().min(1).max(120),
-  description: z.string().min(10).max(2000),
-  category: z
-    .string()
-    .min(2)
-    .max(60)
-    .refine((v) => (allowedCategories as readonly string[]).includes(v), {
-      message: "Недопустимая категория",
-    }),
-  price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
-  stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]),
-  format: z.enum(["online", "offline", "hybrid"]),
-  analysisId: z.string().uuid().optional(),
-  attachmentIds: z.array(z.string().uuid()).optional(),
-  problem: z.string().max(2000).optional(),
-  solution: z.string().max(2000).optional(),
-  market: z.string().max(2000).optional(),
-  profileExtra: z
-    .object({
-      city: z.string().min(1).max(80).optional(),
-      doneItems: z.array(z.string().min(1).max(120)).max(24).optional(),
-      helpTags: z.array(z.string().min(1).max(40)).max(24).optional(),
-      needsText: z.string().min(1).max(2000).optional(),
-      coverGradient: z.string().min(1).max(80).optional(),
-    })
-    .optional(),
-  submitMode: z.enum(["draft", "submit"]).optional(),
-});
+const createIdeaSchema = z
+  .object({
+    title: z.string().min(1).max(120),
+    description: z.string().min(10).max(2000),
+    sector: z.string().min(2).max(40).refine((v) => isSectorId(v), { message: "Недопустимая отрасль" }),
+    category: z.string().min(2).max(80),
+    price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
+    stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]),
+    format: z.enum(["online", "offline", "hybrid"]),
+    analysisId: z.string().uuid().optional(),
+    attachmentIds: z.array(z.string().uuid()).optional(),
+    problem: z.string().max(2000).optional(),
+    solution: z.string().max(2000).optional(),
+    market: z.string().max(2000).optional(),
+    profileExtra: z
+      .object({
+        city: z.string().min(1).max(80).optional(),
+        doneItems: z.array(z.string().min(1).max(120)).max(24).optional(),
+        helpTags: z.array(z.string().min(1).max(40)).max(24).optional(),
+        needsText: z.string().min(1).max(2000).optional(),
+        coverGradient: z.string().min(1).max(80).optional(),
+      })
+      .optional(),
+    submitMode: z.enum(["draft", "submit"]).optional(),
+  })
+  .refine((d) => isValidIndustryPair(d.sector, d.category), {
+    message: "Категория не соответствует выбранной отрасли",
+    path: ["category"],
+  });
 
-const updateIdeaSchema = z.object({
-  title: z.string().min(1).max(120).optional(),
-  description: z.string().min(10).max(2000).optional(),
-  category: z
-    .string()
-    .min(2)
-    .max(60)
-    .refine((v) => (allowedCategories as readonly string[]).includes(v), {
-      message: "Недопустимая категория",
-    })
-    .optional(),
-  price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число").optional(),
-  stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]).optional(),
-  format: z.enum(["online", "offline", "hybrid"]).optional(),
-  analysisId: z.string().uuid().nullable().optional(),
-  attachmentIds: z.array(z.string().uuid()).optional(),
-  problem: z.string().max(2000).optional().nullable(),
-  solution: z.string().max(2000).optional().nullable(),
-  market: z.string().max(2000).optional().nullable(),
-  profileExtra: z
-    .object({
-      city: z.string().min(1).max(80).optional().nullable(),
-      doneItems: z.array(z.string().min(1).max(120)).max(24).optional(),
-      helpTags: z.array(z.string().min(1).max(40)).max(24).optional(),
-      needsText: z.string().min(1).max(2000).optional().nullable(),
-      coverGradient: z.string().min(1).max(80).optional().nullable(),
-    })
-    .optional(),
-  submitForModeration: z.boolean().optional(),
-});
+const updateIdeaSchema = z
+  .object({
+    title: z.string().min(1).max(120).optional(),
+    description: z.string().min(10).max(2000).optional(),
+    sector: z.string().min(2).max(40).refine((v) => isSectorId(v), { message: "Недопустимая отрасль" }).optional(),
+    category: z.string().min(2).max(80).optional(),
+    price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число").optional(),
+    stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]).optional(),
+    format: z.enum(["online", "offline", "hybrid"]).optional(),
+    analysisId: z.string().uuid().nullable().optional(),
+    attachmentIds: z.array(z.string().uuid()).optional(),
+    problem: z.string().max(2000).optional().nullable(),
+    solution: z.string().max(2000).optional().nullable(),
+    market: z.string().max(2000).optional().nullable(),
+    profileExtra: z
+      .object({
+        city: z.string().min(1).max(80).optional().nullable(),
+        doneItems: z.array(z.string().min(1).max(120)).max(24).optional(),
+        helpTags: z.array(z.string().min(1).max(40)).max(24).optional(),
+        needsText: z.string().min(1).max(2000).optional().nullable(),
+        coverGradient: z.string().min(1).max(80).optional().nullable(),
+      })
+      .optional(),
+    submitForModeration: z.boolean().optional(),
+  })
+  .refine(
+    (d) => {
+      if (d.sector === undefined && d.category === undefined) return true;
+      if (d.sector !== undefined && d.category !== undefined) return isValidIndustryPair(d.sector, d.category);
+      return false;
+    },
+    { message: "Укажите отрасль и категорию отрасли вместе", path: ["category"] },
+  );
 
 ideasRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
@@ -109,6 +112,7 @@ ideasRouter.get("/", tryAuth, async (req, res) => {
         id: i.id,
         title: i.title,
         description: i.description,
+        sector: (i as { sector?: string }).sector ?? "software_it",
         category: i.category,
         price: Number(i.price),
         stage: i.stage,
@@ -169,6 +173,7 @@ ideasRouter.get("/:ideaId", tryAuth, async (req, res) => {
       id: idea.id,
       title: idea.title,
       description: idea.description,
+      sector: (idea as { sector?: string }).sector ?? "software_it",
       category: idea.category,
       price: Number(idea.price),
       stage: idea.stage,
@@ -221,6 +226,7 @@ ideasRouter.post("/", requireAuth, requireNotDeleted, requireNotBanned, requireV
       data: {
         title: data.title,
         description: data.description,
+        sector: data.sector,
         category: data.category,
         price: data.price,
         stage: data.stage,
@@ -322,6 +328,7 @@ ideasRouter.put("/:ideaId", requireAuth, requireNotDeleted, requireNotBanned, re
           : {}),
         ...(data.title !== undefined ? { title: data.title } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.sector !== undefined ? { sector: data.sector } : {}),
         ...(data.category !== undefined ? { category: data.category } : {}),
         ...(data.price !== undefined ? { price: data.price } : {}),
         ...(data.stage !== undefined ? { stage: data.stage } : {}),

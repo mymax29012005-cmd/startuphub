@@ -4,14 +4,17 @@ import React, { use as useReact, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
+import { IndustryPickers } from "@/components/forms/IndustryPickers";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/i18n/I18nProvider";
 import { partnerRoleLabelsByLang } from "@/lib/labelMaps";
-import { allowedCategories, asAllowedCategory } from "@/lib/categories";
+import { INDUSTRY_CATEGORIES_BY_SECTOR, INDUSTRY_SECTORS, normalizeIndustryPair, type SectorId } from "@/lib/industryHierarchy";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 import type { PartnerProfileExtra } from "@/lib/marketplaceExtras";
 
 const roles = ["supplier", "reseller", "integration", "cofounder"] as const;
+const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
+const defaultIndustry = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
 
 type Me = { id: string; role: "user" | "admin" };
 type ServiceRow = { title: string; note: string };
@@ -19,6 +22,7 @@ type ServiceRow = { title: string; note: string };
 type PartnerDetail = {
   id: string;
   role: (typeof roles)[number] | string;
+  sector?: string;
   industry: string;
   description: string;
   author: { id: string };
@@ -40,7 +44,8 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
   const [loadingPage, setLoadingPage] = useState(true);
 
   const [role, setRole] = useState<(typeof roles)[number]>("supplier");
-  const [industry, setIndustry] = useState(allowedCategories[0]?.value ?? "SaaS");
+  const [sector, setSector] = useState<SectorId>(defaultSector);
+  const [industry, setIndustry] = useState(defaultIndustry);
 
   const [partnerName, setPartnerName] = useState("");
   const [partnerType, setPartnerType] = useState("");
@@ -87,7 +92,9 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
         if (cancelled) return;
         setItem(data);
         setRole((roles as readonly string[]).includes(String(data.role)) ? (data.role as (typeof roles)[number]) : "supplier");
-        setIndustry(asAllowedCategory(data.industry ?? (allowedCategories[0]?.value ?? "SaaS")));
+        const ind = normalizeIndustryPair(data.sector, data.industry);
+        setSector(ind.sector);
+        setIndustry(ind.subcategoryId);
         setDescription(data.description ?? "");
         setAttachments(data.attachments ?? []);
         const pe = data.profileExtra ?? null;
@@ -133,6 +140,7 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
         credentials: "include",
         body: JSON.stringify({
           role,
+          sector,
           industry,
           description,
           profileExtra: {
@@ -195,16 +203,14 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
                   ))}
                 </select>
               </label>
-              <label>
-                <div className="mb-2 block text-sm text-gray-400">Категория / отрасль</div>
-                <select className={fc} value={industry} onChange={(e) => setIndustry(asAllowedCategory(e.target.value))}>
-                  {allowedCategories.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <IndustryPickers
+                sector={sector}
+                subcategoryId={industry}
+                onChange={({ sector: s, subcategoryId }) => {
+                  setSector(s);
+                  setIndustry(subcategoryId);
+                }}
+              />
               <label>
                 <div className="mb-2 block text-sm text-gray-400">Чем вы помогаете стартапам</div>
                 <textarea className={`${fc} min-h-[160px] rounded-3xl`} value={description} onChange={(e) => setDescription(e.target.value)} rows={6} />

@@ -173,6 +173,7 @@ model Startup {
   id          String    @id @default(uuid())
   title       String
   description String
+  sector      String
   category    String
   price       Decimal   @db.Decimal(12, 2)
 
@@ -203,6 +204,7 @@ model Startup {
   updatedAt   DateTime @updatedAt
 
   @@index([category])
+  @@index([sector])
   @@index([moderationStatus, createdAt])
 }
 
@@ -210,6 +212,7 @@ model Idea {
   id          String    @id @default(uuid())
   title       String
   description String
+  sector      String
   category    String
   price       Decimal   @db.Decimal(12, 2)
 
@@ -242,11 +245,13 @@ model Idea {
   updatedAt   DateTime @updatedAt
 
   @@index([category])
+  @@index([sector])
   @@index([moderationStatus, createdAt])
 }
 
 model InvestorRequest {
   id          String    @id @default(uuid())
+  sector      String
   industry    String
   description String
   amount      Decimal   @db.Decimal(12, 2)
@@ -270,12 +275,14 @@ model InvestorRequest {
   updatedAt   DateTime @updatedAt
 
   @@index([industry])
+  @@index([sector])
   @@index([moderationStatus, createdAt])
 }
 
 model PartnerRequest {
   id          String    @id @default(uuid())
   role        PartnerRequestRole
+  sector      String
   industry    String
   description String
 
@@ -297,6 +304,7 @@ model PartnerRequest {
   updatedAt   DateTime @updatedAt
 
   @@index([industry])
+  @@index([sector])
   @@index([moderationStatus, createdAt])
 }
 

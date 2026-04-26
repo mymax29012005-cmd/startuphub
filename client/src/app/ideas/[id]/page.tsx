@@ -12,11 +12,13 @@ import { CashflowBars } from "@/components/analyzer/CashflowBars";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { ideaHeroGradientClass, type IdeaProfileExtra } from "@/lib/marketplaceExtras";
+import { formatIndustryLine } from "@/lib/industryHierarchy";
 
 type IdeaDetail = {
   id: string;
   title: string;
   description: string;
+  sector?: string;
   category: string;
   price: number;
   stage: string;
@@ -328,7 +330,7 @@ export default function IdeaDetailPage({
                     <div>
                       <div className="text-sm text-gray-400">Нужна помощь</div>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {(idea.profileExtra?.helpTags?.length ? idea.profileExtra.helpTags : [idea.category]).map((t) => (
+                        {(idea.profileExtra?.helpTags?.length ? idea.profileExtra.helpTags : [formatIndustryLine(idea.sector, idea.category)]).map((t) => (
                           <span key={t} className="rounded-2xl bg-white/10 px-4 py-1 text-sm">
                             {t}
                           </span>

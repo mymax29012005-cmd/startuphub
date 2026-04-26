@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/Button";
 import { DeleteResourceButton } from "@/components/DeleteResourceButton";
 import { formatCheckRangeRub, type InvestorProfileExtra } from "@/lib/marketplaceExtras";
 import { stageLabelsByLang } from "@/lib/labelMaps";
+import { formatIndustryLine } from "@/lib/industryHierarchy";
 
 type Me = { id: string; role: "user" | "admin" };
 
 type InvestorDetail = {
   id: string;
+  sector?: string;
   industry: string;
   description: string;
   amount: number;
@@ -125,7 +127,7 @@ export default function InvestorDetailPage({
     if (!item) return null;
     const pe = item.profileExtra ?? null;
     const name = (pe?.investorName?.trim() || item.author.name || "Инвестор").trim();
-    const title = (pe?.investorTitle?.trim() || item.industry).trim();
+    const title = (pe?.investorTitle?.trim() || formatIndustryLine(item.sector, item.industry)).trim();
     const check = formatCheckRangeRub(pe, item.amount);
     const stages = (pe?.stages ?? []).map((s) => stageLabelsByLang.ru?.[s] ?? s);
     const interests = pe?.interests ?? [];

@@ -28,7 +28,7 @@ export function Footer() {
           <Link href="/" className={footerLinkClass}>
             {t("nav.home")}
           </Link>
-          {SITE_MAIN_NAV.map((item) => {
+          {SITE_MAIN_NAV.filter((item) => !("disabled" in item && item.disabled)).map((item) => {
             const label =
               "chatsUnread" in item && item.chatsUnread ? (
                 <span className="inline-flex items-center gap-2">

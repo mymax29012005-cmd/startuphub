@@ -5,16 +5,19 @@ import React, { Suspense, useCallback, useEffect, useMemo, useState } from "reac
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { useI18n } from "@/i18n/I18nProvider";
+import { IndustryPickers } from "@/components/forms/IndustryPickers";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
-import { allowedCategories, asAllowedCategory } from "@/lib/categories";
+import { INDUSTRY_CATEGORIES_BY_SECTOR, INDUSTRY_SECTORS, normalizeIndustryPair, type SectorId } from "@/lib/industryHierarchy";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 import { addListingFieldClass } from "@/components/forms/addListingFormShell";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
 const formats = ["online", "offline", "hybrid"] as const;
+
+const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
+const defaultCategory = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
 
 type MaterialSlot = "pitch" | "excel" | "video" | "other";
 type Me = { id: string; role: "user" | "admin" };
@@ -65,14 +68,14 @@ function AddStartupInner() {
   const [title, setTitle] = useState("");
   const [tagline, setTagline] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(allowedCategories[0]?.value ?? "SaaS");
+  const [sector, setSector] = useState<SectorId>(defaultSector);
+  const [category, setCategory] = useState(defaultCategory);
   const [price, setPrice] = useState<string>("");
   const [valuationPreMoney, setValuationPreMoney] = useState<string>("");
-  const [equityOfferedPct, setEquityOfferedPct] = useState(18);
+  const [equityOfferedPct, setEquityOfferedPct] = useState(10);
 
   const [stage, setStage] = useState<(typeof stages)[number]>("seed");
   const [format, setFormat] = useState<(typeof formats)[number]>("hybrid");
-  const [isOnline, setIsOnline] = useState(true);
 
   const [kpiRows, setKpiRows] = useState([
     { value: "", label: "" },
@@ -90,14 +93,11 @@ function AddStartupInner() {
     other: [],
   });
 
-  const [withAuction, setWithAuction] = useState(false);
-  const [auctionCurrentPrice, setAuctionCurrentPrice] = useState<string>("");
-  const [auctionEndsAt, setAuctionEndsAt] = useState("");
-
   const [uploading, setUploading] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<MaterialSlot | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [analysisInfo, setAnalysisInfo] = useState<null | {
@@ -118,13 +118,20 @@ function AddStartupInner() {
       if (!title && d?.title) setTitle(String(d.title));
       if (d?.tagline != null) setTagline(String(d.tagline));
       if (!description && d?.description) setDescription(String(d.description));
-      if (category === (allowedCategories[0]?.value ?? "SaaS") && d?.category) setCategory(asAllowedCategory(String(d.category)));
+      if (d?.sector && d?.category) {
+        const n = normalizeIndustryPair(String(d.sector), String(d.category));
+        setSector(n.sector);
+        setCategory(n.subcategoryId);
+      } else if (d?.category) {
+        const n = normalizeIndustryPair(undefined, String(d.category));
+        setSector(n.sector);
+        setCategory(n.subcategoryId);
+      }
       if (!price && d?.price) setPrice(String(d.price));
       if (d?.valuationPreMoney != null) setValuationPreMoney(String(d.valuationPreMoney));
       if (typeof d?.equityOfferedPct === "number") setEquityOfferedPct(d.equityOfferedPct);
       if (d?.stage) setStage(d.stage);
       if (d?.format) setFormat(d.format);
-      if (typeof d?.isOnline === "boolean") setIsOnline(d.isOnline);
       if (Array.isArray(d?.kpiRows)) setKpiRows(d.kpiRows);
       if (d?.milestones != null) setMilestones(String(d.milestones));
       if (Array.isArray(d?.teamMembers)) setTeamMembers(d.teamMembers);
@@ -163,13 +170,13 @@ function AddStartupInner() {
       title,
       tagline,
       description,
+      sector,
       category,
       price,
       valuationPreMoney,
       equityOfferedPct,
       stage,
       format,
-      isOnline,
       kpiRows,
       milestones,
       teamMembers,
@@ -180,13 +187,13 @@ function AddStartupInner() {
     title,
     tagline,
     description,
+    sector,
     category,
     price,
     valuationPreMoney,
     equityOfferedPct,
     stage,
     format,
-    isOnline,
     kpiRows,
     milestones,
     teamMembers,
@@ -274,6 +281,21 @@ function AddStartupInner() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setFieldErrors([]);
+
+    const missing: string[] = [];
+    if (!title.trim()) missing.push("Название проекта");
+    if (!description.trim()) missing.push("Полное описание");
+    if (description.trim().length < 10) missing.push("Полное описание — минимум 10 символов");
+    if (!sector || !category) missing.push("Отрасль и категория отрасли");
+    const priceNum = price === "" ? undefined : Number(stripNonDigits(price));
+    if (priceNum === undefined || !Number.isFinite(priceNum) || priceNum <= 0) missing.push("Сумма привлечения");
+
+    if (missing.length) {
+      setFieldErrors(missing);
+      return;
+    }
+
     if (me?.role !== "admin") {
       const ok = window.confirm(
         [
@@ -290,28 +312,6 @@ function AddStartupInner() {
     }
     setLoading(true);
 
-    const priceNum = price === "" ? undefined : Number(stripNonDigits(price));
-    if (priceNum === undefined || !Number.isFinite(priceNum) || priceNum <= 0) {
-      setError("Укажите сумму привлечения (положительное число)");
-      setLoading(false);
-      return;
-    }
-
-    const auctionPriceNum =
-      withAuction && auctionCurrentPrice !== "" ? Number(stripNonDigits(auctionCurrentPrice)) : undefined;
-    if (withAuction) {
-      if (auctionPriceNum === undefined || !Number.isFinite(auctionPriceNum) || auctionPriceNum <= 0) {
-        setError("Для аукциона укажите корректную текущую цену");
-        setLoading(false);
-        return;
-      }
-      if (!auctionEndsAt) {
-        setError("Для аукциона укажите дату и время окончания");
-        setLoading(false);
-        return;
-      }
-    }
-
     const profileExtra = buildProfileExtra();
 
     try {
@@ -322,21 +322,14 @@ function AddStartupInner() {
         body: JSON.stringify({
           title,
           description,
+          sector,
           category,
           price: priceNum,
           stage,
           format,
-          isOnline,
           profileExtra,
           analysisId: analysisId || undefined,
           attachmentIds: allAttachments.map((a) => a.id),
-          auction:
-            withAuction && auctionPriceNum != null && auctionEndsAt
-              ? {
-                  currentPrice: auctionPriceNum,
-                  endsAt: new Date(auctionEndsAt),
-                }
-              : undefined,
         }),
       });
 
@@ -391,7 +384,9 @@ function AddStartupInner() {
       </div>
 
       <h1 className="text-center text-4xl font-bold tracking-tighter text-white md:text-5xl">Создать проект</h1>
-      <p className="mb-10 mt-2 text-center text-lg text-gray-400">Все поля после «Основной информации» — опциональные</p>
+      <p className="mb-10 mt-2 mx-auto max-w-2xl text-center text-base text-gray-400">
+        Чем подробнее карточка, тем проще заинтересовать инвесторов и партнёров — заполненные разделы дают больше просмотров и откликов.
+      </p>
 
       <form onSubmit={onSubmit} className="space-y-16 rounded-3xl border border-white/10 bg-[#12121A] p-8 md:p-10">
         {/* 1 */}
@@ -401,7 +396,9 @@ function AddStartupInner() {
           </h2>
           <div className="space-y-8">
             <div>
-              <label className="mb-2 block text-sm text-gray-400">Название проекта</label>
+              <label className="mb-2 block text-sm text-gray-400">
+                Название проекта <span className="text-red-500">*</span>
+              </label>
               <input
                 className={fieldClass}
                 value={title}
@@ -419,7 +416,9 @@ function AddStartupInner() {
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm text-gray-400">Полное описание</label>
+              <label className="mb-2 block text-sm text-gray-400">
+                Полное описание <span className="text-red-500">*</span>
+              </label>
               <textarea
                 className={`${fieldClass} min-h-[140px] rounded-3xl`}
                 placeholder="Расскажите подробно: продукт, аудитория, отличия, статус…"
@@ -428,19 +427,19 @@ function AddStartupInner() {
                 rows={5}
               />
             </div>
+            <IndustryPickers
+              sector={sector}
+              subcategoryId={category}
+              onChange={({ sector: s, subcategoryId }) => {
+                setSector(s);
+                setCategory(subcategoryId);
+              }}
+            />
             <div className="grid gap-8 md:grid-cols-2">
               <label>
-                <div className="mb-2 block text-sm text-gray-400">Отрасль</div>
-                <select className={fieldClass} value={category} onChange={(e) => setCategory(asAllowedCategory(e.target.value))}>
-                  {allowedCategories.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <div className="mb-2 block text-sm text-gray-400">Стадия проекта</div>
+                <div className="mb-2 block text-sm text-gray-400">
+                  Стадия проекта <span className="text-red-500">*</span>
+                </div>
                 <select className={fieldClass} value={stage} onChange={(e) => setStage(e.target.value as any)}>
                   {stages.map((s) => (
                     <option key={s} value={s}>
@@ -449,10 +448,10 @@ function AddStartupInner() {
                   ))}
                 </select>
               </label>
-            </div>
-            <div className="grid gap-8 md:grid-cols-2">
               <label>
-                <div className="mb-2 block text-sm text-gray-400">Формат</div>
+                <div className="mb-2 block text-sm text-gray-400">
+                  Формат <span className="text-red-500">*</span>
+                </div>
                 <select className={fieldClass} value={format} onChange={(e) => setFormat(e.target.value as any)}>
                   {formats.map((f) => (
                     <option key={f} value={f}>
@@ -460,10 +459,6 @@ function AddStartupInner() {
                     </option>
                   ))}
                 </select>
-              </label>
-              <label className="flex cursor-pointer items-center gap-3 self-end pb-2">
-                <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} className="accent-violet-500" />
-                <span className="text-sm text-gray-300">Онлайн-проект</span>
               </label>
             </div>
           </div>
@@ -476,7 +471,9 @@ function AddStartupInner() {
           </h2>
           <div className="grid gap-8 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm text-gray-400">Сумма, которую хотите привлечь</label>
+              <label className="mb-2 block text-sm text-gray-400">
+                Сумма, которую хотите привлечь <span className="text-red-500">*</span>
+              </label>
               <div className="flex">
                 <input
                   className={`${fieldClass} rounded-r-none border-r-0`}
@@ -491,7 +488,9 @@ function AddStartupInner() {
               </div>
             </div>
             <div>
-              <label className="mb-2 block text-sm text-gray-400">Оценка компании (pre-money)</label>
+              <label className="mb-2 block text-sm text-gray-400">
+                Оценка компании до сделки (без учёта новых инвестиций), ₽
+              </label>
               <div className="flex">
                 <input
                   className={`${fieldClass} rounded-r-none border-r-0`}
@@ -510,16 +509,16 @@ function AddStartupInner() {
             <label className="mb-3 block text-sm text-gray-400">Какую долю компании готовы отдать?</label>
             <input
               type="range"
-              min={5}
-              max={40}
+              min={0}
+              max={100}
               value={equityOfferedPct}
               onChange={(e) => setEquityOfferedPct(Number(e.target.value))}
               className="w-full accent-rose-500"
             />
             <div className="mt-2 flex justify-between text-sm font-medium">
-              <span>5%</span>
+              <span>0%</span>
               <span className="text-rose-400">{equityOfferedPct}%</span>
-              <span>40%</span>
+              <span>100%</span>
             </div>
           </div>
         </div>
@@ -527,15 +526,14 @@ function AddStartupInner() {
         {/* 3 */}
         <div>
           <h2 className="mb-6 flex items-center gap-3 text-2xl font-semibold text-white">
-            <span className="text-emerald-400">3</span> Ключевые показатели эффективности{" "}
-            <span className="text-xs font-normal text-gray-500">(опционально)</span>
+            <span className="text-emerald-400">3</span> Ключевые показатели эффективности
           </h2>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {kpiRows.map((row, i) => (
-              <div key={i}>
+              <div key={i} className="rounded-2xl border border-white/10 bg-[#1A1A24] p-4">
                 <input
                   className={fieldClass}
-                  placeholder={["2.8×", "68%", "1270"][i]}
+                  placeholder="Значение"
                   value={row.value}
                   onChange={(e) => {
                     const next = [...kpiRows];
@@ -545,9 +543,7 @@ function AddStartupInner() {
                 />
                 <input
                   className={`${fieldClass} mt-3 py-4 text-sm`}
-                  placeholder={
-                    ["Рост эффективности продаж", "Сокращение времени на обработку лида", "Активных пользователей"][i]
-                  }
+                  placeholder="Подпись к показателю"
                   value={row.label}
                   onChange={(e) => {
                     const next = [...kpiRows];
@@ -558,16 +554,24 @@ function AddStartupInner() {
               </div>
             ))}
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="mt-4 rounded-2xl border border-white/30 px-6 py-3 hover:bg-white/10"
+            onClick={() => setKpiRows((prev) => [...prev, { value: "", label: "" }])}
+          >
+            + Добавить показатель
+          </Button>
         </div>
 
         {/* 4 */}
         <div>
           <h2 className="mb-6 flex items-center gap-3 text-2xl font-semibold text-white">
-            <span className="text-emerald-400">4</span> Что уже сделано <span className="text-xs font-normal text-gray-500">(опционально)</span>
+            <span className="text-emerald-400">4</span> Что уже сделано
           </h2>
           <textarea
             className={`${fieldClass} min-h-[140px] rounded-3xl`}
-            placeholder="MVP запущен, 1270 пользователей, MRR 840 тыс ₽, интеграции с amoCRM и т.д."
+            placeholder="Перечислите через запятую: MVP запущен, 1270 пользователей, MRR 840 тыс ₽…"
             value={milestones}
             onChange={(e) => setMilestones(e.target.value)}
             rows={5}
@@ -746,34 +750,16 @@ function AddStartupInner() {
           </div>
         </div>
 
-        {/* 7 — аукцион */}
-        <div>
-          <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
-            <span className="text-rose-400">7</span> Аукцион <span className="text-xs font-normal text-gray-500">(опционально)</span>
-          </h2>
-          <label className="flex cursor-pointer items-center gap-3">
-            <input type="checkbox" checked={withAuction} onChange={(e) => setWithAuction(e.target.checked)} className="accent-rose-500" />
-            <span className="text-sm text-gray-300">Создать активный аукцион сразу</span>
-          </label>
-          {withAuction ? (
-            <div className="mt-6 grid gap-6 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm text-gray-400">Текущая цена (₽)</label>
-                <Input
-                  placeholder="Стартовая ставка"
-                  value={formatDigitsWithSpaces(auctionCurrentPrice)}
-                  onChange={(e) => setAuctionCurrentPrice(stripNonDigits(e.target.value))}
-                  inputMode="numeric"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm text-gray-400">Окончание</label>
-                <Input type="datetime-local" value={auctionEndsAt} onChange={(e) => setAuctionEndsAt(e.target.value)} />
-              </div>
-            </div>
-          ) : null}
-        </div>
-
+        {fieldErrors.length ? (
+          <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+            <div className="font-semibold">Заполните обязательные поля:</div>
+            <ul className="mt-2 list-inside list-disc space-y-1">
+              {fieldErrors.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {error ? <div className="text-sm text-red-300">{error}</div> : null}
 
         <div className="border-t border-white/10 pt-10">

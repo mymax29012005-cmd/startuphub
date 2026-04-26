@@ -61,6 +61,7 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
             id: true,
             title: true,
             description: true,
+            sector: true,
             category: true,
             price: true,
             stage: true,
@@ -78,6 +79,7 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
             id: true,
             title: true,
             description: true,
+            sector: true,
             category: true,
             price: true,
             stage: true,
@@ -92,6 +94,7 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
         investorRequest: {
           select: {
             id: true,
+            sector: true,
             industry: true,
             description: true,
             amount: true,
@@ -105,6 +108,7 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
           select: {
             id: true,
             role: true,
+            sector: true,
             industry: true,
             description: true,
             authorId: true,
@@ -157,6 +161,7 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
                 id: f.startup.id,
                 title: f.startup.title,
                 description: f.startup.description,
+                sector: (f.startup as { sector?: string }).sector ?? "software_it",
                 category: f.startup.category,
                 price: Number(f.startup.price),
                 stage: f.startup.stage,
@@ -188,6 +193,7 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
                 id: f.idea.id,
                 title: f.idea.title,
                 description: f.idea.description,
+                sector: (f.idea as { sector?: string }).sector ?? "software_it",
                 category: f.idea.category,
                 price: Number(f.idea.price),
                 stage: f.idea.stage,
@@ -207,6 +213,7 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
           f.investorRequestId && f.investorRequest
             ? {
                 id: f.investorRequest.id,
+                sector: (f.investorRequest as { sector?: string }).sector ?? "software_it",
                 industry: f.investorRequest.industry,
                 description: f.investorRequest.description,
                 amount: Number(f.investorRequest.amount),
@@ -227,6 +234,7 @@ favoritesRouter.get("/", requireAuth, async (req, res) => {
             ? {
                 id: f.partnerRequest.id,
                 role: f.partnerRequest.role,
+                sector: (f.partnerRequest as { sector?: string }).sector ?? "software_it",
                 industry: f.partnerRequest.industry,
                 description: f.partnerRequest.description,
                 author: {

@@ -4,15 +4,18 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
+import { IndustryPickers } from "@/components/forms/IndustryPickers";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
-import { allowedCategories, asAllowedCategory } from "@/lib/categories";
+import { INDUSTRY_CATEGORIES_BY_SECTOR, INDUSTRY_SECTORS, normalizeIndustryPair, type SectorId } from "@/lib/industryHierarchy";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
 const formats = ["online", "offline", "hybrid"] as const;
+const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
+const defaultCategory = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
 type Me = { id: string; role: "user" | "admin" };
 
 export default function AddIdeaPage() {
@@ -36,7 +39,8 @@ function AddIdeaInner() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(allowedCategories[0]?.value ?? "SaaS");
+  const [sector, setSector] = useState<SectorId>(defaultSector);
+  const [category, setCategory] = useState(defaultCategory);
   const [price, setPrice] = useState<string>("");
   const [stage, setStage] = useState<(typeof stages)[number]>("idea");
   const [format, setFormat] = useState<(typeof formats)[number]>("online");
@@ -55,6 +59,7 @@ function AddIdeaInner() {
   const [uploading, setUploading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -102,7 +107,15 @@ function AddIdeaInner() {
       const d = JSON.parse(raw) as any;
       if (!title && d?.title) setTitle(String(d.title));
       if (!description && d?.description) setDescription(String(d.description));
-      if (category === (allowedCategories[0]?.value ?? "SaaS") && d?.category) setCategory(asAllowedCategory(String(d.category)));
+      if (d?.sector && d?.category) {
+        const n = normalizeIndustryPair(String(d.sector), String(d.category));
+        setSector(n.sector);
+        setCategory(n.subcategoryId);
+      } else if (d?.category) {
+        const n = normalizeIndustryPair(undefined, String(d.category));
+        setSector(n.sector);
+        setCategory(n.subcategoryId);
+      }
       if (!price && d?.price) setPrice(String(d.price));
       if (d?.stage) setStage(d.stage);
       if (d?.format) setFormat(d.format);
@@ -124,6 +137,20 @@ function AddIdeaInner() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setFieldErrors([]);
+
+    const missing: string[] = [];
+    if (!title.trim()) missing.push("Название");
+    if (!description.trim()) missing.push("Описание");
+    if (description.trim().length < 10) missing.push("Описание — минимум 10 символов");
+    const priceNum0 = price === "" ? undefined : Number(stripNonDigits(price));
+    if (priceNum0 === undefined || !Number.isFinite(priceNum0) || priceNum0 <= 0) missing.push("Цена (ориентир, ₽)");
+
+    if (missing.length) {
+      setFieldErrors(missing);
+      return;
+    }
+
     if (me?.role !== "admin") {
       const ok = window.confirm(
         [
@@ -139,12 +166,7 @@ function AddIdeaInner() {
     }
     setLoading(true);
 
-    const priceNum = price === "" ? undefined : Number(price);
-    if (priceNum !== undefined && !Number.isFinite(priceNum)) {
-      setError("Цена должна быть числом");
-      setLoading(false);
-      return;
-    }
+    const priceNum = priceNum0;
 
     const doneItems = doneItemsRaw
       .split("\n")
@@ -199,6 +221,7 @@ function AddIdeaInner() {
         body: JSON.stringify({
           title,
           description,
+          sector,
           category,
           price: priceNum,
           stage,
@@ -246,7 +269,7 @@ function AddIdeaInner() {
     <AddListingPageChrome
       backHref="/marketplace?tab=ideas"
       title="Разместить идею"
-      subtitle="Оформление как у карточки стартапа — те же поля и визуальная иерархия"
+      subtitle="Та же структура отрасли и категории, что у стартапа. Подробная карточка получает больше внимания."
     >
       <form onSubmit={onSubmit} className="space-y-16 rounded-3xl border border-white/10 bg-[#12121A] p-8 md:p-10">
         {analysisId ? (
@@ -265,12 +288,16 @@ function AddIdeaInner() {
           </h2>
           <div className="space-y-8">
             <div>
-              <label className="mb-2 block text-sm text-gray-400">Название</label>
+              <label className="mb-2 block text-sm text-gray-400">
+                Название <span className="text-red-500">*</span>
+              </label>
               <input className={fc} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Например: приложение для учёта лекарств" />
               <p className="mt-2 text-sm text-gray-500">Коротко: что за идея и для кого.</p>
             </div>
             <div>
-              <label className="mb-2 block text-sm text-gray-400">Описание</label>
+              <label className="mb-2 block text-sm text-gray-400">
+                Описание <span className="text-red-500">*</span>
+              </label>
               <textarea
                 className={`${fc} min-h-[140px] rounded-3xl`}
                 placeholder="Суть, проблема, аудитория, что ищешь на платформе…"
@@ -279,19 +306,19 @@ function AddIdeaInner() {
                 rows={5}
               />
             </div>
+            <IndustryPickers
+              sector={sector}
+              subcategoryId={category}
+              onChange={({ sector: s, subcategoryId }) => {
+                setSector(s);
+                setCategory(subcategoryId);
+              }}
+            />
             <div className="grid gap-8 md:grid-cols-2">
               <label>
-                <div className="mb-2 block text-sm text-gray-400">Категория</div>
-                <select className={fc} value={category} onChange={(e) => setCategory(asAllowedCategory(e.target.value))}>
-                  {allowedCategories.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <div className="mb-2 block text-sm text-gray-400">Цена (ориентир, ₽)</div>
+                <div className="mb-2 block text-sm text-gray-400">
+                  Цена (ориентир, ₽) <span className="text-red-500">*</span>
+                </div>
                 <input
                   className={fc}
                   value={formatDigitsWithSpaces(price)}
@@ -303,7 +330,9 @@ function AddIdeaInner() {
             </div>
             <div className="grid gap-8 md:grid-cols-2">
               <label>
-                <div className="mb-2 block text-sm text-gray-400">Стадия</div>
+                <div className="mb-2 block text-sm text-gray-400">
+                  Стадия <span className="text-red-500">*</span>
+                </div>
                 <select className={fc} value={stage} onChange={(e) => setStage(e.target.value as (typeof stages)[number])}>
                   {stages.map((s) => (
                     <option key={s} value={s}>
@@ -313,7 +342,9 @@ function AddIdeaInner() {
                 </select>
               </label>
               <label>
-                <div className="mb-2 block text-sm text-gray-400">Формат</div>
+                <div className="mb-2 block text-sm text-gray-400">
+                  Формат <span className="text-red-500">*</span>
+                </div>
                 <select className={fc} value={format} onChange={(e) => setFormat(e.target.value as (typeof formats)[number])}>
                   {formats.map((f) => (
                     <option key={f} value={f}>
@@ -374,6 +405,7 @@ function AddIdeaInner() {
                     JSON.stringify({
                       title,
                       description,
+                      sector,
                       category,
                       price,
                       stage,
@@ -458,6 +490,16 @@ function AddIdeaInner() {
           </div>
         </div>
 
+        {fieldErrors.length ? (
+          <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+            <div className="font-semibold">Заполните обязательные поля:</div>
+            <ul className="mt-2 list-inside list-disc space-y-1">
+              {fieldErrors.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {error ? <div className="text-sm text-red-300">{error}</div> : null}
 
         <div className="border-t border-white/10 pt-10">

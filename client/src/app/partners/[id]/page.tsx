@@ -9,12 +9,14 @@ import { DeleteResourceButton } from "@/components/DeleteResourceButton";
 import { partnerRoleLabelsByLang } from "@/lib/labelMaps";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { PartnerProfileExtra, PartnerService } from "@/lib/marketplaceExtras";
+import { formatIndustryLine } from "@/lib/industryHierarchy";
 
 type Me = { id: string; role: "user" | "admin" };
 
 type PartnerDetail = {
   id: string;
   role: string;
+  sector?: string;
   industry: string;
   description: string;
   createdAt: string;
@@ -138,7 +140,7 @@ export default function PartnerDetailPage({
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">{display.name}</h1>
                   <p className="mt-1 text-lg text-cyan-400 sm:mt-2 sm:text-2xl">{display.sub}</p>
-                  <p className="mt-3 text-sm text-gray-500">Категория: {item.industry}</p>
+                  <p className="mt-3 text-sm text-gray-500">{formatIndustryLine(item.sector, item.industry)}</p>
                 </div>
               </div>
 

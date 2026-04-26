@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 
 import { Card } from "@/components/ui/Card";
-import { allowedCategories } from "@/lib/categories";
+import { INDUSTRY_CATEGORIES_BY_SECTOR, INDUSTRY_SECTORS } from "@/lib/industryHierarchy";
 
 const quickFaq = [
   {
@@ -24,10 +24,6 @@ const quickFaq = [
     a: "Да. В карточке есть “Редактировать”, а “Удалить” доступно владельцу и админу.",
   },
   {
-    q: "Как работают аукционы?",
-    a: "Сначала запись, потом ставки в live. Владелец лота не участвует и не ставит.",
-  },
-  {
     q: "Что делать, если не получается войти?",
     a: "Проверь, чем регистрировался (email или телефон) и вводи только один из них при входе.",
   },
@@ -44,15 +40,15 @@ const howToSteps = [
   },
   {
     title: "3) Опубликуй карточку",
-    text: "Название, категория из списка, описание и цена. Можно приложить файлы и отчёт анализатора.",
+    text: "Название, отрасль и категория из списков, описание и цена. Можно приложить файлы и отчёт анализатора.",
   },
   {
     title: "4) Общайся в чатах",
     text: "Открой профиль пользователя → “Перейти в чат”. Непрочитанные отмечаются точками.",
   },
   {
-    title: "5) Следи за аукционами",
-    text: "Записывайся, делай ставки, смотри участников и победителя после завершения.",
+    title: "5) Маркетплейс и фильтры",
+    text: "На маркетплейсе можно отфильтровать карточки по отрасли и другим параметрам, чтобы быстрее находить релевантные проекты.",
   },
 ];
 
@@ -75,22 +71,6 @@ const analyzerSteps = [
   },
 ];
 
-const categoriesHelp = [
-  { k: "SaaS", v: "Сервис по подписке: CRM, аналитика, сервисы для бизнеса/людей." },
-  { k: "AI / ML", v: "ИИ/машинное обучение: ассистенты, распознавание, генерация, рекомендации." },
-  { k: "FinTech", v: "Финансы и платежи: банки, эквайринг, кошельки, скоринг, инвестиции." },
-  { k: "EdTech", v: "Образование: курсы, платформы обучения, тесты, обучение в компаниях." },
-  { k: "HealthTech", v: "Здоровье/медицина: телемедицина, трекинг, медсервисы, B2B для клиник." },
-  { k: "E-commerce", v: "Интернет‑торговля: магазины, витрины, логистика, инструменты для продавцов." },
-  { k: "Marketplace", v: "Площадка, где встречаются продавцы и покупатели (B2B/B2C/C2C)." },
-  { k: "Mobile", v: "Мобильные приложения (iOS/Android) — сервисы и утилиты." },
-  { k: "Web", v: "Веб‑сервис/веб‑приложение без привязки к отрасли." },
-  { k: "Hardware / IoT", v: "Устройства, датчики, “железо”, интеграция с физическим миром." },
-  { k: "Gaming", v: "Игры, игровые сервисы, игровые платформы." },
-  { k: "Media / Content", v: "Медиа, контент‑платформы, инструменты для авторов." },
-  { k: "Other", v: "Если не подходит ни одна категория выше." },
-];
-
 function Arrow() {
   return (
     <div className="flex items-center justify-center py-2 text-[rgba(234,240,255,0.45)] select-none">
@@ -111,9 +91,9 @@ export default function FAQPage() {
       <Card className="p-6 md:p-10">
         <h1 className="text-2xl font-semibold text-white">FAQ — часто задаваемые вопросы</h1>
         <div className="mt-3 text-xs text-[rgba(234,240,255,0.55)]">
-          Текущие категории на платформе:{" "}
+          Отрасли на платформе:{" "}
           <span className="text-[rgba(234,240,255,0.85)]">
-            {allowedCategories.map((c) => c.value).join(", ")}
+            {INDUSTRY_SECTORS.map((s) => s.label).join(" · ")}
           </span>
         </div>
 
@@ -147,16 +127,20 @@ export default function FAQPage() {
 
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="glass rounded-3xl p-5 border border-[rgba(255,255,255,0.12)]">
-              <div className="text-sm font-semibold text-white">Категории / индустрии — как выбрать</div>
+              <div className="text-sm font-semibold text-white">Отрасль и категория — как выбрать</div>
               <div className="mt-2 text-sm text-[rgba(234,240,255,0.72)] leading-relaxed">
-                Категория — это “ярлык”, чтобы людям было легче искать проекты. Выбирай ближайшую по смыслу — лучше
-                “примерно правильно”, чем долго думать.
+                Сначала выбери отрасль (крупная группа), затем категорию внутри неё — так карточка попадает в нужные
+                фильтры на маркетплейсе. Лучше “примерно верно”, чем долго искать идеальное название.
               </div>
-              <div className="mt-4 grid grid-cols-1 gap-2">
-                {categoriesHelp.map((c) => (
-                  <div key={c.k} className="rounded-2xl bg-white/[0.04] border border-[rgba(255,255,255,0.10)] p-3">
-                    <div className="text-xs font-semibold text-white">{c.k}</div>
-                    <div className="mt-1 text-xs text-[rgba(234,240,255,0.70)]">{c.v}</div>
+              <div className="mt-4 grid grid-cols-1 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                {INDUSTRY_SECTORS.map((s) => (
+                  <div key={s.id} className="rounded-2xl bg-white/[0.04] border border-[rgba(255,255,255,0.10)] p-3">
+                    <div className="text-xs font-semibold text-white">{s.label}</div>
+                    <ul className="mt-2 list-disc pl-4 text-xs text-[rgba(234,240,255,0.70)] space-y-0.5">
+                      {INDUSTRY_CATEGORIES_BY_SECTOR[s.id].map((c) => (
+                        <li key={c.id}>{c.label}</li>
+                      ))}
+                    </ul>
                   </div>
                 ))}
               </div>

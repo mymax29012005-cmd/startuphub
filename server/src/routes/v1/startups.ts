@@ -21,8 +21,14 @@ function hintForStartupDbError(e: unknown): string | undefined {
   return undefined;
 }
 import { canDeleteAsOwnerOrAdmin, canEditAsOwnerOrAdmin } from "../../lib/authz";
-import { allowedCategories } from "../../lib/categories";
+import { isValidIndustryPair, isSectorId } from "../../lib/industryHierarchy";
 import { requireAuth, requireNotBanned, requireNotDeleted, requireVerifiedEmail, tryAuth } from "../../middleware/auth";
+
+function isOnlineFromFormat(format: "online" | "offline" | "hybrid", isOnline?: boolean): boolean {
+  if (typeof isOnline === "boolean") return isOnline;
+  if (format === "offline") return false;
+  return true;
+}
 
 export const startupsRouter = Router();
 
@@ -38,7 +44,7 @@ const profileExtraSchema = z
           label: z.string().max(250).optional(),
         }),
       )
-      .max(6)
+      .max(20)
       .optional(),
     milestones: z.string().max(4000).optional(),
     team: z
@@ -64,56 +70,53 @@ const profileExtraSchema = z
   .strict()
   .optional();
 
-const createStartupSchema = z.object({
-  title: z.string().min(1).max(120),
-  description: z.string().min(10).max(2000),
-  category: z
-    .string()
-    .min(2)
-    .max(60)
-    .refine((v) => (allowedCategories as readonly string[]).includes(v), {
-      message: "Недопустимая категория",
-    }),
-  price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
+const createStartupSchema = z
+  .object({
+    title: z.string().min(1).max(120),
+    description: z.string().min(10).max(2000),
+    sector: z.string().min(2).max(40).refine((v) => isSectorId(v), { message: "Недопустимая отрасль" }),
+    category: z.string().min(2).max(80),
+    price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
 
-  stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]),
-  format: z.enum(["online", "offline", "hybrid"]),
-  isOnline: z.boolean().optional(),
+    stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]),
+    format: z.enum(["online", "offline", "hybrid"]),
+    isOnline: z.boolean().optional(),
 
-  profileExtra: profileExtraSchema,
+    profileExtra: profileExtraSchema,
 
-  analysisId: z.string().uuid().optional(),
-  attachmentIds: z.array(z.string().uuid()).optional(),
+    analysisId: z.string().uuid().optional(),
+    attachmentIds: z.array(z.string().uuid()).optional(),
 
-  auction: z
-    .object({
-      currentPrice: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число"),
-      endsAt: z.coerce.date(),
-    })
-    .optional(),
-  submitMode: z.enum(["draft", "submit"]).optional(),
-});
+    submitMode: z.enum(["draft", "submit"]).optional(),
+  })
+  .refine((d) => isValidIndustryPair(d.sector, d.category), {
+    message: "Категория не соответствует выбранной отрасли",
+    path: ["category"],
+  });
 
-const updateStartupSchema = z.object({
-  title: z.string().min(1).max(120).optional(),
-  description: z.string().min(10).max(2000).optional(),
-  category: z
-    .string()
-    .min(2)
-    .max(60)
-    .refine((v) => (allowedCategories as readonly string[]).includes(v), {
-      message: "Недопустимая категория",
-    })
-    .optional(),
-  price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число").optional(),
-  stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]).optional(),
-  format: z.enum(["online", "offline", "hybrid"]).optional(),
-  isOnline: z.boolean().optional(),
-  analysisId: z.string().uuid().nullable().optional(),
-  attachmentIds: z.array(z.string().uuid()).optional(),
-  profileExtra: profileExtraSchema.nullable().optional(),
-  submitForModeration: z.boolean().optional(),
-});
+const updateStartupSchema = z
+  .object({
+    title: z.string().min(1).max(120).optional(),
+    description: z.string().min(10).max(2000).optional(),
+    sector: z.string().min(2).max(40).refine((v) => isSectorId(v), { message: "Недопустимая отрасль" }).optional(),
+    category: z.string().min(2).max(80).optional(),
+    price: z.coerce.number().positive().max(9_999_999_999, "Слишком большое число").optional(),
+    stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]).optional(),
+    format: z.enum(["online", "offline", "hybrid"]).optional(),
+    isOnline: z.boolean().optional(),
+    analysisId: z.string().uuid().nullable().optional(),
+    attachmentIds: z.array(z.string().uuid()).optional(),
+    profileExtra: profileExtraSchema.nullable().optional(),
+    submitForModeration: z.boolean().optional(),
+  })
+  .refine(
+    (d) => {
+      if (d.sector === undefined && d.category === undefined) return true;
+      if (d.sector !== undefined && d.category !== undefined) return isValidIndustryPair(d.sector, d.category);
+      return false;
+    },
+    { message: "Укажите отрасль и категорию отрасли вместе", path: ["category"] },
+  );
 
 startupsRouter.get("/", tryAuth, async (req, res) => {
   const prisma = getPrisma();
@@ -165,6 +168,7 @@ startupsRouter.get("/", tryAuth, async (req, res) => {
         title: s.title,
         description: s.description,
         tagline: extra && typeof extra === "object" && typeof extra.tagline === "string" ? extra.tagline : undefined,
+        sector: (s as { sector?: string }).sector ?? "software_it",
         category: s.category,
         price: Number(s.price),
         stage: s.stage,
@@ -231,6 +235,7 @@ startupsRouter.get("/:startupId", tryAuth, async (req, res) => {
       id: startup.id,
       title: startup.title,
       description: startup.description,
+      sector: (startup as { sector?: string }).sector ?? "software_it",
       category: startup.category,
       price: Number(startup.price),
       stage: startup.stage,
@@ -285,28 +290,16 @@ startupsRouter.post("/", requireAuth, requireNotDeleted, requireNotBanned, requi
       data: {
         title: data.title,
         description: data.description,
+        sector: data.sector,
         category: data.category,
         price: data.price,
         stage: data.stage,
         format: data.format,
-        isOnline: data.isOnline ?? true,
+        isOnline: isOnlineFromFormat(data.format, data.isOnline),
         profileExtra: data.profileExtra ? (data.profileExtra as any) : undefined,
         ownerId: req.user!.userId,
         analysisId: data.analysisId ?? null,
         moderationStatus: nextStatus as any,
-        auction: data.auction
-          ? {
-              create: {
-                currentPrice: data.auction.currentPrice,
-                isActive: true,
-                status: "planned",
-                startsAt: data.auction.endsAt,
-                registrationEndsAt: data.auction.endsAt,
-                endsAt: data.auction.endsAt,
-                moderationStatus: nextStatus as any,
-              },
-            }
-          : undefined,
       },
       select: { id: true },
     });
@@ -396,11 +389,15 @@ startupsRouter.put("/:startupId", requireAuth, requireNotDeleted, requireNotBann
     const updateData: Record<string, unknown> = {
       ...(data.title !== undefined ? { title: data.title } : {}),
       ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.sector !== undefined ? { sector: data.sector } : {}),
       ...(data.category !== undefined ? { category: data.category } : {}),
       ...(data.price !== undefined ? { price: data.price } : {}),
       ...(data.stage !== undefined ? { stage: data.stage } : {}),
       ...(data.format !== undefined ? { format: data.format } : {}),
       ...(data.isOnline !== undefined ? { isOnline: data.isOnline } : {}),
+      ...(data.format !== undefined && data.isOnline === undefined
+        ? { isOnline: isOnlineFromFormat(data.format) }
+        : {}),
       ...(data.analysisId !== undefined ? { analysisId: data.analysisId } : {}),
       ...(data.profileExtra !== undefined
         ? { profileExtra: data.profileExtra === null ? null : (data.profileExtra as object) }

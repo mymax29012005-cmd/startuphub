@@ -4,13 +4,16 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
+import { IndustryPickers } from "@/components/forms/IndustryPickers";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/i18n/I18nProvider";
 import { partnerRoleLabelsByLang } from "@/lib/labelMaps";
-import { allowedCategories, asAllowedCategory } from "@/lib/categories";
+import { INDUSTRY_CATEGORIES_BY_SECTOR, INDUSTRY_SECTORS, type SectorId } from "@/lib/industryHierarchy";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const roles = ["supplier", "reseller", "integration", "cofounder"] as const;
+const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
+const defaultIndustry = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
 type Me = { id: string; role: "user" | "admin" };
 
 type ServiceRow = { title: string; note: string };
@@ -41,7 +44,8 @@ export default function AddPartnerPage() {
   }, []);
 
   const [role, setRole] = useState<(typeof roles)[number]>("supplier");
-  const [industry, setIndustry] = useState(allowedCategories[0]?.value ?? "SaaS");
+  const [sector, setSector] = useState<SectorId>(defaultSector);
+  const [industry, setIndustry] = useState(defaultIndustry);
 
   const [partnerName, setPartnerName] = useState("");
   const [partnerType, setPartnerType] = useState("");
@@ -92,6 +96,7 @@ export default function AddPartnerPage() {
         credentials: "include",
         body: JSON.stringify({
           role,
+          sector,
           industry,
           description,
           profileExtra: {
@@ -149,16 +154,14 @@ export default function AddPartnerPage() {
                 ))}
               </select>
             </label>
-            <label>
-              <div className="mb-2 block text-sm text-gray-400">Категория / отрасль</div>
-              <select className={fc} value={industry} onChange={(e) => setIndustry(asAllowedCategory(e.target.value))}>
-                {allowedCategories.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <IndustryPickers
+              sector={sector}
+              subcategoryId={industry}
+              onChange={({ sector: s, subcategoryId }) => {
+                setSector(s);
+                setIndustry(subcategoryId);
+              }}
+            />
             <label>
               <div className="mb-2 block text-sm text-gray-400">Чем вы помогаете стартапам</div>
               <textarea

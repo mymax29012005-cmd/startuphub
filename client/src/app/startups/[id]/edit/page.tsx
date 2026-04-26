@@ -5,14 +5,17 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
+import { IndustryPickers } from "@/components/forms/IndustryPickers";
 import { useI18n } from "@/i18n/I18nProvider";
-import { allowedCategories, asAllowedCategory } from "@/lib/categories";
+import { INDUSTRY_CATEGORIES_BY_SECTOR, INDUSTRY_SECTORS, normalizeIndustryPair, type SectorId } from "@/lib/industryHierarchy";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
 const formats = ["online", "offline", "hybrid"] as const;
+const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
+const defaultCategory = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
 type Stage = (typeof stages)[number];
 type Format = (typeof formats)[number];
 
@@ -54,6 +57,7 @@ type StartupDetail = {
   id: string;
   title: string;
   description: string;
+  sector?: string;
   category: string;
   price: number;
   stage: Stage;
@@ -83,14 +87,14 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
 
   const [title, setTitle] = useState("");
   const [tagline, setTagline] = useState("");
-  const [category, setCategory] = useState(allowedCategories[0]?.value ?? "SaaS");
+  const [sector, setSector] = useState<SectorId>(defaultSector);
+  const [category, setCategory] = useState(defaultCategory);
   const [price, setPrice] = useState("");
   const [valuationPreMoney, setValuationPreMoney] = useState<string>("");
-  const [equityOfferedPct, setEquityOfferedPct] = useState(18);
+  const [equityOfferedPct, setEquityOfferedPct] = useState(10);
   const [description, setDescription] = useState("");
   const [stage, setStage] = useState<Stage>("seed");
   const [format, setFormat] = useState<Format>("hybrid");
-  const [isOnline, setIsOnline] = useState(true);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [kpiRows, setKpiRows] = useState([
     { value: "", label: "" },
@@ -107,10 +111,6 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
     video: [],
     other: [],
   });
-
-  const [withAuction, setWithAuction] = useState(false);
-  const [auctionCurrentPrice, setAuctionCurrentPrice] = useState<string>("");
-  const [auctionEndsAt, setAuctionEndsAt] = useState("");
 
   const [uploading, setUploading] = useState(false);
   const [analysisInfo, setAnalysisInfo] = useState<null | {
@@ -156,19 +156,19 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
         setTitle(data.title ?? "");
         const pe = data.profileExtra ?? null;
         setTagline(typeof pe?.tagline === "string" ? pe.tagline : "");
-        setCategory(asAllowedCategory(data.category ?? (allowedCategories[0]?.value ?? "SaaS")));
+        const ind = normalizeIndustryPair(data.sector, data.category);
+        setSector(ind.sector);
+        setCategory(ind.subcategoryId);
         setPrice(String(data.price ?? ""));
         setDescription(data.description ?? "");
         setStage(asStage(data.stage, "seed"));
         setFormat(asFormat(data.format, "hybrid"));
-        setIsOnline(!!data.isOnline);
         setAnalysisId((data.analysisId as any) ?? null);
         setValuationPreMoney(pe?.valuationPreMoney != null ? String(pe.valuationPreMoney) : "");
         if (typeof pe?.equityOfferedPct === "number") setEquityOfferedPct(pe.equityOfferedPct);
         if (Array.isArray(pe?.kpis)) {
-          const next = pe.kpis.slice(0, 3).map((r) => ({ value: String(r?.value ?? ""), label: String(r?.label ?? "") }));
-          while (next.length < 3) next.push({ value: "", label: "" });
-          setKpiRows(next);
+          const next = pe.kpis.map((r) => ({ value: String(r?.value ?? ""), label: String(r?.label ?? "") }));
+          setKpiRows(next.length ? next : [{ value: "", label: "" }]);
         }
         setMilestones(typeof pe?.milestones === "string" ? pe.milestones : "");
         if (Array.isArray(pe?.team)) {
@@ -202,11 +202,6 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
           other: [...otherFromIds, ...leftover],
         });
 
-        if (data.auction) {
-          setWithAuction(true);
-          setAuctionCurrentPrice(String(data.auction.currentPrice ?? ""));
-          setAuctionEndsAt(typeof data.auction.endsAt === "string" ? data.auction.endsAt.slice(0, 16) : "");
-        }
       } catch {
         if (!cancelled) setErr("Сетевая ошибка");
       } finally {
@@ -228,21 +223,25 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
       if (d?.title != null) setTitle(String(d.title));
       if (d?.tagline != null) setTagline(String(d.tagline));
       if (d?.description != null) setDescription(String(d.description));
-      if (d?.category != null) setCategory(asAllowedCategory(String(d.category)));
+      if (d?.sector && d?.category) {
+        const n = normalizeIndustryPair(String(d.sector), String(d.category));
+        setSector(n.sector);
+        setCategory(n.subcategoryId);
+      } else if (d?.category != null) {
+        const n = normalizeIndustryPair(undefined, String(d.category));
+        setSector(n.sector);
+        setCategory(n.subcategoryId);
+      }
       if (d?.price != null) setPrice(String(d.price));
       if (d?.valuationPreMoney != null) setValuationPreMoney(String(d.valuationPreMoney));
       if (typeof d?.equityOfferedPct === "number") setEquityOfferedPct(d.equityOfferedPct);
       if (d?.stage) setStage(d.stage);
       if (d?.format) setFormat(d.format);
-      if (typeof d?.isOnline === "boolean") setIsOnline(d.isOnline);
       if (Array.isArray(d?.kpiRows)) setKpiRows(d.kpiRows);
       if (d?.milestones != null) setMilestones(String(d.milestones));
       if (Array.isArray(d?.teamMembers)) setTeamMembers(d.teamMembers);
       if (d?.videoPitchUrl != null) setVideoPitchUrl(String(d.videoPitchUrl));
       if (d?.materialSlots && typeof d.materialSlots === "object") setMaterialSlots(d.materialSlots);
-      if (typeof d?.withAuction === "boolean") setWithAuction(d.withAuction);
-      if (d?.auctionCurrentPrice != null) setAuctionCurrentPrice(String(d.auctionCurrentPrice));
-      if (d?.auctionEndsAt != null) setAuctionEndsAt(String(d.auctionEndsAt));
       localStorage.removeItem(draftKey);
     } catch {
       // ignore
@@ -284,21 +283,18 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
           title,
           tagline,
           description,
+          sector,
           category,
           price,
           valuationPreMoney,
           equityOfferedPct,
           stage,
           format,
-          isOnline,
           kpiRows,
           milestones,
           teamMembers,
           videoPitchUrl,
           materialSlots,
-          withAuction,
-          auctionCurrentPrice,
-          auctionEndsAt,
         }),
       );
     } catch {
@@ -415,19 +411,6 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                 return;
               }
 
-              const auctionPriceNum =
-                withAuction && auctionCurrentPrice !== "" ? Number(stripNonDigits(auctionCurrentPrice)) : undefined;
-              if (withAuction && !item?.auction) {
-                if (auctionPriceNum === undefined || !Number.isFinite(auctionPriceNum) || auctionPriceNum <= 0) {
-                  setErr("Для аукциона укажите корректную текущую цену");
-                  return;
-                }
-                if (!auctionEndsAt) {
-                  setErr("Для аукциона укажите дату и время окончания");
-                  return;
-                }
-              }
-
               const profileExtra = buildProfileExtra();
               const r = await fetch(`/api/v1/startups/${id}`, {
                 method: "PUT",
@@ -436,11 +419,11 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                 body: JSON.stringify({
                   title,
                   description,
+                  sector,
                   category,
                   price: priceNum,
                   stage,
                   format,
-                  isOnline,
                   analysisId,
                   profileExtra,
                   attachmentIds: allAttachments.map((a) => a.id),
@@ -452,20 +435,6 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                 return;
               }
 
-              if (withAuction && !item?.auction) {
-                const auctionPriceNum2 = Number(stripNonDigits(auctionCurrentPrice));
-                const r2 = await fetch(`/api/v1/startups/${id}/auction`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: "include",
-                  body: JSON.stringify({ currentPrice: auctionPriceNum2, endsAt: new Date(auctionEndsAt) }),
-                });
-                if (!r2.ok) {
-                  const j2 = await r2.json().catch(() => null);
-                  setErr(j2?.error ?? "Не удалось создать аукцион");
-                  return;
-                }
-              }
               router.push(returnTo || `/startups/${id}`);
             } catch {
               setErr("Сетевая ошибка");
@@ -497,16 +466,14 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                   onChange={(e) => setTagline(e.target.value)}
                 />
               </div>
-              <label>
-                <div className="mb-2 block text-sm text-gray-400">Отрасль</div>
-                <select className={fieldClass} value={category} onChange={(e) => setCategory(asAllowedCategory(e.target.value))}>
-                  {allowedCategories.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <IndustryPickers
+                sector={sector}
+                subcategoryId={category}
+                onChange={({ sector: s, subcategoryId }) => {
+                  setSector(s);
+                  setCategory(subcategoryId);
+                }}
+              />
               <div>
                 <label className="mb-2 block text-sm text-gray-400">Сумма привлечения (₽)</label>
                 <div className="flex">
@@ -554,10 +521,6 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                   </select>
                 </label>
               </div>
-              <label className="flex cursor-pointer items-center gap-3">
-                <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} className="accent-violet-500" />
-                <span className="text-sm text-gray-300">Онлайн-проект</span>
-              </label>
             </div>
           </div>
 
@@ -567,7 +530,7 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
             </h2>
             <div className="grid gap-8 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm text-gray-400">Оценка компании (pre-money)</label>
+                <div className="mb-2 block text-sm text-gray-400">Оценка компании до сделки (без новых инвестиций), ₽</div>
                 <div className="flex">
                   <input
                     className={`${fieldClass} rounded-r-none border-r-0`}
@@ -582,19 +545,19 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
               <div>
-                <label className="mb-2 block text-sm text-gray-400">Доля, которую готовы отдать</label>
+                <div className="mb-2 block text-sm text-gray-400">Доля, которую готовы отдать</div>
                 <input
                   type="range"
-                  min={5}
-                  max={40}
+                  min={0}
+                  max={100}
                   value={equityOfferedPct}
                   onChange={(e) => setEquityOfferedPct(Number(e.target.value))}
                   className="w-full accent-rose-500"
                 />
                 <div className="mt-2 flex justify-between text-sm font-medium">
-                  <span>5%</span>
+                  <span>0%</span>
                   <span className="text-rose-300">{equityOfferedPct}%</span>
-                  <span>40%</span>
+                  <span>100%</span>
                 </div>
               </div>
             </div>
@@ -602,9 +565,9 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
 
           <div>
             <h2 className="mb-6 flex items-center gap-3 text-2xl font-semibold text-white">
-              <span className="text-emerald-400">3</span> KPI и вехи <span className="text-xs font-normal text-gray-500">(опционально)</span>
+              <span className="text-emerald-400">3</span> KPI и вехи
             </h2>
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {kpiRows.map((row, i) => (
                 <div key={i} className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
                   <div className="text-xs text-gray-500">KPI {i + 1}</div>
@@ -623,14 +586,22 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                 </div>
               ))}
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="mt-4 rounded-2xl border border-white/30 px-6 py-3 hover:bg-white/10"
+              onClick={() => setKpiRows((prev) => [...prev, { value: "", label: "" }])}
+            >
+              + Добавить показатель
+            </Button>
             <div className="mt-8">
-              <label className="mb-2 block text-sm text-gray-400">Вехи / план</label>
+              <label className="mb-2 block text-sm text-gray-400">Что уже сделано</label>
               <textarea
                 className={`${fieldClass} min-h-[140px] rounded-3xl`}
                 value={milestones}
                 onChange={(e) => setMilestones(e.target.value)}
                 rows={6}
-                placeholder="Что планируете сделать в ближайшие 3–12 месяцев…"
+                placeholder="Через запятую: MVP, первые клиенты, пилот с …"
               />
             </div>
           </div>
@@ -678,47 +649,15 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
-          <div>
-            <h2 className="mb-6 flex items-center gap-3 text-2xl font-semibold text-white">
-              <span className="text-violet-300">5</span> Аукцион <span className="text-xs font-normal text-gray-500">(опционально)</span>
-            </h2>
-            {item?.auction ? (
-              <div className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-6 text-sm text-gray-300">
-                Аукцион уже создан: {formatDigitsWithSpaces(String(item.auction.currentPrice))} ₽ до{" "}
-                {new Date(item.auction.endsAt).toLocaleString("ru-RU")}. Редактирование аукциона пока недоступно.
-              </div>
-            ) : (
-              <div className="space-y-6 rounded-3xl border border-white/10 bg-[#0A0A0F] p-6">
-                <label className="flex cursor-pointer items-center gap-3">
-                  <input type="checkbox" checked={withAuction} onChange={(e) => setWithAuction(e.target.checked)} className="accent-violet-500" />
-                  <span className="text-sm text-gray-300">Создать аукцион для проекта</span>
-                </label>
-                {withAuction ? (
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <label>
-                      <div className="mb-2 block text-sm text-gray-400">Текущая цена (₽)</div>
-                      <input
-                        className={fieldClass}
-                        value={formatDigitsWithSpaces(auctionCurrentPrice)}
-                        onChange={(e) => setAuctionCurrentPrice(stripNonDigits(e.target.value))}
-                        inputMode="numeric"
-                        placeholder="10 000 000"
-                      />
-                    </label>
-                    <label>
-                      <div className="mb-2 block text-sm text-gray-400">Окончание</div>
-                      <input className={fieldClass} type="datetime-local" value={auctionEndsAt} onChange={(e) => setAuctionEndsAt(e.target.value)} />
-                    </label>
-                  </div>
-                ) : null}
-                <div className="text-xs text-gray-500">Аукцион будет создан после сохранения изменений.</div>
-              </div>
-            )}
-          </div>
+          {item?.auction ? (
+            <div className="rounded-3xl border border-white/10 bg-[#0A0A0F] p-4 text-sm text-gray-400">
+              По проекту есть аукцион (ставка {formatDigitsWithSpaces(String(item.auction.currentPrice))} ₽). Управление аукционом — в соответствующем разделе сайта.
+            </div>
+          ) : null}
 
           <div>
             <h2 className="mb-6 flex items-center gap-3 text-2xl font-semibold text-white">
-              <span className="text-amber-400">6</span> Материалы проекта{" "}
+              <span className="text-amber-400">5</span> Материалы проекта{" "}
               <span className="text-xs font-normal text-gray-500">(опционально)</span>
             </h2>
             <div className="grid gap-6 md:grid-cols-2">

@@ -4,22 +4,26 @@ import React, { use as useReact, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AddListingPageChrome, addListingFieldClass } from "@/components/forms/addListingFormShell";
+import { IndustryPickers } from "@/components/forms/IndustryPickers";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatLabelsByLang, stageLabelsByLang } from "@/lib/labelMaps";
-import { allowedCategories, asAllowedCategory } from "@/lib/categories";
+import { INDUSTRY_CATEGORIES_BY_SECTOR, INDUSTRY_SECTORS, normalizeIndustryPair, type SectorId } from "@/lib/industryHierarchy";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
 import type { IdeaProfileExtra } from "@/lib/marketplaceExtras";
 import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
 const formats = ["online", "offline", "hybrid"] as const;
+const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
+const defaultCategory = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
 
 type Me = { id: string; role: "user" | "admin" };
 type IdeaDetail = {
   id: string;
   title: string;
   description: string;
+  sector?: string;
   category: string;
   price: number;
   stage: string;
@@ -49,7 +53,8 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(allowedCategories[0]?.value ?? "SaaS");
+  const [sector, setSector] = useState<SectorId>(defaultSector);
+  const [category, setCategory] = useState(defaultCategory);
   const [price, setPrice] = useState<string>("");
   const [stage, setStage] = useState<(typeof stages)[number]>("idea");
   const [format, setFormat] = useState<(typeof formats)[number]>("online");
@@ -105,7 +110,9 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
         setItem(data);
         setTitle(data.title ?? "");
         setDescription(data.description ?? "");
-        setCategory(asAllowedCategory(data.category ?? (allowedCategories[0]?.value ?? "SaaS")));
+        const ind = normalizeIndustryPair(data.sector, data.category);
+        setSector(ind.sector);
+        setCategory(ind.subcategoryId);
         setPrice(String(data.price ?? ""));
         setStage((data.stage as any) ?? "idea");
         setFormat((data.format as any) ?? "online");
@@ -142,7 +149,15 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
       const d = JSON.parse(raw) as any;
       if (d?.title != null) setTitle(String(d.title));
       if (d?.description != null) setDescription(String(d.description));
-      if (d?.category != null) setCategory(asAllowedCategory(String(d.category)));
+      if (d?.sector && d?.category) {
+        const n = normalizeIndustryPair(String(d.sector), String(d.category));
+        setSector(n.sector);
+        setCategory(n.subcategoryId);
+      } else if (d?.category != null) {
+        const n = normalizeIndustryPair(undefined, String(d.category));
+        setSector(n.sector);
+        setCategory(n.subcategoryId);
+      }
       if (d?.price != null) setPrice(String(d.price));
       if (d?.stage) setStage(d.stage);
       if (d?.format) setFormat(d.format);
@@ -229,6 +244,7 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
         body: JSON.stringify({
           title,
           description,
+          sector,
           category,
           price: priceNum,
           stage,
@@ -290,22 +306,18 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
                 <label className="mb-2 block text-sm text-gray-400">Описание</label>
                 <textarea className={`${fc} min-h-[140px] rounded-3xl`} value={description} onChange={(e) => setDescription(e.target.value)} rows={5} />
               </div>
-              <div className="grid gap-8 md:grid-cols-2">
-                <label>
-                  <div className="mb-2 block text-sm text-gray-400">Категория</div>
-                  <select className={fc} value={category} onChange={(e) => setCategory(asAllowedCategory(e.target.value))}>
-                    {allowedCategories.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <div className="mb-2 block text-sm text-gray-400">Цена (ориентир, ₽)</div>
-                  <input className={fc} value={formatDigitsWithSpaces(price)} onChange={(e) => setPrice(stripNonDigits(e.target.value))} inputMode="numeric" />
-                </label>
-              </div>
+              <IndustryPickers
+                sector={sector}
+                subcategoryId={category}
+                onChange={({ sector: s, subcategoryId }) => {
+                  setSector(s);
+                  setCategory(subcategoryId);
+                }}
+              />
+              <label>
+                <div className="mb-2 block text-sm text-gray-400">Цена (ориентир, ₽)</div>
+                <input className={fc} value={formatDigitsWithSpaces(price)} onChange={(e) => setPrice(stripNonDigits(e.target.value))} inputMode="numeric" />
+              </label>
               <div className="grid gap-8 md:grid-cols-2">
                 <label>
                   <div className="mb-2 block text-sm text-gray-400">Стадия</div>
@@ -378,6 +390,7 @@ export default function EditIdeaPage({ params }: { params: Promise<{ id: string 
                       JSON.stringify({
                         title,
                         description,
+                        sector,
                         category,
                         price,
                         stage,
