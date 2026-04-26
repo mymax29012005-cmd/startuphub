@@ -4,6 +4,7 @@ import Link from "next/link";
 import React from "react";
 
 import { stageLabelsByLang } from "@/lib/labelMaps";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export type SpotlightStartup = {
   id: string;
@@ -46,6 +47,7 @@ function initials(title: string, category: string) {
 }
 
 export function PlatformSpotlightSection({ startup, idea, investor, fmtMoney }: Props) {
+  const { t } = useI18n();
   const stStage = startup ? stageLabelsByLang.ru?.[startup.stage] ?? startup.stage : "";
   const idStage = idea ? stageLabelsByLang.ru?.[idea.stage] ?? idea.stage : "";
 
@@ -55,14 +57,9 @@ export function PlatformSpotlightSection({ startup, idea, investor, fmtMoney }: 
         <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-3xl font-bold text-white md:text-4xl">Сейчас на платформе</h2>
-            <p className="mt-2 max-w-2xl text-sm text-white/55 md:text-base">
-              Карточки стартапа, идеи и запрос инвестора — в одном ряду. Аукционы скоро.
-            </p>
+            <p className="mt-2 max-w-2xl text-sm text-white/55 md:text-base">{t("home.spotlightSubtitle")}</p>
           </div>
           <div className="flex flex-wrap gap-4 text-sm">
-            <Link href="/marketplace?tab=auctions" className="font-medium text-white/45 transition hover:text-white/80">
-              Аукционы — скоро →
-            </Link>
             <Link href="/marketplace" className="font-medium text-white/60 transition hover:text-white">
               Маркетплейс →
             </Link>
@@ -74,7 +71,7 @@ export function PlatformSpotlightSection({ startup, idea, investor, fmtMoney }: 
             <div className="card-hover group min-w-0 cursor-default overflow-hidden rounded-3xl border border-white/10 bg-[#12121A] opacity-95">
               <div className="relative h-[180px] bg-gradient-to-br from-[#6366f1] via-[#a855f7] to-[#ec4899]" aria-hidden />
               <div className="flex min-h-[140px] items-center justify-center p-6">
-                <h3 className="text-center text-lg font-semibold leading-snug text-white">Аукцион — скоро / soon</h3>
+                <h3 className="text-center text-lg font-semibold leading-snug text-white">{t("home.auctionCardTeaser")}</h3>
               </div>
             </div>
           </div>

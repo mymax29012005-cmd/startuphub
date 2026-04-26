@@ -8,7 +8,7 @@ const dictionaries: Record<Lang, any> = {
       home: "Главная",
       marketplace: "Маркетплейс",
       auctions: "Аукционы",
-      auctionsSoon: "Скоро · soon",
+      auctionsSoon: "Скоро",
       startups: "Стартапы",
       ideas: "Идеи",
       auction: "Аукцион",
@@ -59,6 +59,9 @@ const dictionaries: Record<Lang, any> = {
       lastAuctions: "Активные аукционы",
 
       seeAll: "Смотреть все",
+
+      spotlightSubtitle: "Карточки стартапа, идеи и запрос инвестора — в одном ряду. Аукционы скоро.",
+      auctionCardTeaser: "Аукцион — скоро",
     },
     pages: {
       addStartup: "+ Добавить стартап",
@@ -405,6 +408,9 @@ const dictionaries: Record<Lang, any> = {
       lastAuctions: "Active auctions",
 
       seeAll: "See all",
+
+      spotlightSubtitle: "Startup, idea, and investor cards in one row. Auctions soon.",
+      auctionCardTeaser: "Auction — soon",
     },
     pages: {
       addStartup: "+ Add startup",
@@ -715,6 +721,9 @@ const dictionaries: Record<Lang, any> = {
       lastAuctions: "正在进行的拍卖",
 
       seeAll: "查看全部",
+
+      spotlightSubtitle: "初创公司、创意与投资人请求并排展示。拍卖即将推出。",
+      auctionCardTeaser: "拍卖 — 即将推出",
     },
     pages: {
       addStartup: "+ 添加初创公司",
