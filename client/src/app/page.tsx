@@ -330,15 +330,13 @@ export default function Home() {
                   ) : null}
                   {s.n === 5 ? (
                     <div className="how-stack-chat">
-                      <div className="how-stack-chat-col how-stack-chat-col--l">
-                        <span className="how-chat-bubble how-chat-bubble--row1" />
-                        <span className="how-chat-bubble how-chat-bubble--row2" />
-                        <span className="how-chat-bubble how-chat-bubble--row3" />
-                      </div>
-                      <div className="how-stack-chat-col how-stack-chat-col--r">
-                        <span className="how-chat-bubble how-chat-bubble--row1" />
-                        <span className="how-chat-bubble how-chat-bubble--row2" />
-                        <span className="how-chat-bubble how-chat-bubble--row3" />
+                      <div className="how-stack-chat-stream">
+                        <span className="how-chat-bubble how-chat-bubble--out how-chat-s1" />
+                        <span className="how-chat-bubble how-chat-bubble--in how-chat-s2" />
+                        <span className="how-chat-bubble how-chat-bubble--in how-chat-s3" />
+                        <span className="how-chat-bubble how-chat-bubble--out how-chat-s4 how-chat-bubble--tall" />
+                        <span className="how-chat-bubble how-chat-bubble--in how-chat-s5" />
+                        <span className="how-chat-bubble how-chat-bubble--out how-chat-s6" />
                       </div>
                     </div>
                   ) : null}
