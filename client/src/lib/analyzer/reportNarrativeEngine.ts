@@ -1,9 +1,10 @@
 import type { StartupAnalysisInput, StartupAnalysisResult } from "./types";
-import { buildInvestmentMemo } from "./investmentMemoEngine";
+import { buildInvestmentMemo, type InvestmentMemoReport } from "./investmentMemoEngine";
 
 export type ReportNarrative = {
   insightsChunks: [string, string, string];
   fullDocument: string;
+  memo: InvestmentMemoReport;
 };
 
 /** Совместимость: делегирует в Investment Memo (VC-style narrative). */
@@ -25,5 +26,6 @@ export function reportNarrativeEngine(result: StartupAnalysisResult, input: Star
   return {
     insightsChunks: memo.insightsChunks,
     fullDocument,
+    memo,
   };
 }

@@ -1,0 +1,165 @@
+/* Investment Intelligence — визуальный слой из design-new/redesign.html, scoped */
+
+.ia-shell {
+  --ia-text: #eaf0ff;
+  --ia-muted: rgba(234, 240, 255, 0.72);
+  --ia-blue: #6ea8ff;
+  --ia-violet: #7c3aed;
+  --ia-rose: #e11d48;
+  --ia-mint: #00f5d4;
+  --ia-glass: rgba(255, 255, 255, 0.06);
+  --ia-border: rgba(255, 255, 255, 0.12);
+  color: var(--ia-text);
+}
+
+.ia-shell .ia-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+}
+
+.ia-shell .ia-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .ia-shell .ia-grid {
+    grid-template-columns: 1fr;
+  }
+  .ia-shell .ia-w-3,
+  .ia-shell .ia-w-4,
+  .ia-shell .ia-w-6,
+  .ia-shell .ia-w-8,
+  .ia-shell .ia-w-12 {
+    grid-column: 1 / -1;
+  }
+}
+
+.ia-shell .ia-card {
+  background: var(--ia-glass);
+  border: 1px solid var(--ia-border);
+  border-radius: 18px;
+  padding: 20px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.ia-shell .ia-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(110, 168, 255, 0.28);
+}
+
+.ia-shell .ia-w-3 {
+  grid-column: span 3;
+}
+.ia-shell .ia-w-4 {
+  grid-column: span 4;
+}
+.ia-shell .ia-w-6 {
+  grid-column: span 6;
+}
+.ia-shell .ia-w-8 {
+  grid-column: span 8;
+}
+.ia-shell .ia-w-12 {
+  grid-column: span 12;
+}
+
+.ia-shell .ia-violet {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.25), rgba(124, 58, 237, 0.05));
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+.ia-shell .ia-blue {
+  background: linear-gradient(135deg, rgba(110, 168, 255, 0.18), rgba(110, 168, 255, 0.05));
+}
+
+.ia-shell .ia-mint {
+  background: linear-gradient(135deg, rgba(0, 245, 212, 0.15), rgba(0, 245, 212, 0.03));
+}
+
+.ia-shell .ia-rose {
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.15), rgba(225, 29, 72, 0.03));
+}
+
+.ia-shell .ia-card h1,
+.ia-shell .ia-card h2,
+.ia-shell .ia-card h3 {
+  margin: 0 0 10px 0;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.ia-shell .ia-card h1 {
+  font-size: 1.35rem;
+  line-height: 1.25;
+}
+
+.ia-shell .ia-card h2 {
+  font-size: 1.15rem;
+}
+
+.ia-shell .ia-card h3 {
+  font-size: 1rem;
+}
+
+.ia-shell .ia-card p,
+.ia-shell .ia-prose {
+  color: var(--ia-muted);
+  line-height: 1.65;
+  font-size: 14.5px;
+  margin: 0 0 12px 0;
+}
+
+.ia-shell .ia-card p:last-child {
+  margin-bottom: 0;
+}
+
+.ia-shell .ia-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  margin-bottom: 10px;
+}
+
+.ia-shell .ia-metric {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ia-shell .ia-small {
+  font-size: 12px;
+  color: rgba(234, 240, 255, 0.58);
+}
+
+.ia-shell .ia-chartBox {
+  height: 220px;
+  width: 100%;
+}
+
+.ia-shell .ia-hr {
+  border: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 12px 0;
+}
+
+.ia-shell .ia-insightLine {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 14px;
+  color: var(--ia-muted);
+  margin-bottom: 10px;
+}
+
+.ia-shell .ia-insightLine:last-child {
+  margin-bottom: 0;
+}

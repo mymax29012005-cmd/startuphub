@@ -6,8 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
-import { RadarChart } from "@/components/analyzer/RadarChart";
-import { CashflowBars } from "@/components/analyzer/CashflowBars";
 import { HelpTip } from "@/components/analyzer/HelpTip";
 import { useI18n } from "@/i18n/I18nProvider";
 import { computeStartupAnalysis } from "@/lib/analyzer/computeStartupAnalysis";
@@ -19,6 +17,8 @@ import type {
   StartupStage,
 } from "@/lib/analyzer/types";
 import { formatDigitsWithSpaces, stripNonDigits } from "@/lib/numberFormat";
+import { AnalyzerIntelligenceDashboard } from "@/components/analyzer/AnalyzerIntelligenceDashboard";
+import "./intelligence-shell.css";
 
 const stages: StartupStage[] = ["idea", "seed", "series_a", "series_b", "growth", "exit"];
 const competitionLevels: CompetitionLevel[] = ["low", "medium", "high"];
@@ -511,48 +511,41 @@ function AnalyzerInner() {
     });
   }, [history]);
 
-  const overallScore10 = useMemo(() => {
-    if (!result) return null;
-    return (result.successProbability * 10).toFixed(1);
-  }, [result]);
-
-  const readinessPct = useMemo(() => {
-    if (!result) return null;
-    return Math.round(result.successProbability * 100);
-  }, [result]);
-
-  const potentialWidthPct = useMemo(() => {
-    if (!result) return 0;
-    return Math.round(Math.max(0, Math.min(100, result.successProbability * 100)));
-  }, [result]);
-
   const report = result;
   const narrative = useMemo(() => {
     if (!report) return null;
     return reportNarrativeEngine(report as any, analysisInput);
   }, [report, analysisInput]);
 
+  const showIntelligenceDashboard = Boolean(result && step === 4 && narrative);
+
   return (
-    <div className="pt-24 max-w-7xl mx-auto px-4 pb-20 sm:px-6">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8 sm:mb-10">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Анализатор проекта</h1>
-          <p className="text-gray-400 mt-2 text-base sm:text-lg">Data-driven анализ стартапа по метрикам: рост, юнит-экономика, PMF, эффективность, рынок и риск</p>
-        </div>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 lg:text-right">
-          <div>
-            <div className="text-sm text-gray-400">Последний анализ</div>
-            <div className="text-emerald-400 font-medium">{lastAnalysisText}</div>
+    <div className="ia-shell pt-24 mx-auto max-w-[1200px] px-4 pb-20 sm:px-6">
+      {!showIntelligenceDashboard ? (
+        <div className="ia-container mb-6">
+          <div className="ia-grid">
+            <div className="ia-card ia-w-8 ia-violet">
+              <span className="ia-badge">Investment Intelligence</span>
+              <h1 className="!mb-2 text-xl font-semibold tracking-tight sm:text-2xl">Анализатор проекта</h1>
+              <p className="text-[rgba(234,240,255,0.72)] text-sm sm:text-base">
+                Data-driven анализ: рост, юнит-экономика, PMF, эффективность, рынок и риск — в формате инвестиционного меморандума.
+              </p>
+            </div>
+            <div className="ia-card ia-w-4 ia-mint">
+              <h2 className="text-base font-semibold text-white">История</h2>
+              <p className="ia-small">Последний анализ</p>
+              <p className="ia-metric text-lg !text-[#eaf0ff]">{lastAnalysisText}</p>
+              <button
+                type="button"
+                onClick={resetNewAnalysis}
+                className="mt-4 w-full rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 px-4 py-3 text-sm font-semibold text-white hover:brightness-110 transition"
+              >
+                Новый анализ
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={resetNewAnalysis}
-            className="w-full sm:w-auto px-6 py-3 text-sm font-semibold rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 hover:brightness-110 transition"
-          >
-            Новый анализ
-          </button>
         </div>
-      </div>
+      ) : null}
 
       {returnTo ? (
         <div className="mb-8 bg-[#12121A] border border-white/10 rounded-3xl p-6">
@@ -571,8 +564,9 @@ function AnalyzerInner() {
         </div>
       ) : null}
 
-      <div className="bg-[#12121A] border border-white/10 rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_20px_40px_-10px_rgb(124_58_237_/_0.3)] ring-1 ring-[rgba(124,58,237,0.35)]">
-        <div className="grid md:grid-cols-2 gap-10">
+      {!showIntelligenceDashboard ? (
+      <div className="ia-container">
+      <div className="ia-card p-6 sm:p-8 md:p-10">
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div className="flex flex-wrap gap-2">
@@ -1130,161 +1124,47 @@ function AnalyzerInner() {
                   ) : null}
                 </>
               ) : (
-                <div className="text-sm text-gray-400">Отчёт открыт справа. Можно вернуться к параметрам и пересчитать.</div>
+                <div className="text-sm text-gray-400">После запуска анализа откроется экран Investment Intelligence.</div>
               )}
             </div>
           </div>
-
-          <div className="space-y-8">
-            <div className="bg-[#1A1A24] rounded-3xl p-8 border border-white/10 shadow-[0_20px_40px_-10px_rgb(124_58_237_/_0.3)] ring-1 ring-[rgba(124,58,237,0.35)]">
-              <div className="flex items-center justify-between mb-6 gap-4">
-                <div className="font-semibold text-lg">Результат анализа</div>
-                <div className="px-5 py-2 bg-emerald-500/20 text-emerald-400 text-sm rounded-2xl whitespace-nowrap">
-                  {readinessPct == null ? "—" : `Готовность ${readinessPct}%`}
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <div className="flex justify-between text-sm mb-3">
-                  <span>Общий потенциал проекта</span>
-                  <span className="font-bold text-2xl text-emerald-400">{overallScore10 == null ? "—" : `${overallScore10} / 10`}</span>
-                </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div className="progress-bar" style={{ width: `${potentialWidthPct}%` }} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="bg-[#0A0A0F] rounded-2xl p-4">
-                  <div className="text-3xl font-bold text-violet-400">{scores[0] ?? "—"}</div>
-                    <div className="text-xs text-gray-400 mt-1">Growth Score</div>
-                </div>
-                <div className="bg-[#0A0A0F] rounded-2xl p-4">
-                  <div className="text-3xl font-bold text-rose-400">{scores[3] ?? "—"}</div>
-                    <div className="text-xs text-gray-400 mt-1">Efficiency Score</div>
-                </div>
-                <div className="bg-[#0A0A0F] rounded-2xl p-4">
-                  <div className="text-3xl font-bold text-amber-400">{scores[5] ?? "—"}</div>
-                    <div className="text-xs text-gray-400 mt-1">Risk (обратный)</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#12121A] border border-white/10 rounded-3xl p-8 shadow-[0_20px_40px_-10px_rgb(124_58_237_/_0.3)] ring-1 ring-[rgba(124,58,237,0.35)]">
-              <h3 className="font-semibold mb-5 flex items-center gap-2">💡 Ключевые insights</h3>
-              <ul className="space-y-6 text-sm">
-                <li className="flex gap-4">
-                  <span className="text-emerald-400 text-xl">↑</span>
-                  <div>
-                    {narrative
-                      ? narrative.insightsChunks[0]
-                      : "Заполни параметры слева и запусти анализ — здесь появятся ключевые выводы."}
-                  </div>
-                </li>
-                <li className="flex gap-4">
-                  <span className="text-amber-400 text-xl">⚠</span>
-                  <div>
-                    {narrative ? narrative.insightsChunks[1] : "Риски и runway рассчитаются автоматически после запуска анализа."}
-                  </div>
-                </li>
-                <li className="flex gap-4">
-                  <span className="text-violet-400 text-xl">★</span>
-                  <div>
-                    {narrative
-                      ? narrative.insightsChunks[2]
-                      : "После анализа здесь появится диапазон оценки и рекомендации по следующему шагу."}
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            {report ? (
-              <div className="space-y-6">
-                <div className="bg-[#1A1A24] rounded-3xl p-6 border border-white/10 shadow-[0_20px_40px_-10px_rgb(124_58_237_/_0.3)] ring-1 ring-[rgba(124,58,237,0.35)]">
-                  <div className="text-white font-semibold mb-3">{t("analyzer.report.radarTitle")}</div>
-                  <RadarChart
-                    labels={[
-                      t("analyzer.report.labels.growth"),
-                      t("analyzer.report.labels.unit"),
-                      t("analyzer.report.labels.pmf"),
-                      t("analyzer.report.labels.efficiency"),
-                      t("analyzer.report.labels.market"),
-                      t("analyzer.report.labels.risk"),
-                    ]}
-                    values={scores}
-                  />
-                </div>
-
-                <div className="bg-[#1A1A24] rounded-3xl p-6 border border-white/10 shadow-[0_20px_40px_-10px_rgb(124_58_237_/_0.3)] ring-1 ring-[rgba(124,58,237,0.35)]">
-                  <div className="text-white font-semibold mb-3">{t("analyzer.report.cashflowTitle")}</div>
-                  <CashflowBars values={report.yearCashflows} />
-                </div>
-
-                <div className="bg-[#12121A] border border-white/10 rounded-3xl p-6 shadow-[0_20px_40px_-10px_rgb(124_58_237_/_0.3)] ring-1 ring-[rgba(124,58,237,0.35)]">
-                  <div className="text-white font-semibold mb-4">{t("analyzer.report.summaryTitle")}</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-[#0A0A0F] rounded-2xl p-4 border border-white/10">
-                      <div className="text-xs text-gray-400">{t("analyzer.report.probability")}</div>
-                      <div className="mt-2 text-2xl font-semibold text-white">{(report.successProbability * 100).toFixed(0)}%</div>
-                      <div className="mt-1 text-xs text-gray-400">
-                        {t("analyzer.report.risk")}: {riskLevel}
-                      </div>
-                    </div>
-                    <div className="bg-[#0A0A0F] rounded-2xl p-4 border border-white/10">
-                      <div className="text-xs text-gray-400">{t("analyzer.report.runway")}</div>
-                      <div className="mt-2 text-2xl font-semibold text-white">{((report as any).runwayMonths ?? 0).toFixed(1)} мес</div>
-                      <div className="mt-1 text-xs text-gray-400">
-                        {t("analyzer.report.burn")}: {Math.round(analysisInput.burnMonthly).toLocaleString("ru-RU")} ₽/мес
-                      </div>
-                    </div>
-                    <div className="bg-[#0A0A0F] rounded-2xl p-4 border border-white/10 sm:col-span-2">
-                      <div className="text-xs text-gray-400">{t("analyzer.report.expectedValue")}</div>
-                      <div className="mt-2 text-2xl font-semibold text-white">{Math.round(report.expectedValue).toLocaleString("ru-RU")} ₽</div>
-                      <div className="mt-1 text-xs text-gray-400">{t("analyzer.report.expectedValueHint")}</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 flex flex-col lg:flex-row gap-3 lg:justify-between lg:items-center">
-                    <div className="flex flex-wrap gap-2">
-                      <Button type="button" variant="ghost" className="h-11" onClick={backToAnalyzer}>
-                        {t("analyzer.actions.backToAnalyzer")}
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2 justify-end">
-                      <Button type="button" variant="ghost" className="h-11" onClick={backToAnalyzer}>
-                        {t("analyzer.actions.dontSave")}
-                      </Button>
-                      <Button type="button" variant="secondary" className="h-11" disabled={!me || saving} onClick={() => ensureSavedAndGo("startup")}>
-                        {t("analyzer.actions.createStartupWithAnalysis")}
-                      </Button>
-                      <Button type="button" variant="secondary" className="h-11" disabled={!me || saving} onClick={() => ensureSavedAndGo("idea")}>
-                        {t("analyzer.actions.createIdeaWithAnalysis")}
-                      </Button>
-                      <Button type="button" className="h-11" disabled={!me || saving} onClick={onSave}>
-                        {saving ? t("analyzer.actions.saving") : t("analyzer.actions.save")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {!me ? <div className="mt-3 text-xs text-gray-400">{t("analyzer.actions.loginToSave")}</div> : null}
-                  {me && saved ? <div className="mt-3 text-xs text-gray-400">{t("common.success")}</div> : null}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
       </div>
+      </div>
+      ) : report && narrative ? (
+        <AnalyzerIntelligenceDashboard
+          report={report}
+          analysisInput={analysisInput}
+          narrative={narrative}
+          scores={scores}
+          radarLabels={[
+            t("analyzer.report.labels.growth"),
+            t("analyzer.report.labels.unit"),
+            t("analyzer.report.labels.pmf"),
+            t("analyzer.report.labels.efficiency"),
+            t("analyzer.report.labels.market"),
+            t("analyzer.report.labels.risk"),
+          ]}
+          riskLevelLabel={riskLevel ?? "—"}
+          t={t}
+          me={me}
+          saving={saving}
+          saved={saved}
+          onBackToParams={backToAnalyzer}
+          onSave={() => void onSave()}
+          onEnsureSavedAndGo={(target) => void ensureSavedAndGo(target)}
+        />
+      ) : null}
 
-      <div className="mt-16">
-        <h2 className="text-2xl font-semibold mb-8">История анализов</h2>
+      <div className="ia-container mt-16">
+        <h2 className="mb-8 text-xl font-semibold tracking-tight text-white sm:text-2xl">История анализов</h2>
         {!me ? (
-          <div className="bg-[#12121A] border border-white/10 rounded-3xl p-6 text-sm text-gray-400">{t("analyzer.historyLogin")}</div>
+          <div className="ia-card ia-w-12 text-sm text-[rgba(234,240,255,0.72)]">{t("analyzer.historyLogin")}</div>
         ) : historyLoading ? (
-          <div className="text-sm text-gray-400">{t("analyzer.historyLoading")}</div>
+          <div className="ia-small">{t("analyzer.historyLoading")}</div>
         ) : history.length === 0 ? (
-          <div className="text-sm text-gray-400">{t("analyzer.historyEmpty")}</div>
+          <div className="ia-small">{t("analyzer.historyEmpty")}</div>
         ) : (
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="ia-grid">
             {history.slice(0, 12).map((item) => {
               const title = item.data.title?.trim() || "Анализ без названия";
               const score10 = (item.result.successProbability * 10).toFixed(1);
@@ -1295,7 +1175,7 @@ function AnalyzerInner() {
                     ? "text-amber-400"
                     : "text-violet-400";
               return (
-                <div key={item.id} className="transition hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgb(124_58_237_/_0.3)] bg-[#12121A] border border-white/10 rounded-3xl p-6">
+                <div key={item.id} className="ia-card ia-w-4 transition hover:-translate-y-1">
                   <div className="text-xs text-gray-400">{new Date(item.createdAt).toLocaleDateString("ru-RU")}</div>
                   <div className="font-medium mt-2 line-clamp-2">{title}</div>
                   <div className={`${color} text-sm mt-6`}>Скоринг: {score10}/10</div>
