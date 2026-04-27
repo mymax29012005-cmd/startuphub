@@ -157,10 +157,10 @@ const dictionaries: Record<Lang, any> = {
       },
 
       help: {
-        market: "Оцените подтверждение рынка и конкуренцию. Чем выше подтверждение — тем ниже риск.",
-        traction: "Оцените собственную тягу и силу команды.",
-        unit: "Заполните маржу, удержание (churn) и ключевые параметры экономики юнитов.",
-        finance: "Укажите расходы, остаток денег и профиль рисков.",
+        market: "Заполните метрики рынка: TAM, рост рынка и плотность конкуренции. Эти цифры влияют на market score.",
+        traction: "Раздел оставлен для совместимости, но итоговый скоринг строится на численных метриках (retention, выручка, рост, burn, TAM и т.д.).",
+        unit: "Заполните маржу, churn, ARPU, CAC и метрики выручки — анализатор посчитает LTV, payback, unit score и эффективность.",
+        finance: "Укажите burn, запас денег (cash) и операционные метрики — анализатор посчитает runway и риск-профиль.",
       },
 
       fields: {
@@ -173,6 +173,8 @@ const dictionaries: Record<Lang, any> = {
         monthlyChurnPct: "Churn (потери) в месяц",
         growthMonthly: "Рост в месяц",
         monthlyRevenue: "Выручка в месяц (₽)",
+        newRevenueMonthly: "Новая выручка за месяц (₽)",
+        salesMarketingSpend: "Затраты на продажи и маркетинг (₽/мес)",
         activeUsers: "Активные пользователи",
         arpu: "ARPU (₽)",
         cac: "CAC (₽)",
@@ -180,25 +182,41 @@ const dictionaries: Record<Lang, any> = {
         recurringShare: "Доля повторяемой выручки",
         burnMonthly: "Расходы (burn) в месяц (₽)",
         cashOnHand: "Денежный запас (₽)",
+        dau: "DAU (активные в день)",
+        mau: "MAU (активные в месяц)",
+        retentionD30: "Retention D30 (%)",
+        organicGrowthPct: "Органический рост (%)",
+        viralCoefficient: "Viral coefficient (K)",
+        repeatPurchaseRate: "Повторные покупки (%)",
+        releasesPerMonth: "Релизы в месяц",
+        teamSize: "Размер команды",
+        foundersFullTime: "Фаундер(ы) full-time?",
+        tam: "TAM (размер рынка, ₽)",
+        tamGrowthPct: "Рост TAM (% в год)",
+        competitionDensity: "Плотность конкуренции (%)",
         regulatory: "Регуляторные риски",
         tech: "Технологические риски",
       },
 
       fieldHelp: {
         marketValidation:
-          "Как поставить цифру (0–100): 0–20 — только идея; 30–50 — интервью/опросы/лид-магнит; 60–80 — есть пилоты/первые продажи; 90–100 — стабильные повторные продажи/очередь.",
+          "Поле оставлено для совместимости старых отчётов. В новой версии скоринга это значение не влияет на расчёты.",
         competition:
-          "Насколько сильны конкуренты и насколько легко на рынок «войти». Чем выше — тем больше риск.",
+          "Поле оставлено для совместимости. Для скоринга используйте «Плотность конкуренции» ниже (0% — почти нет конкурентов, 100% — рынок перегрет).",
         moatStrength:
-          "Как поставить цифру (0–100): 0–20 — легко скопировать; 30–50 — есть отличия, но повторят быстро; 60–80 — есть сильное преимущество (данные/сеть/контракты/тех); 90–100 — преимущество почти не повторить.",
+          "Поле оставлено для совместимости старых отчётов. В новой версии скоринга «моат» не участвует в формулах.",
         tractionScore:
-          "Как поставить цифру (0–100): 0–20 — ещё нет пользователей; 30–50 — есть первые активные, но рост нестабилен; 60–80 — есть рост и удержание; 90–100 — быстрый рост + сильное удержание/повторные покупки.",
+          "Поле оставлено для совместимости старых отчётов. В новой версии вместо самооценки используются метрики retention, рост, выручка и эффективность.",
         teamStrength:
-          "Как поставить цифру (0–100): 0–20 — нет ключевых компетенций; 30–50 — есть базовые роли; 60–80 — сильный опыт в домене/продукте; 90–100 — топ-экспертиза + быстрое исполнение.",
+          "Поле оставлено для совместимости старых отчётов. В новой версии вместо самооценки используется «релизы в месяц» и финансовые метрики.",
         grossMargin:
           "Валовая маржа показывает, сколько остаётся с каждой вырученной ₽ после прямых затрат. Чем выше — тем устойчивее бизнес.",
         monthlyChurnPct:
           "Churn — это доля клиентов, которые уходят каждый месяц. Ниже churn — выше LTV.",
+        newRevenueMonthly:
+          "Сколько новой выручки вы добавили за последний месяц (новые подписки, апсейлы, новые продажи). Нужна для Burn Multiple и Magic Number.",
+        salesMarketingSpend:
+          "Сколько вы тратите в месяц на привлечение (реклама, маркетинг, продажи, агентства). Нужна для Magic Number.",
         arpu:
           "ARPU — средняя выручка на одного активного пользователя за месяц.",
         cac:
@@ -209,6 +227,30 @@ const dictionaries: Record<Lang, any> = {
           "Burn — сколько ₽ вы тратите в месяц (зарплаты, маркетинг, инфраструктура).",
         cashOnHand:
           "Денежный запас — сколько ₽ у вас есть сейчас, чтобы пережить период до первых больших денег.",
+        dau:
+          "DAU — сколько уникальных пользователей заходят/пользуются продуктом за день (можно взять из аналитики: Firebase/Amplitude/AppMetrica).",
+        mau:
+          "MAU — сколько уникальных пользователей активны за месяц. Вместе с DAU даёт stickiness (DAU/MAU).",
+        retentionD30:
+          "Сколько процентов пользователей возвращаются на 30-й день. Обычно считается в аналитике (cohorts). Чем выше — тем ближе product-market fit.",
+        repeatPurchaseRate:
+          "Доля клиентов, которые покупают повторно (или продлевают подписку). Если подписка — можно брать из данных по продлениям.",
+        organicGrowthPct:
+          "Рост без платного маркетинга: рекомендации, SEO, PR, сарафан. Оценивайте по доле/темпу роста organic-каналов.",
+        viralCoefficient:
+          "K-factor: сколько новых пользователей в среднем приводит один активный пользователь (например, через рефералку/приглашения).",
+        releasesPerMonth:
+          "Сколько релизов/обновлений продукта вы выпускаете в месяц. Это прокси метрика скорости исполнения.",
+        teamSize:
+          "Сколько человек в команде сейчас (включая фаундеров).",
+        foundersFullTime:
+          "Работают ли фаундеры над проектом на полной занятости. Это влияет на интерпретацию «скорости исполнения».",
+        tam:
+          "TAM — общий размер рынка, на который вы потенциально можете продавать (в ₽ за год). Обычно берут из исследований/отчетов или оценки сверху-вниз.",
+        tamGrowthPct:
+          "Как быстро растёт рынок в год (в %). Можно взять из отраслевых отчётов.",
+        competitionDensity:
+          "Насколько рынок «перегрет» конкурентами: 0% — почти нет конкурентов, 100% — много сильных игроков и сложно выделиться.",
         regulatory:
           "Риск проблем из-за законов/регуляторов (лицензии, требования, ограничения).",
         tech:
@@ -293,11 +335,11 @@ const dictionaries: Record<Lang, any> = {
         empty: "Сначала заполните вопросы и нажмите «Рассчитать».",
         report: "Отчет",
         labels: {
-          market: "Рынок",
-          unit: "Unit",
-          traction: "Тяга",
-          team: "Команда",
-          financial: "Финансы",
+          market: "Market score",
+          unit: "Unit economics",
+          growth: "Growth",
+          pmf: "PMF",
+          efficiency: "Efficiency",
           risk: "Риски",
         },
       },
@@ -511,6 +553,8 @@ const dictionaries: Record<Lang, any> = {
         monthlyChurnPct: "Monthly churn",
         growthMonthly: "Monthly growth",
         monthlyRevenue: "Monthly revenue (₽)",
+        newRevenueMonthly: "New revenue this month (₽)",
+        salesMarketingSpend: "Sales & marketing spend (₽/mo)",
         activeUsers: "Active users",
         arpu: "ARPU (₽)",
         cac: "CAC (₽)",
@@ -518,6 +562,18 @@ const dictionaries: Record<Lang, any> = {
         recurringShare: "Recurring revenue share",
         burnMonthly: "Burn per month (₽)",
         cashOnHand: "Cash on hand (₽)",
+        dau: "DAU",
+        mau: "MAU",
+        retentionD30: "Retention D30 (%)",
+        organicGrowthPct: "Organic growth (%)",
+        viralCoefficient: "Viral coefficient (K)",
+        repeatPurchaseRate: "Repeat purchase (%)",
+        releasesPerMonth: "Releases per month",
+        teamSize: "Team size",
+        foundersFullTime: "Founders full-time?",
+        tam: "TAM (market size, ₽)",
+        tamGrowthPct: "TAM growth (%/year)",
+        competitionDensity: "Competition density (%)",
         regulatory: "Regulatory risk",
         tech: "Tech risk",
       },
@@ -537,6 +593,10 @@ const dictionaries: Record<Lang, any> = {
           "Gross margin shows how much profit remains after direct costs. Higher is healthier.",
         monthlyChurnPct:
           "Churn is the share of customers leaving every month. Lower churn increases LTV.",
+        newRevenueMonthly:
+          "How much new revenue you added this month (new subscriptions, upsells, new sales). Used for Burn Multiple and Magic Number.",
+        salesMarketingSpend:
+          "How much you spend per month on acquisition (ads, marketing, sales). Used for Magic Number.",
         arpu:
           "ARPU is average monthly revenue per active user.",
         cac:
@@ -547,6 +607,30 @@ const dictionaries: Record<Lang, any> = {
           "Burn per month: how much cash you spend (team, marketing, infrastructure).",
         cashOnHand:
           "Cash on hand: how much money you currently have to survive until the next milestones.",
+        dau:
+          "Daily active users. Usually from analytics tools (Firebase/Amplitude/etc).",
+        mau:
+          "Monthly active users. Together with DAU gives stickiness (DAU/MAU).",
+        retentionD30:
+          "Percent of users who return on day 30. Cohort metric from analytics; higher implies better PMF.",
+        repeatPurchaseRate:
+          "Share of customers who repurchase or renew. For subscriptions, use renewal/retention data.",
+        organicGrowthPct:
+          "Growth driven by organic channels (SEO/word of mouth/PR), not paid ads.",
+        viralCoefficient:
+          "K-factor: how many new users one active user brings on average (referrals/invites).",
+        releasesPerMonth:
+          "How many product releases/updates you ship monthly. Proxy for execution speed.",
+        teamSize:
+          "Current team size (including founders).",
+        foundersFullTime:
+          "Whether founders work on the project full-time.",
+        tam:
+          "TAM is the total market size you can potentially sell into (annual, ₽). Often from research reports.",
+        tamGrowthPct:
+          "Annual market growth rate (%).",
+        competitionDensity:
+          "How crowded the market is: 0% almost no competitors, 100% very crowded.",
         regulatory:
           "Regulatory risk: likelihood of legal/compliance issues affecting the business.",
         tech:
@@ -611,7 +695,14 @@ const dictionaries: Record<Lang, any> = {
         },
         riskNote: "Higher value means higher chance of issues.",
         empty: "Fill the questions and press «Calculate».",
-        labels: { market: "Market", unit: "Unit", traction: "Traction", team: "Team", financial: "Finance", risk: "Risks" },
+        labels: {
+          market: "Market score",
+          unit: "Unit economics",
+          growth: "Growth",
+          pmf: "PMF",
+          efficiency: "Efficiency",
+          risk: "Risks",
+        },
       },
 
       historyTitle: "Your analysis history",
@@ -820,6 +911,8 @@ const dictionaries: Record<Lang, any> = {
         monthlyChurnPct: "每月流失率",
         growthMonthly: "每月增长",
         monthlyRevenue: "每月收入 (₽)",
+        newRevenueMonthly: "本月新增收入 (₽)",
+        salesMarketingSpend: "销售与市场费用 (₽/月)",
         activeUsers: "活跃用户",
         arpu: "ARPU (₽)",
         cac: "获客成本 (₽)",
@@ -827,6 +920,18 @@ const dictionaries: Record<Lang, any> = {
         recurringShare: "经常性收入占比",
         burnMonthly: "每月烧钱 (₽)",
         cashOnHand: "现金余额 (₽)",
+        dau: "DAU",
+        mau: "MAU",
+        retentionD30: "30日留存 (%)",
+        organicGrowthPct: "自然增长 (%)",
+        viralCoefficient: "病毒系数 (K)",
+        repeatPurchaseRate: "复购率 (%)",
+        releasesPerMonth: "每月发布次数",
+        teamSize: "团队规模",
+        foundersFullTime: "创始人全职？",
+        tam: "TAM（市场规模，₽）",
+        tamGrowthPct: "TAM年增长率 (%)",
+        competitionDensity: "竞争密度 (%)",
         regulatory: "监管风险",
         tech: "技术风险",
       },
@@ -843,6 +948,8 @@ const dictionaries: Record<Lang, any> = {
         teamStrength: "团队实力：经验、学习速度、执行计划的能力。",
         grossMargin: "毛利率：扣除直接成本后剩下的利润比例。越高越健康。",
         monthlyChurnPct: "Churn：每月流失的客户占比。越低 LTV 越高。",
+        newRevenueMonthly: "本月新增收入（新订阅/新增销售/升级）。用于 Burn Multiple 与 Magic Number。",
+        salesMarketingSpend: "每月用于获客的费用（广告、市场、销售）。用于 Magic Number。",
         growthMonthly: "每月增长：你的关键指标增长速度（用户/收入）。",
         arpu: "ARPU：每月每个活跃用户带来的平均收入。",
         cac: "CAC：获客成本（吸引一个客户/用户需要花多少钱）。",
@@ -850,6 +957,18 @@ const dictionaries: Record<Lang, any> = {
         recurringShare: "经常性收入占比：订阅/合同/定期付款带来的比例。",
         burnMonthly: "每月烧钱：你每月花掉的现金（团队、市场、基础设施等）。",
         cashOnHand: "现金余额：你目前手头的资金，用于支撑到下一阶段。",
+        dau: "每日活跃用户数（DAU），通常来自分析工具。",
+        mau: "月活跃用户数（MAU），与 DAU 一起用于计算粘性（DAU/MAU）。",
+        retentionD30: "30日留存：第30天仍回来的用户比例（cohort）。越高通常越接近 PMF。",
+        repeatPurchaseRate: "复购/续费比例。订阅产品可用续费数据估算。",
+        organicGrowthPct: "自然增长：SEO/口碑/PR 等非付费渠道带来的增长。",
+        viralCoefficient: "病毒系数 K：一个活跃用户平均带来多少新用户（邀请/推荐）。",
+        releasesPerMonth: "每月发布/更新次数，代表执行速度的代理指标。",
+        teamSize: "当前团队人数（含创始人）。",
+        foundersFullTime: "创始人是否全职投入项目。",
+        tam: "TAM：可触达的总市场规模（年化，₽）。通常来自行业报告/研究。",
+        tamGrowthPct: "市场年增长率（%）。",
+        competitionDensity: "竞争密度：0% 竞争少，100% 竞争非常拥挤。",
         regulatory: "监管风险：法律/合规带来的不确定性。",
         tech: "技术风险：产品维护与技术栈可靠性的难度。",
       },
@@ -909,7 +1028,7 @@ const dictionaries: Record<Lang, any> = {
         },
         riskNote: "数值越高，问题概率越大。",
         empty: "先填写问题并点击「计算」。",
-        labels: { market: "市场", unit: "单元", traction: "增长", team: "团队", financial: "财务", risk: "风险" },
+        labels: { market: "市场", unit: "单元经济", growth: "增长", pmf: "PMF", efficiency: "效率", risk: "风险" },
       },
 
       historyTitle: "你的分析历史",

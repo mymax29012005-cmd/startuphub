@@ -105,6 +105,8 @@ function AnalyzerInner() {
   const [activeUsers, setActiveUsers] = useState("200");
   const [arpu, setArpu] = useState("5000");
   const [monthlyRevenue, setMonthlyRevenue] = useState("0");
+  const [newRevenueMonthly, setNewRevenueMonthly] = useState("0");
+  const [salesMarketingSpend, setSalesMarketingSpend] = useState("0");
   const [cac, setCac] = useState("20000");
   const [unitPaybackMonths, setUnitPaybackMonths] = useState("12");
   const [growthMonthlyPct, setGrowthMonthlyPct] = useState(4);
@@ -114,6 +116,30 @@ function AnalyzerInner() {
   const [cashOnHand, setCashOnHand] = useState("1000000");
   const [regulatory, setRegulatory] = useState<RiskLevel>("medium");
   const [tech, setTech] = useState<RiskLevel>("medium");
+
+  // Product / usage
+  const [dau, setDau] = useState("0");
+  const [mau, setMau] = useState("0");
+  const [retentionD1Pct, setRetentionD1Pct] = useState(0);
+  const [retentionD7Pct, setRetentionD7Pct] = useState(0);
+  const [retentionD30Pct, setRetentionD30Pct] = useState(0);
+  const [activationRatePct, setActivationRatePct] = useState(0);
+  const [conversionRatePct, setConversionRatePct] = useState(0);
+  const [organicGrowthPct, setOrganicGrowthPct] = useState(0);
+  const [viralCoefficient, setViralCoefficient] = useState("0");
+
+  // Revenue / repeat
+  const [repeatPurchaseRatePct, setRepeatPurchaseRatePct] = useState(0);
+
+  // Operations / execution
+  const [releasesPerMonth, setReleasesPerMonth] = useState("0");
+  const [teamSize, setTeamSize] = useState("0");
+  const [foundersFullTime, setFoundersFullTime] = useState<"yes" | "no">("yes");
+
+  // Market (new)
+  const [tam, setTam] = useState("0");
+  const [tamGrowthPct, setTamGrowthPct] = useState(0);
+  const [competitionDensityPct, setCompetitionDensityPct] = useState(50);
 
   const [result, setResult] = useState<ReturnType<typeof computeStartupAnalysis> | null>(null);
   const [saving, setSaving] = useState(false);
@@ -196,8 +222,30 @@ function AnalyzerInner() {
       growthMonthlyPct,
 
       monthlyRevenue: parseDigits(monthlyRevenue),
+      newRevenueMonthly: parseDigits(newRevenueMonthly),
+      salesMarketingSpend: parseDigits(salesMarketingSpend),
       burnMonthly: parseDigits(burnMonthly),
       cashOnHand: parseDigits(cashOnHand),
+
+      dau: parseDigits(dau),
+      mau: parseDigits(mau),
+      retentionD1: clamp(retentionD1Pct / 100, 0, 1),
+      retentionD7: clamp(retentionD7Pct / 100, 0, 1),
+      retentionD30: clamp(retentionD30Pct / 100, 0, 1),
+      activationRate: clamp(activationRatePct / 100, 0, 1),
+      conversionRate: clamp(conversionRatePct / 100, 0, 1),
+      organicGrowthPct,
+      viralCoefficient: Number(String(viralCoefficient).replace(",", ".")) || 0,
+
+      repeatPurchaseRate: clamp(repeatPurchaseRatePct / 100, 0, 1),
+
+      releasesPerMonth: parseDigits(releasesPerMonth),
+      teamSize: parseDigits(teamSize),
+      foundersFullTime: foundersFullTime === "yes",
+
+      tam: parseDigits(tam),
+      tamGrowthPct,
+      competitionDensity: clamp(competitionDensityPct / 100, 0, 1),
 
       regulatory,
       tech,
@@ -222,38 +270,44 @@ function AnalyzerInner() {
     unitPaybackMonths,
     growthMonthlyPct,
     monthlyRevenue,
+    newRevenueMonthly,
+    salesMarketingSpend,
     burnMonthly,
     cashOnHand,
+    dau,
+    mau,
+    retentionD1Pct,
+    retentionD7Pct,
+    retentionD30Pct,
+    activationRatePct,
+    conversionRatePct,
+    organicGrowthPct,
+    viralCoefficient,
+    repeatPurchaseRatePct,
+    releasesPerMonth,
+    teamSize,
+    foundersFullTime,
+    tam,
+    tamGrowthPct,
+    competitionDensityPct,
     regulatory,
     tech,
   ]);
 
   const scores = useMemo(() => {
-    // Convert "risk" components into "strength" scores for visualization.
-    // Keep deterministic mapping from input rather than recomputing private internals.
-    const marketRisk = clamp(100 - marketValidation, 0, 100);
-    const competitionRisk = competition === "low" ? 20 : competition === "medium" ? 50 : 80;
-    const regulatoryRisk = regulatory === "low" ? 20 : regulatory === "medium" ? 50 : 80;
-    const techRisk = tech === "low" ? 20 : tech === "medium" ? 50 : 80;
-
-    // Strength scores (0..100)
-    const marketScore = 100 - marketRisk;
-    const competitionScore = 100 - competitionRisk;
-    const financialScoreGuess = result ? result.financialScore : 60;
-    const unitScoreGuess = result ? result.unitEconomicsScore : 60;
-    const teamScore = teamStrength * 0.7 + moatStrength * 0.3;
-    const riskAdjustedTechScore = 100 - (regulatoryRisk * 0.35 + techRisk * 0.65);
-    const traction = result ? result.tractionScore : tractionScore;
-
-    return [
-      clamp(marketScore, 0, 100),
-      clamp(unitScoreGuess, 0, 100),
-      clamp(traction, 0, 100),
-      clamp(teamScore, 0, 100),
-      clamp(financialScoreGuess, 0, 100),
-      clamp(riskAdjustedTechScore, 0, 100),
-    ];
-  }, [marketValidation, competition, regulatory, tech, result, teamStrength, moatStrength, tractionScore]);
+    if (result) {
+      // Radar values must match the report (fixed formulas, no subjectivity).
+      return [
+        clamp((result as any).growthScore ?? 0, 0, 100),
+        clamp((result as any).unitEconomicsScore ?? 0, 0, 100),
+        clamp((result as any).pmfScore ?? 0, 0, 100),
+        clamp((result as any).efficiencyScore ?? 0, 0, 100),
+        clamp((result as any).marketScore ?? 0, 0, 100),
+        clamp(100 - clamp((result as any).riskAvg ?? 0, 0, 100), 0, 100),
+      ];
+    }
+    return [60, 60, 60, 60, 60, 60];
+  }, [result]);
 
   function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
@@ -296,6 +350,8 @@ function AnalyzerInner() {
     setActiveUsers(String(item.data.activeUsers));
     setArpu(String(item.data.arpu));
     setMonthlyRevenue(String(item.data.monthlyRevenue));
+    setNewRevenueMonthly(String((item.data as any).newRevenueMonthly ?? 0));
+    setSalesMarketingSpend(String((item.data as any).salesMarketingSpend ?? 0));
     setCac(String(item.data.cac));
     setUnitPaybackMonths(String(item.data.unitPaybackMonths));
     setGrowthMonthlyPct(item.data.growthMonthlyPct);
@@ -304,6 +360,23 @@ function AnalyzerInner() {
     setCashOnHand(String(item.data.cashOnHand));
     setRegulatory(item.data.regulatory);
     setTech(item.data.tech);
+
+    setDau(String((item.data as any).dau ?? 0));
+    setMau(String((item.data as any).mau ?? 0));
+    setRetentionD1Pct(Math.round(((item.data as any).retentionD1 ?? 0) * 100));
+    setRetentionD7Pct(Math.round(((item.data as any).retentionD7 ?? 0) * 100));
+    setRetentionD30Pct(Math.round(((item.data as any).retentionD30 ?? 0) * 100));
+    setActivationRatePct(Math.round(((item.data as any).activationRate ?? 0) * 100));
+    setConversionRatePct(Math.round(((item.data as any).conversionRate ?? 0) * 100));
+    setOrganicGrowthPct(Number((item.data as any).organicGrowthPct ?? 0));
+    setViralCoefficient(String((item.data as any).viralCoefficient ?? 0));
+    setRepeatPurchaseRatePct(Math.round(((item.data as any).repeatPurchaseRate ?? 0) * 100));
+    setReleasesPerMonth(String((item.data as any).releasesPerMonth ?? 0));
+    setTeamSize(String((item.data as any).teamSize ?? 0));
+    setFoundersFullTime(((item.data as any).foundersFullTime ?? true) ? "yes" : "no");
+    setTam(String((item.data as any).tam ?? 0));
+    setTamGrowthPct(Number((item.data as any).tamGrowthPct ?? 0));
+    setCompetitionDensityPct(Math.round(((item.data as any).competitionDensity ?? 0.5) * 100));
 
     setResult(item.result);
     setSaved(false);
@@ -459,7 +532,7 @@ function AnalyzerInner() {
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8 sm:mb-10">
         <div>
           <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Анализатор проекта</h1>
-          <p className="text-gray-400 mt-2 text-base sm:text-lg">Получи глубокий AI-анализ твоего стартапа за секунды</p>
+          <p className="text-gray-400 mt-2 text-base sm:text-lg">Data-driven анализ стартапа по метрикам: рост, юнит-экономика, PMF, эффективность, рынок и риск</p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 lg:text-right">
           <div>
@@ -764,6 +837,20 @@ function AnalyzerInner() {
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.newRevenueMonthly")}</span>
+                            <HelpTip text={t("analyzer.fieldHelp.newRevenueMonthly")} />
+                          </div>
+                          <MoneyInput value={newRevenueMonthly} onChange={setNewRevenueMonthly} placeholder="0" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.salesMarketingSpend")}</span>
+                            <HelpTip text={t("analyzer.fieldHelp.salesMarketingSpend")} />
+                          </div>
+                          <MoneyInput value={salesMarketingSpend} onChange={setSalesMarketingSpend} placeholder="0" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.arpu")}</span>
                             <HelpTip text={t("analyzer.fieldHelp.arpu")} />
                           </div>
@@ -802,6 +889,76 @@ function AnalyzerInner() {
                           />
                         </div>
                       </div>
+
+                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.dau")}</span>
+                            <HelpTip text={t("analyzer.fieldHelp.dau")} />
+                          </div>
+                          <MoneyInput value={dau} onChange={setDau} placeholder="0" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.mau")}</span>
+                            <HelpTip text={t("analyzer.fieldHelp.mau")} />
+                          </div>
+                          <MoneyInput value={mau} onChange={setMau} placeholder="0" />
+                        </div>
+
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.retentionD30")} ({retentionD30Pct}%)</span>
+                            <HelpTip text={t("analyzer.fieldHelp.retentionD30")} />
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={80}
+                            step={1}
+                            value={retentionD30Pct}
+                            onChange={(e) => setRetentionD30Pct(Number(e.target.value))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.repeatPurchaseRate")} ({repeatPurchaseRatePct}%)</span>
+                            <HelpTip text={t("analyzer.fieldHelp.repeatPurchaseRate")} />
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={repeatPurchaseRatePct}
+                            onChange={(e) => setRepeatPurchaseRatePct(Number(e.target.value))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.organicGrowthPct")} ({organicGrowthPct}%)</span>
+                            <HelpTip text={t("analyzer.fieldHelp.organicGrowthPct")} />
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={40}
+                            step={1}
+                            value={organicGrowthPct}
+                            onChange={(e) => setOrganicGrowthPct(Number(e.target.value))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.viralCoefficient")}</span>
+                            <HelpTip text={t("analyzer.fieldHelp.viralCoefficient")} />
+                          </div>
+                          <MoneyInput value={viralCoefficient} onChange={setViralCoefficient} placeholder="0" />
+                        </div>
+                      </div>
                     </div>
                   ) : null}
 
@@ -821,6 +978,74 @@ function AnalyzerInner() {
                             <HelpTip text={t("analyzer.fieldHelp.cashOnHand")} />
                           </div>
                           <MoneyInput value={cashOnHand} onChange={setCashOnHand} placeholder="0" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.releasesPerMonth")}</span>
+                            <HelpTip text={t("analyzer.fieldHelp.releasesPerMonth")} />
+                          </div>
+                          <MoneyInput value={releasesPerMonth} onChange={setReleasesPerMonth} placeholder="0" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.teamSize")}</span>
+                            <HelpTip text={t("analyzer.fieldHelp.teamSize")} />
+                          </div>
+                          <MoneyInput value={teamSize} onChange={setTeamSize} placeholder="0" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.foundersFullTime")}</span>
+                            <HelpTip text={t("analyzer.fieldHelp.foundersFullTime")} />
+                          </div>
+                          <select
+                            className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white"
+                            value={foundersFullTime}
+                            onChange={(e) => setFoundersFullTime(e.target.value as "yes" | "no")}
+                          >
+                            <option value="yes">Да</option>
+                            <option value="no">Нет</option>
+                          </select>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.tam")}</span>
+                            <HelpTip text={t("analyzer.fieldHelp.tam")} />
+                          </div>
+                          <MoneyInput value={tam} onChange={setTam} placeholder="0" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.tamGrowthPct")} ({tamGrowthPct}%)</span>
+                            <HelpTip text={t("analyzer.fieldHelp.tamGrowthPct")} />
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={30}
+                            step={1}
+                            value={tamGrowthPct}
+                            onChange={(e) => setTamGrowthPct(Number(e.target.value))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-2 flex items-center">
+                            <span>{t("analyzer.fields.competitionDensity")} ({competitionDensityPct}%)</span>
+                            <HelpTip text={t("analyzer.fieldHelp.competitionDensity")} />
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={competitionDensityPct}
+                            onChange={(e) => setCompetitionDensityPct(Number(e.target.value))}
+                            className="w-full"
+                          />
                         </div>
                       </div>
 
@@ -927,15 +1152,15 @@ function AnalyzerInner() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="bg-[#0A0A0F] rounded-2xl p-4">
                   <div className="text-3xl font-bold text-violet-400">{scores[0] ?? "—"}</div>
-                  <div className="text-xs text-gray-400 mt-1">Рыночный fit</div>
+                    <div className="text-xs text-gray-400 mt-1">Growth Score</div>
                 </div>
                 <div className="bg-[#0A0A0F] rounded-2xl p-4">
                   <div className="text-3xl font-bold text-rose-400">{scores[3] ?? "—"}</div>
-                  <div className="text-xs text-gray-400 mt-1">Команда</div>
+                    <div className="text-xs text-gray-400 mt-1">Efficiency Score</div>
                 </div>
                 <div className="bg-[#0A0A0F] rounded-2xl p-4">
                   <div className="text-3xl font-bold text-amber-400">{scores[5] ?? "—"}</div>
-                  <div className="text-xs text-gray-400 mt-1">Технология</div>
+                    <div className="text-xs text-gray-400 mt-1">Risk (обратный)</div>
                 </div>
               </div>
             </div>
@@ -978,11 +1203,11 @@ function AnalyzerInner() {
                   <div className="text-white font-semibold mb-3">{t("analyzer.report.radarTitle")}</div>
                   <RadarChart
                     labels={[
-                      t("analyzer.report.labels.market"),
+                      t("analyzer.report.labels.growth"),
                       t("analyzer.report.labels.unit"),
-                      t("analyzer.report.labels.traction"),
-                      t("analyzer.report.labels.team"),
-                      t("analyzer.report.labels.financial"),
+                      t("analyzer.report.labels.pmf"),
+                      t("analyzer.report.labels.efficiency"),
+                      t("analyzer.report.labels.market"),
                       t("analyzer.report.labels.risk"),
                     ]}
                     values={scores}

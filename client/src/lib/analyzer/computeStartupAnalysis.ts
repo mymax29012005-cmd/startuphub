@@ -4,169 +4,223 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-function scoreFromRange(value: number, min: number, max: number) {
-  // Higher value => higher score
+function normalize(value: number, min: number, max: number) {
+  if (value <= min) return 0;
+  if (value >= max) return 1;
   if (max === min) return 0;
-  return clamp(((value - min) / (max - min)) * 100, 0, 100);
-}
-
-function riskFromSelect(level: "low" | "medium" | "high") {
-  if (level === "low") return 20;
-  if (level === "medium") return 50;
-  return 80;
+  return (value - min) / (max - min);
 }
 
 /**
- * Deterministic (no AI) scoring & valuation heuristic.
- * Intentionally "good enough" for a demo/offline analyzer.
+ * Data-driven deterministic scoring (no AI).
+ * Formulas are intentionally fixed to match the spec.
  */
 export function computeStartupAnalysis(input: StartupAnalysisInput): StartupAnalysisResult {
   const recurringShare = clamp(input.recurringShare, 0, 1);
 
-  // --- Financials base ---
-  const grossMarginFraction = clamp(input.grossMarginPct / 100, 0, 1);
+  // BASE
+  const monthlyRevenue = input.monthlyRevenue > 0 ? input.monthlyRevenue : input.activeUsers * input.arpu * recurringShare;
+  const churn = input.monthlyChurnPct / 100;
 
-  const monthlyRevenue =
-    input.monthlyRevenue > 0
-      ? input.monthlyRevenue
-      : input.activeUsers * input.arpu * recurringShare;
+  // LTV
+  const ltv = churn > 0 ? input.arpu / churn : input.arpu * 24;
 
-  // Unit economics
-  const monthlyChurnFraction = clamp(input.monthlyChurnPct / 100, 0.0001, 0.5);
-  const ltv = input.arpu / monthlyChurnFraction; // simplified LTV for subscription
+  // PAYBACK
+  const grossMargin = input.grossMarginPct / 100;
+  const paybackMonths = input.unitPaybackMonths > 0 ? input.unitPaybackMonths : input.cac > 0 ? input.cac / Math.max(1e-9, input.arpu * grossMargin) : 0;
 
-  // If payback months is provided, use it; otherwise approximate.
-  const paybackMonths =
-    input.unitPaybackMonths > 0 ? input.unitPaybackMonths : input.cac / Math.max(1, (input.arpu * grossMarginFraction) / 12);
+  // BURN MULTIPLE
+  const burnMultiple = input.newRevenueMonthly > 0 ? input.burnMonthly / input.newRevenueMonthly : 5;
 
-  // --- Traction & risk components (0..100 risk score, higher means worse) ---
-  const marketRisk = clamp(100 - input.marketValidation, 0, 100);
-  const competitionRisk = riskFromSelect(input.competition);
-  const executionRisk = clamp(100 - input.teamStrength, 0, 100);
-  const regulatoryRisk = riskFromSelect(input.regulatory);
-  const techRisk = riskFromSelect(input.tech);
+  // MAGIC NUMBER
+  const magicNumber = input.salesMarketingSpend > 0 ? (input.newRevenueMonthly * 4) / input.salesMarketingSpend : 0;
 
-  const runwayMonths = input.burnMonthly > 0 ? input.cashOnHand / input.burnMonthly : 120;
-  const financialRisk =
-    runwayMonths >= 24
-      ? 20
-      : runwayMonths >= 12
-        ? 45
-        : runwayMonths >= 6
-          ? 60
-          : runwayMonths >= 3
-            ? 75
-            : 90;
+  // RUNWAY
+  const runwayMonths = input.burnMonthly > 0 ? input.cashOnHand / input.burnMonthly : 0;
 
-  // --- Scores (0..100) ---
-  const riskAvg = clamp(
-    (marketRisk * 0.25 +
-      competitionRisk * 0.15 +
-      executionRisk * 0.20 +
-      financialRisk * 0.25 +
-      regulatoryRisk * 0.10 +
-      techRisk * 0.05) /
-      1,
-    0,
-    100,
-  );
+  // STICKINESS
+  const stickiness = input.mau > 0 ? input.dau / input.mau : 0;
 
-  const successProbability = clamp(1 - Math.pow(riskAvg / 100, 1.2), 0.05, 0.9);
+  // PMF
+  let pmf =
+    0.5 * normalize(input.retentionD30, 0, 0.5) +
+    0.3 * normalize(input.organicGrowthPct, 0, 30) +
+    0.2 * normalize(input.repeatPurchaseRate, 0, 1);
+  pmf *= 100;
 
-  // Unit economics score: prefer healthy gross margin and LTV/CAC.
-  const ltvCac = input.cac > 0 ? ltv / input.cac : 10;
-  const ltvCacScore = clamp(((Math.log10(Math.max(1e-6, ltvCac)) - 0) / 2) * 100, 0, 100);
-  const grossMarginScore = clamp(grossMarginFraction * 120, 0, 100);
-  const unitEconomicsScore = clamp(ltvCacScore * 0.6 + grossMarginScore * 0.4, 0, 100);
+  // UNIT
+  const ltvToCac = input.cac > 0 ? ltv / input.cac : 0;
+  let unitScore =
+    0.5 * normalize(ltvToCac, 0, 5) +
+    0.3 * normalize(grossMargin, 0, 0.8) +
+    0.2 * normalize(paybackMonths > 0 ? 1 / paybackMonths : 0, 0, 1);
+  unitScore *= 100;
 
-  const tractionScore = clamp(
-    input.growthMonthlyPct * 3 + input.marketValidation * 0.2 + input.tractionScore * 0.25,
-    0,
-    100,
-  );
+  // GROWTH
+  let growthScore = 0.6 * normalize(input.growthMonthlyPct, 0, 20) + 0.4 * normalize(input.organicGrowthPct, 0, 30);
+  growthScore *= 100;
 
-  const financialScore = clamp(100 - financialRisk, 0, 100);
-  const teamMoatScore = clamp(input.teamStrength * 0.65 + input.moatStrength * 0.35, 0, 100);
+  // EFFICIENCY
+  let efficiency =
+    0.5 * normalize(burnMultiple > 0 ? 1 / burnMultiple : 0, 0, 2) +
+    0.5 * normalize(magicNumber, 0, 1);
+  efficiency *= 100;
 
-  // --- Discounted cash flow (5 years) ---
-  const stageBaseDiscount = (() => {
-    switch (input.stage) {
-      case "idea":
-        return 0.35;
-      case "seed":
-        return 0.28;
-      case "series_a":
-        return 0.22;
-      case "series_b":
-        return 0.18;
-      case "growth":
-        return 0.15;
-      case "exit":
-        return 0.13;
-      default:
-        return 0.22;
-    }
-  })();
+  // MARKET SCORE
+  let marketScore =
+    0.5 * normalize(input.tam, 1e6, 1e10) +
+    0.3 * normalize(input.tamGrowthPct, 0, 20) +
+    0.2 * (1 - clamp(input.competitionDensity, 0, 1));
+  marketScore *= 100;
 
-  const riskPremium = (riskAvg / 100) * 0.12; // adds up to ~12%
-  const discountRate = stageBaseDiscount + riskPremium;
+  // RISK (0..1)
+  const financialRisk01 =
+    0.6 * normalize(runwayMonths > 0 ? 1 / runwayMonths : 1, 0, 1) +
+    0.4 * normalize(burnMultiple, 0, 5);
+  const marketRisk01 = normalize(churn, 0, 0.2);
+  const executionRisk01 = normalize(input.releasesPerMonth > 0 ? 1 / input.releasesPerMonth : 1, 0, 1);
 
-  const annualRevenue0 = monthlyRevenue * 12;
-  const annualGrossProfit0 = annualRevenue0 * grossMarginFraction;
-  const burnAnnual = input.burnMonthly * 12;
+  let riskAvg01 = (financialRisk01 + marketRisk01 + executionRisk01) / 3;
 
-  let npv = 0;
-  const yearCashflows: number[] = [];
-  for (let year = 1; year <= 5; year++) {
-    const growthFactor = Math.pow(1 + input.growthMonthlyPct / 100, 12 * year);
-    // Approximation: growth compounds over months in each year.
-    const annualRevenue = annualRevenue0 * growthFactor;
-    const grossProfit = annualRevenue * grossMarginFraction;
-    const cashflow = grossProfit - burnAnnual; // ignore working capital for simplicity
-    yearCashflows.push(cashflow);
-    const pv = cashflow / Math.pow(1 + discountRate, year);
-    npv += pv;
-  }
+  // 🔥 KILL SWITCHES
+  if (churn > 0.2) pmf *= 0.3;
+  if (ltvToCac < 1) unitScore *= 0.2;
+  if (runwayMonths < 3) riskAvg01 += 0.3;
+  riskAvg01 = clamp(riskAvg01, 0, 1);
 
-  // --- Valuation heuristic (based on ARR multiple) ---
-  const annualRecurringRevenue = annualRevenue0 * recurringShare;
+  // SUCCESS
+  const pPmf = pmf / 100;
+  const pScale = (unitScore + marketScore) / 200;
+  const pSurvival = normalize(runwayMonths, 0, 24);
+  const successProbability = clamp(pPmf * pScale * pSurvival, 0.05, 0.9);
+
+  // ARR
+  const arr = monthlyRevenue * 12;
+
+  // VALUATION
   const baseMultiple = (() => {
     switch (input.stage) {
       case "idea":
-        return 2.5;
+        return 1;
       case "seed":
-        return 4.5;
+        return 3;
       case "series_a":
-        return 6.0;
+        return 6;
       case "series_b":
-        return 7.5;
+        return 8;
       case "growth":
-        return 9.0;
+        return 10;
       case "exit":
-        return 10.0;
+        return 10;
       default:
-        return 4.5;
+        return 3;
     }
   })();
 
-  const multiple = baseMultiple * (0.55 + 0.45 * successProbability);
-  const valuationLow = annualRecurringRevenue * multiple * 0.85;
-  const valuationHigh = annualRecurringRevenue * multiple * 1.15;
-  const expectedValue = (valuationLow + valuationHigh) / 2 * successProbability;
+  const valuationARR = arr * baseMultiple * (1 - riskAvg01);
+
+  // DCF
+  const discountRate = 0.1 + riskAvg01 * 0.3;
+  const yearCashflows: number[] = [];
+  let dcf = 0;
+  for (let year = 1; year <= 5; year++) {
+    const revenue = arr * Math.pow(1 + input.growthMonthlyPct / 100, year);
+    const profit = revenue * grossMargin;
+    const discounted = profit / Math.pow(1 + discountRate, year);
+    yearCashflows.push(discounted);
+    dcf += discounted;
+  }
+
+  // FINAL
+  const valuationLow = Math.min(valuationARR, dcf) * 0.7;
+  const valuationHigh = Math.max(valuationARR, dcf) * 1.3;
+  const valuationBase = (valuationLow + valuationHigh) / 2;
+  const expectedValue = valuationBase * successProbability;
+
+  // INVESTOR SCORE
+  const investorScore =
+    0.25 * growthScore +
+    0.25 * unitScore +
+    0.2 * pmf +
+    0.15 * efficiency +
+    0.15 * marketScore;
+
+  // CONFIDENCE
+  const totalFields = 18;
+  const filledFields = [
+    input.activeUsers,
+    input.arpu,
+    input.monthlyRevenue,
+    input.newRevenueMonthly,
+    input.salesMarketingSpend,
+    input.cac,
+    input.burnMonthly,
+    input.cashOnHand,
+    input.retentionD30,
+    input.retentionD7,
+    input.retentionD1,
+    input.repeatPurchaseRate,
+    input.organicGrowthPct,
+    input.dau,
+    input.mau,
+    input.releasesPerMonth,
+    input.tam,
+    input.tamGrowthPct,
+  ].filter((v) => typeof v === "number" && Number(v) > 0).length;
+
+  const fieldsFilledRatio = totalFields > 0 ? filledFields / totalFields : 0;
+  const confidence =
+    0.5 * fieldsFilledRatio +
+    0.3 * (input.retentionD30 > 0 ? 1 : 0) +
+    0.2 * (input.monthlyRevenue > 0 ? 1 : 0);
+  const confidenceScore = confidence * 100;
 
   // Break-even monthly revenue (gross margin offsets burn)
-  const breakEvenMonthlyRevenue =
-    input.burnMonthly > 0 && grossMarginFraction > 0 ? input.burnMonthly / grossMarginFraction : 0;
+  const breakEvenMonthlyRevenue = input.burnMonthly > 0 && grossMargin > 0 ? input.burnMonthly / grossMargin : 0;
+
+  // Risk decomposition outputs (0..100, higher = worse)
+  const riskAvg = riskAvg01 * 100;
+  const marketRisk = marketRisk01 * 100;
+  const financialRisk = financialRisk01 * 100;
+  const executionRisk = executionRisk01 * 100;
+
+  // Keep legacy fields for existing UI (no longer used by the model)
+  const teamMoatScore = clamp(input.moatStrength, 0, 100);
+  const tractionScore = clamp(growthScore, 0, 100);
+  const financialScore = clamp(efficiency, 0, 100);
+
+  // Compatibility: keep competition/regulatory/tech risks as 0..100 from selects
+  const competitionRisk =
+    input.competition === "low" ? 20 : input.competition === "medium" ? 50 : 80;
+  const regulatoryRisk =
+    input.regulatory === "low" ? 20 : input.regulatory === "medium" ? 50 : 80;
+  const techRisk =
+    input.tech === "low" ? 20 : input.tech === "medium" ? 50 : 80;
 
   return {
     monthlyRevenue,
+    arr,
     ltv,
     paybackMonths,
+    churn,
+    grossMargin,
+    burnMultiple,
+    magicNumber,
+    runwayMonths,
+    stickiness,
+    ltvToCac,
+
+    pmfScore: clamp(pmf, 0, 100),
+    unitEconomicsScore: clamp(unitScore, 0, 100),
+    growthScore: clamp(growthScore, 0, 100),
+    efficiencyScore: clamp(efficiency, 0, 100),
+    marketScore: clamp(marketScore, 0, 100),
+    investorScore: clamp(investorScore, 0, 100),
+    confidenceScore: clamp(confidenceScore, 0, 100),
 
     tractionScore,
-    unitEconomicsScore,
-    teamMoatScore,
     financialScore,
+    teamMoatScore,
 
     marketRisk,
     competitionRisk,
@@ -180,15 +234,14 @@ export function computeStartupAnalysis(input: StartupAnalysisInput): StartupAnal
 
     discountRate,
     yearCashflows,
-    npv,
+    dcf,
+    valuationARR,
 
-    annualRecurringRevenue,
-    multiple,
     valuationLow,
     valuationHigh,
+    valuationBase,
     expectedValue,
 
-    runwayMonths,
     breakEvenMonthlyRevenue,
   };
 }
