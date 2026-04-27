@@ -11,6 +11,7 @@ import { CashflowBars } from "@/components/analyzer/CashflowBars";
 import { HelpTip } from "@/components/analyzer/HelpTip";
 import { useI18n } from "@/i18n/I18nProvider";
 import { computeStartupAnalysis } from "@/lib/analyzer/computeStartupAnalysis";
+import { reportNarrativeEngine } from "@/lib/analyzer/reportNarrativeEngine";
 import type {
   CompetitionLevel,
   RiskLevel,
@@ -526,6 +527,10 @@ function AnalyzerInner() {
   }, [result]);
 
   const report = result;
+  const narrative = useMemo(() => {
+    if (!report) return null;
+    return reportNarrativeEngine(report as any, analysisInput);
+  }, [report, analysisInput]);
 
   return (
     <div className="pt-24 max-w-7xl mx-auto px-4 pb-20 sm:px-6">
@@ -1171,26 +1176,22 @@ function AnalyzerInner() {
                 <li className="flex gap-4">
                   <span className="text-emerald-400 text-xl">↑</span>
                   <div>
-                    {report
-                      ? `Вероятность успеха: ${(report.successProbability * 100).toFixed(0)}%. Ожидаемая стоимость: ${Math.round(
-                          report.expectedValue,
-                        ).toLocaleString("ru-RU")} ₽.`
+                    {narrative
+                      ? narrative.insightsChunks[0]
                       : "Заполни параметры слева и запусти анализ — здесь появятся ключевые выводы."}
                   </div>
                 </li>
                 <li className="flex gap-4">
                   <span className="text-amber-400 text-xl">⚠</span>
                   <div>
-                    {report ? `Средний риск: ${riskLevel}. Runway: ${report.runwayMonths.toFixed(1)} мес.` : "Риски и runway рассчитаются автоматически после запуска анализа."}
+                    {narrative ? narrative.insightsChunks[1] : "Риски и runway рассчитаются автоматически после запуска анализа."}
                   </div>
                 </li>
                 <li className="flex gap-4">
                   <span className="text-violet-400 text-xl">★</span>
                   <div>
-                    {report
-                      ? `Диапазон оценки: ${Math.round(report.valuationLow).toLocaleString("ru-RU")} ₽ — ${Math.round(
-                          report.valuationHigh,
-                        ).toLocaleString("ru-RU")} ₽.`
+                    {narrative
+                      ? narrative.insightsChunks[2]
                       : "После анализа здесь появится диапазон оценки и рекомендации по следующему шагу."}
                   </div>
                 </li>
@@ -1231,7 +1232,7 @@ function AnalyzerInner() {
                     </div>
                     <div className="bg-[#0A0A0F] rounded-2xl p-4 border border-white/10">
                       <div className="text-xs text-gray-400">{t("analyzer.report.runway")}</div>
-                      <div className="mt-2 text-2xl font-semibold text-white">{report.runwayMonths.toFixed(1)} мес</div>
+                      <div className="mt-2 text-2xl font-semibold text-white">{((report as any).runwayMonths ?? 0).toFixed(1)} мес</div>
                       <div className="mt-1 text-xs text-gray-400">
                         {t("analyzer.report.burn")}: {Math.round(analysisInput.burnMonthly).toLocaleString("ru-RU")} ₽/мес
                       </div>
