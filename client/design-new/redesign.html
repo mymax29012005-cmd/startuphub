@@ -1,490 +1,536 @@
 <!DOCTYPE html>
-
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>StartupHub — Профиль</title>
+<title>Startup Intelligence Interface</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+:root {
+  --bg: #050507;
+  --text: #eaf0ff;
+  --muted: rgba(234,240,255,0.7);
 
-*{
-box-sizing:border-box;
+  --blue: #6ea8ff;
+  --violet: #7c3aed;
+  --rose: #e11d48;
+  --mint: #00f5d4;
+
+  --glass: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.12);
 }
 
-body{
-margin:0;
-font-family:Inter,system-ui,Arial;
-color:#fff;
-
-background:
-radial-gradient(circle at 10% -10%, rgba(80,60,200,0.45), transparent 40%),
-radial-gradient(circle at 90% 0%, rgba(0,224,198,0.18), transparent 40%),
-#05070F;
+/* BASE */
+body {
+  margin:0;
+  font-family: Inter, system-ui;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(124,58,237,0.25), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(110,168,255,0.18), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(0,245,212,0.12), transparent 50%),
+    var(--bg);
+  color:var(--text);
 }
 
-/* container */
-
-.container{
-max-width:1200px;
-margin:auto;
-padding:40px 20px;
+.container {
+  max-width:1200px;
+  margin:0 auto;
+  padding:40px 20px;
 }
 
-/* header */
-
-.header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:40px;
+/* GRID SYSTEM */
+.grid {
+  display:grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap:16px;
 }
 
-.logo{
-font-size:22px;
-font-weight:700;
-
-background:linear-gradient(90deg,#8A7CFF,#00E0C6);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
+/* CARDS */
+.card {
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:20px;
+  backdrop-filter: blur(18px);
+  box-shadow:0 25px 80px rgba(0,0,0,0.4);
+  transition:0.3s;
 }
 
-.nav{
-display:flex;
-gap:25px;
-opacity:.75;
-font-size:14px;
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(110,168,255,0.3);
 }
 
-/* profile hero */
+/* SIZES */
+.w-4 { grid-column: span 4; }
+.w-6 { grid-column: span 6; }
+.w-8 { grid-column: span 8; }
+.w-12 { grid-column: span 12; }
 
-.profile-hero{
-display:flex;
-gap:25px;
-align-items:center;
-margin-bottom:30px;
+/* HIGHLIGHT BLOCKS */
+.violet {
+  background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(124,58,237,0.05));
+  border:1px solid rgba(124,58,237,0.3);
 }
 
-.avatar{
-width:90px;
-height:90px;
-border-radius:20px;
-object-fit:cover;
+.blue {
+  background: linear-gradient(135deg, rgba(110,168,255,0.18), rgba(110,168,255,0.05));
 }
 
-.profile-text h1{
-margin:0;
-font-size:28px;
+.mint {
+  background: linear-gradient(135deg, rgba(0,245,212,0.15), rgba(0,245,212,0.03));
 }
 
-.role{
-opacity:.75;
-margin-top:4px;
+.rose {
+  background: linear-gradient(135deg, rgba(225,29,72,0.15), rgba(225,29,72,0.03));
 }
 
-.location{
-opacity:.55;
-font-size:14px;
+/* TYPO */
+h1,h2,h3 { margin:0 0 10px 0; }
+
+p {
+  color:var(--muted);
+  line-height:1.6;
+  font-size:14.5px;
 }
 
-.buttons{
-margin-top:12px;
-display:flex;
-gap:10px;
+/* BADGES */
+.badge {
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  background:rgba(124,58,237,0.12);
+  border:1px solid rgba(124,58,237,0.3);
 }
 
-.btn{
-background:linear-gradient(135deg,#5C4DFF,#00E0C6);
-border:none;
-color:white;
-padding:10px 18px;
-border-radius:10px;
-font-weight:500;
-cursor:pointer;
-box-shadow:0 0 20px rgba(92,77,255,0.3);
+/* METRICS */
+.metric {
+  font-size:18px;
+  font-weight:600;
 }
 
-/* cards */
-
-.card,
-.project,
-.stat,
-.progress-card,
-.activity{
-
-background:linear-gradient(
-180deg,
-#141b33 0%,
-#0f1526 100%
-);
-
-border:1px solid #1c2340;
-
-box-shadow:
-0 0 25px rgba(92,77,255,0.12),
-0 0 20px rgba(0,224,198,0.05);
-
-border-radius:16px;
+/* SMALL TEXT */
+.small {
+  font-size:12px;
+  color:rgba(234,240,255,0.6);
 }
 
-/* stats */
-
-.stats{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:20px;
-margin-bottom:30px;
+/* CHART */
+.chartBox {
+  height:220px;
 }
-
-.stat{
-padding:20px;
-text-align:center;
-}
-
-.stat h2{
-margin:0;
-
-background:linear-gradient(90deg,#8A7CFF,#00FFC8);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-
-font-size:28px;
-}
-
-.stat span{
-opacity:.65;
-font-size:14px;
-}
-
-/* progress */
-
-.progress-card{
-padding:25px;
-margin-bottom:40px;
-}
-
-.progress-bar{
-height:8px;
-background:#1a2038;
-border-radius:20px;
-margin-top:12px;
-overflow:hidden;
-}
-
-.progress-fill{
-height:100%;
-width:100%;
-
-background:linear-gradient(
-90deg,
-#5C4DFF,
-#00E0C6,
-#FF4DA6
-);
-}
-
-/* sections */
-
-.section{
-margin-bottom:40px;
-}
-
-.section-title{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:20px;
-}
-
-/* projects */
-
-.projects{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:20px;
-}
-
-.project{
-padding:20px;
-transition:.25s;
-}
-
-.project:hover{
-
-transform:translateY(-4px);
-
-box-shadow:
-0 10px 40px rgba(92,77,255,0.25),
-0 0 40px rgba(0,224,198,0.15);
-}
-
-.project h3{
-margin:0;
-}
-
-.project p{
-opacity:.7;
-}
-
-.tag{
-
-background:rgba(0,224,198,0.15);
-border:1px solid rgba(0,224,198,0.45);
-color:#00FFC8;
-
-padding:4px 10px;
-border-radius:20px;
-font-size:12px;
-margin-left:8px;
-}
-
-.price{
-opacity:.5;
-font-size:14px;
-margin-top:8px;
-}
-
-/* info grid */
-
-.info-grid{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:20px;
-}
-
-.card{
-padding:20px;
-}
-
-.chips{
-display:flex;
-flex-wrap:wrap;
-gap:10px;
-margin-top:10px;
-}
-
-.chip{
-background:#1b223b;
-padding:6px 12px;
-border-radius:20px;
-font-size:13px;
-}
-
-ul{
-margin:0;
-padding-left:18px;
-}
-
-li{
-margin-bottom:8px;
-opacity:.85;
-}
-
-/* links */
-
-.links{
-margin:30px 0;
-display:flex;
-gap:25px;
-font-size:14px;
-}
-
-.links span{
-color:#8A7CFF;
-cursor:pointer;
-}
-
-.links span:hover{
-color:#00E0C6;
-}
-
-/* activity */
-
-.activity{
-padding:20px;
-}
-
-.activity-item{
-padding:14px 0;
-border-bottom:1px solid rgba(255,255,255,0.05);
-}
-
-.activity-item:last-child{
-border:none;
-}
-
-.date{
-opacity:.45;
-font-size:13px;
-margin-bottom:4px;
-}
-
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-<div class="header">
-<div class="logo">StartupHub</div>
+<!-- HERO (wide, colorful) -->
+<div class="grid">
+  <div class="card w-8 violet">
+    <span class="badge">Investment Intelligence</span>
+    <h1>Startup Deep Analysis Interface</h1>
+    <p>
+      Интерактивный инвестиционный анализ, объединяющий бизнес-логику,
+      метрики роста и поведенческие сигналы пользователей в единую систему интерпретации.
+    </p>
+  </div>
 
-<div class="nav">
-<span>Главная</span>
-<span>Маркетплейс</span>
-<span>Профиль</span>
-</div>
-</div>
-
-<div class="profile-hero">
-
-<img class="avatar" src="https://i.pravatar.cc/200">
-
-<div class="profile-text">
-
-<h1>Admin</h1>
-
-<div class="role">Основатель</div>
-
-<div class="location">Россия, Санкт-Петербург</div>
-
-<div class="buttons">
-<button class="btn">Редактировать</button>
-<button class="btn">Поделиться</button>
+  <div class="card w-4 rose">
+    <h2>Success Score</h2>
+    <div class="metric">63%</div>
+    <p class="small">вероятность устойчивого роста</p>
+  </div>
 </div>
 
-</div>
+<!-- KPI ROW -->
+<div class="grid">
 
-</div>
+  <div class="card w-3 blue">
+    <h3>Growth</h3>
+    <div class="metric">+14%</div>
+    <p class="small">MoM</p>
+  </div>
 
-<div class="stats">
+  <div class="card w-3 violet">
+    <h3>LTV/CAC</h3>
+    <div class="metric">2.6</div>
+    <p class="small">borderline efficiency</p>
+  </div>
 
-<div class="stat">
-<h2>3</h2>
-<span>Стартапа</span>
-</div>
+  <div class="card w-3 mint">
+    <h3>Retention</h3>
+    <div class="metric">32%</div>
+    <p class="small">D30 users</p>
+  </div>
 
-<div class="stat">
-<h2>0</h2>
-<span>Успешных exit</span>
-</div>
-
-<div class="stat">
-<h2>0</h2>
-<span>Откликов</span>
-</div>
+  <div class="card w-3 rose">
+    <h3>Runway</h3>
+    <div class="metric">9m</div>
+    <p class="small">cash survival</p>
+  </div>
 
 </div>
 
-<div class="progress-card">
+<!-- BIG ANALYSIS SPLIT -->
+<div class="grid">
 
-<b>Готовность профиля — 100%</b>
+  <!-- LEFT BIG BLOCK -->
+  <div class="card w-8 violet">
+    <h2>Business Narrative</h2>
 
-<div class="progress-bar">
-<div class="progress-fill"></div>
-</div>
+    <p>
+      Проект демонстрирует устойчивую траекторию раннего SaaS-бизнеса с признаками
+      частичного product-market fit, однако без выраженной экспоненциальной динамики роста.
+    </p>
 
-<p style="opacity:.65">Отлично! Профиль полностью заполнен.</p>
+    <p>
+      Основная ценность продукта заключается в снижении стоимости и сложности выполнения
+      пользовательской задачи, что создаёт потенциал для масштабирования при улучшении удержания.
+    </p>
 
-</div>
+    <p>
+      В текущем состоянии бизнес находится в зоне “validation → early traction transition”.
+    </p>
+  </div>
 
-<div class="section">
+  <!-- RIGHT INSIGHT STACK -->
+  <div class="card w-4 blue">
+    <h3>Key Insights</h3>
 
-<div class="section-title">
-<h2>Мои проекты</h2>
-<span style="opacity:.6">+ Добавить проект</span>
-</div>
-
-<div class="projects">
-
-<div class="project">
-<h3>пример от админа <span class="tag">SaaS</span></h3>
-<p>Прототип / первые пользователи • Активен</p>
-<div class="price">Цена: 12 020 202 ₽</div>
-</div>
-
-<div class="project">
-<h3>тест второй <span class="tag">SaaS</span></h3>
-<p>Описание тестового проекта</p>
-<div class="price">Цена: 1 200 000 ₽</div>
-</div>
-
-<div class="project">
-<h3>тест <span class="tag">SaaS</span></h3>
-<p>Описание проекта</p>
-<div class="price">Цена: 102 365 201 ₽</div>
-</div>
+    <p>⚠ churn является главным ограничением</p>
+    <p>✔ есть частичный PMF</p>
+    <p>✔ рост стабилен</p>
+    <p>⚠ экономика пока не масштабируется</p>
+  </div>
 
 </div>
 
-</div>
+<!-- GROWTH + CHART -->
+<div class="grid">
 
-<div class="info-grid">
+  <div class="card w-6 blue">
+    <h2>Growth Dynamics</h2>
+    <p>
+      Рост стабилен, но не экспоненциален — это ограничивает венчурный потенциал
+      без усиления retention loop.
+    </p>
+  </div>
 
-<div class="card">
-<h3>Навыки и экспертиза</h3>
-
-<div class="chips">
-<div class="chip">основатель</div>
-<div class="chip">программист</div>
-<div class="chip">студент</div>
-<div class="chip">прикольный</div>
-</div>
-
-</div>
-
-<div class="card">
-
-<h3>Ищу</h3>
-
-<ul>
-<li>инвестора для покупки Audi S6</li>
-<li>партнёра</li>
-<li>клиентов для платформы</li>
-</ul>
+  <div class="card w-6">
+    <canvas id="growthChart"></canvas>
+  </div>
 
 </div>
 
-<div class="card">
+<!-- ECONOMICS -->
+<div class="grid">
 
-<h3>Контакты</h3>
+  <div class="card w-4 violet">
+    <h2>Unit Economics</h2>
+    <p>
+      Модель близка к устойчивой, но LTV/CAC ниже оптимального уровня для агрессивного масштабирования.
+    </p>
+  </div>
 
-<p>Email: admin@startuphub.local</p>
-<p>Телефон: +79313548571</p>
-<p>Telegram: maksi22maksi</p>
+  <div class="card w-4 mint">
+    <h2>Market</h2>
+    <p>
+      Рынок большой, конкурентный, без явного доминирующего игрока.
+    </p>
+  </div>
+
+  <div class="card w-4 rose">
+    <h2>Risk</h2>
+    <p>
+      Основной риск — удержание пользователей и ограниченная повторная монетизация.
+    </p>
+  </div>
 
 </div>
 
 </div>
 
-<div class="links">
-<span>Мои стартапы</span>
-<span>Мои идеи</span>
-<span>Публичный профиль</span>
+<script>
+new Chart(document.getElementById("growthChart"), {
+  type: "line",
+  data: {
+    labels: ["M1","M2","M3","M4","M5","M6"],
+    datasets: [{
+      data: [3,5,7,9,12,14],
+      borderColor: "#7c3aed",
+      tension: 0.4
+    }]
+  }
+});
+</script>
+
+
+<!-- =========================
+     ADVANCED INSIGHT LAYER
+========================= -->
+
+<div class="container">
+
+<!-- RISK HEAT LAYER -->
+<div class="grid">
+
+  <div class="card w-6 rose">
+    <h2>Risk Heatmap</h2>
+    <p>
+      Визуализация распределения ключевых рисков по системе бизнеса.
+      Чем ярче зона — тем выше влияние на стабильность компании.
+    </p>
+
+    <canvas id="riskChart"></canvas>
+  </div>
+
+  <div class="card w-6 violet">
+    <h2>Economic Efficiency Curve</h2>
+    <p>
+      Отражает баланс между ростом, затратами и удержанием.
+      Критическая зона возникает при несоответствии LTV и CAC.
+    </p>
+
+    <canvas id="ecoChart"></canvas>
+  </div>
+
 </div>
 
-<div class="activity">
+<!-- INVESTOR THINKING -->
+<div class="grid">
 
-<h3>История действий</h3>
+  <div class="card w-8 blue">
+    <h2>Investor Interpretation</h2>
 
-<div class="activity-item">
-<div class="date">21 апр. 2026</div>
-Размещен стартап «пример от админа»
+    <p>
+      С точки зрения венчурного инвестора, проект находится в стадии
+      <b>“selective conviction”</b> — когда есть потенциал, но нет полной уверенности
+      в масштабируемости модели.
+    </p>
+
+    <p>
+      Основная гипотеза инвестирования:
+      при улучшении retention и снижении CAC бизнес может перейти в
+      категорию высокорастущих SaaS-активов.
+    </p>
+
+    <p>
+      Однако текущая структура юнит-экономики требует доказательства
+      устойчивости при увеличении масштаба.
+    </p>
+  </div>
+
+  <div class="card w-4 rose">
+    <h2>Decision Signal</h2>
+
+    <p><b>→ HOLD</b></p>
+    <p class="small">недостаточно сильных сигналов для aggressive investment</p>
+
+    <hr style="border:0;height:1px;background:rgba(255,255,255,0.1);margin:12px 0;">
+
+    <p class="small">
+      Основные триггеры решения:
+    </p>
+
+    <p class="small">• retention ниже идеала</p>
+    <p class="small">• LTV/CAC пограничный</p>
+    <p class="small">• рост стабильный, но не экспоненциальный</p>
+  </div>
+
 </div>
 
-<div class="activity-item">
-<div class="date">20 апр. 2026</div>
-Размещена идея «пример второй»
+<!-- FINAL SUMMARY -->
+<div class="card violet">
+  <h2>Final Investment Thesis</h2>
+
+  <p>
+    Проект представляет собой раннюю стадию масштабируемого SaaS-бизнеса с
+    частично подтверждённым спросом и устойчивым ростом.
+  </p>
+
+  <p>
+    Однако ключевое ограничение заключается в отсутствии сильного
+    retention loop и недостаточной эффективности монетизации клиентской базы.
+  </p>
+
+  <p>
+    Инвестиционная логика:
+    <b>ставка на улучшение продукта → затем масштабирование</b>.
+  </p>
 </div>
 
-<div class="activity-item">
-<div class="date">20 апр. 2026</div>
-Запрос партнера «supplier - SaaS»
 </div>
+
+<!-- =========================
+     CHARTS
+========================= -->
+
+<script>
+// RISK HEAT (simplified)
+new Chart(document.getElementById("riskChart"), {
+  type: "bar",
+  data: {
+    labels: ["Churn","CAC","Runway","Market","Tech"],
+    datasets: [{
+      data: [80,65,50,40,30],
+      backgroundColor: [
+        "#e11d48",
+        "#7c3aed",
+        "#6ea8ff",
+        "#00f5d4",
+        "#6ea8ff"
+      ]
+    }]
+  }
+});
+
+// ECONOMIC CURVE
+new Chart(document.getElementById("ecoChart"), {
+  type: "line",
+  data: {
+    labels: ["Stage 1","Stage 2","Stage 3","Stage 4"],
+    datasets: [{
+      label: "Efficiency",
+      data: [30,45,55,52],
+      borderColor: "#00f5d4",
+      tension: 0.4
+    }]
+  }
+});
+</script>
+
+
+<!-- =========================
+     REASONING LAYER
+========================= -->
+
+<div class="container">
+
+<div class="grid">
+
+  <div class="card w-12 violet">
+    <h2>Why this score? (Reasoning Layer)</h2>
+
+    <p>
+      Итоговая оценка формируется не как среднее значение метрик,
+      а как взвешенная система причинно-следственных связей между ростом,
+      удержанием пользователей и экономикой привлечения.
+    </p>
+
+    <p>
+      Основное снижение score вызвано:
+    </p>
+
+    <p>• недостаточным удержанием пользователей (retention loop не замкнут)</p>
+    <p>• пограничной юнит-экономикой (LTV/CAC < оптимального уровня)</p>
+    <p>• отсутствием экспоненциального ускорения роста</p>
+
+    <p>
+      При этом положительные факторы:
+    </p>
+
+    <p>• стабильный рост MoM</p>
+    <p>• наличие платящего ядра пользователей</p>
+    <p>• подтверждённый спрос на продукт</p>
+  </div>
+
+</div>
+
+<!-- =========================
+     BENCHMARK LAYER
+========================= -->
+
+<div class="grid">
+
+  <div class="card w-6 blue">
+    <h2>Market Benchmark Comparison</h2>
+
+    <p>
+      Сравнение с типичными SaaS-стартапами ранней стадии:
+    </p>
+
+    <p>Growth: <b>средний уровень</b> (top 40%)</p>
+    <p>Retention: <b>ниже среднего</b> (bottom 35%)</p>
+    <p>LTV/CAC: <b>пограничный</b> (median range)</p>
+    <p>Runway: <b>нормальный</b> (safe zone)</p>
+  </div>
+
+  <div class="card w-6 mint">
+    <h2>Interpretation vs Market</h2>
+
+    <p>
+      Проект находится в зоне “early competitive SaaS”.
+      Это означает, что он уже не является экспериментом,
+      но ещё не перешёл в категорию устойчивого scale-up бизнеса.
+    </p>
+
+    <p>
+      Главный фактор отставания от топ-проекта рынка — удержание и монетизация.
+    </p>
+  </div>
+
+</div>
+
+<!-- =========================
+     ACTION PRIORITY SYSTEM
+========================= -->
+
+<div class="grid">
+
+  <div class="card w-12 rose">
+    <h2>Action Priority System (What to do next)</h2>
+
+    <p>
+      Система автоматически ранжирует действия по влиянию на рост и инвестиционную привлекательность.
+    </p>
+
+    <br>
+
+    <p><b>Priority 1 — Retention Optimization</b></p>
+    <p>Фокус: увеличение D30 retention и формирование привычки использования продукта</p>
+
+    <p><b>Priority 2 — CAC Reduction</b></p>
+    <p>Оптимизация каналов привлечения и снижение стоимости клиента</p>
+
+    <p><b>Priority 3 — Product Value Expansion</b></p>
+    <p>Увеличение ценности продукта для роста ARPU и LTV</p>
+
+    <p><b>Priority 4 — Growth Acceleration</b></p>
+    <p>Усиление органического и платного роста после стабилизации экономики</p>
+
+  </div>
+
+</div>
+
+<!-- =========================
+     FINAL SYSTEM VERDICT
+========================= -->
+
+<div class="grid">
+
+  <div class="card w-12 violet">
+    <h2>System Final Verdict</h2>
+
+    <p>
+      Проект демонстрирует характеристики раннего инвестиционно-перспективного SaaS,
+      однако не обладает достаточной устойчивостью для агрессивного масштабирования.
+    </p>
+
+    <p>
+      Рекомендуемая стратегия:
+      <b>итеративное улучшение продукта → оптимизация экономики → последующее масштабирование</b>
+    </p>
+
+    <p>
+      Инвестиционный статус: <b>HOLD / MONITOR</b>
+    </p>
+  </div>
 
 </div>
 
 </div>
-
 </body>
 </html>
