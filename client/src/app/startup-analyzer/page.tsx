@@ -10,6 +10,9 @@ import { HelpTip } from "@/components/analyzer/HelpTip";
 import { useI18n } from "@/i18n/I18nProvider";
 import { computeStartupAnalysis } from "@/lib/analyzer/computeStartupAnalysis";
 import { reportNarrativeEngine } from "@/lib/analyzer/reportNarrativeEngine";
+import { enrichAnalysisV2 } from "@/lib/analyzer/v2/engine";
+import { getAnalyzerHint } from "@/lib/analyzer/analyzerGlossary";
+import { runAnalyzerSmokeScenarios } from "@/lib/analyzer/v2/smokeScenarios";
 import type {
   CompetitionLevel,
   RiskLevel,
@@ -69,6 +72,7 @@ function AnalyzerInner() {
   const searchParams = useSearchParams();
   const { t, lang } = useI18n();
   const [me, setMe] = useState<{ id: string; role: "user" | "admin" } | null>(null);
+  const debugSmoke = searchParams.get("debugSmoke") === "1";
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -141,6 +145,17 @@ function AnalyzerInner() {
   const [tam, setTam] = useState("0");
   const [tamGrowthPct, setTamGrowthPct] = useState(0);
   const [competitionDensityPct, setCompetitionDensityPct] = useState(50);
+
+  // Evidence (v2)
+  const [customerInterviewsCount, setCustomerInterviewsCount] = useState("0");
+  const [pilotCount, setPilotCount] = useState("0");
+  const [loiCount, setLoiCount] = useState("0");
+  const [waitlistSize, setWaitlistSize] = useState("0");
+
+  // Mature-stage (v2)
+  const [nrrPct, setNrrPct] = useState(0);
+  const [revenueConcentrationPct, setRevenueConcentrationPct] = useState(0);
+  const [topCustomerSharePct, setTopCustomerSharePct] = useState(0);
 
   const [result, setResult] = useState<ReturnType<typeof computeStartupAnalysis> | null>(null);
   const [saving, setSaving] = useState(false);
@@ -250,6 +265,15 @@ function AnalyzerInner() {
 
       regulatory,
       tech,
+
+      customerInterviewsCount: parseDigits(customerInterviewsCount),
+      pilotCount: parseDigits(pilotCount),
+      loiCount: parseDigits(loiCount),
+      waitlistSize: parseDigits(waitlistSize),
+
+      nrrPct,
+      revenueConcentrationPct,
+      topCustomerSharePct,
     };
   }, [
     mode,
@@ -293,6 +317,13 @@ function AnalyzerInner() {
     competitionDensityPct,
     regulatory,
     tech,
+    customerInterviewsCount,
+    pilotCount,
+    loiCount,
+    waitlistSize,
+    nrrPct,
+    revenueConcentrationPct,
+    topCustomerSharePct,
   ]);
 
   const scores = useMemo(() => {
@@ -379,7 +410,18 @@ function AnalyzerInner() {
     setTamGrowthPct(Number((item.data as any).tamGrowthPct ?? 0));
     setCompetitionDensityPct(Math.round(((item.data as any).competitionDensity ?? 0.5) * 100));
 
-    setResult(item.result);
+    setCustomerInterviewsCount(String((item.data as any).customerInterviewsCount ?? 0));
+    setPilotCount(String((item.data as any).pilotCount ?? 0));
+    setLoiCount(String((item.data as any).loiCount ?? 0));
+    setWaitlistSize(String((item.data as any).waitlistSize ?? 0));
+
+    setNrrPct(Number((item.data as any).nrrPct ?? 0));
+    setRevenueConcentrationPct(Number((item.data as any).revenueConcentrationPct ?? 0));
+    setTopCustomerSharePct(Number((item.data as any).topCustomerSharePct ?? 0));
+
+    // Backward compatibility: if old saved result has no v2 layers, enrich it on the client.
+    const enriched = (item.result as any)?.analysisVersion === "v2" ? item.result : enrichAnalysisV2(item.data as any, item.result as any);
+    setResult(enriched as any);
     setSaved(false);
     setLastSavedId(item.id);
     setStep(4);
@@ -521,6 +563,38 @@ function AnalyzerInner() {
 
   return (
     <div className="ia-shell pt-24 mx-auto max-w-[1200px] px-4 pb-20 sm:px-6">
+      {debugSmoke ? (
+        <div className="ia-container mb-6">
+          <div className="ia-card ia-w-12 ia-blue">
+            <div className="text-white font-semibold mb-2">Smoke-сценарии анализатора (debug)</div>
+            <div className="text-xs text-gray-400 mb-4">
+              Этот блок отображается только при <b>?debugSmoke=1</b>. Нужен для быстрой проверки детерминированной логики.
+            </div>
+            <div className="space-y-3 text-sm text-[rgba(234,240,255,0.8)]">
+              {runAnalyzerSmokeScenarios().map((x) => (
+                <div key={x.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="font-semibold text-white">{x.title}</div>
+                    <div className={x.ok ? "text-emerald-300" : "text-rose-300"}>{x.ok ? "OK" : "FAIL"}</div>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-400">
+                    verdict: {x.verdict ?? "—"} · confidence: {x.confidence ?? "—"} · completeness: {x.completenessPct ?? "—"}% · consistency: {x.consistencyScore ?? "—"}
+                  </div>
+                  <div className="mt-2 text-xs text-gray-300">
+                    {x.notes.join(" · ")}
+                  </div>
+                  {x.warnings?.length ? (
+                    <div className="mt-2 text-xs text-gray-400">
+                      warnings: {x.warnings.slice(0, 3).join(" · ")}{x.warnings.length > 3 ? " …" : ""}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {!showIntelligenceDashboard ? (
         <div className="ia-container mb-6">
           <div className="ia-grid">
@@ -681,7 +755,7 @@ function AnalyzerInner() {
                           <span>
                             {t("analyzer.fields.marketValidation")} ({marketValidation})
                           </span>
-                          <HelpTip text={t("analyzer.fieldHelp.marketValidation")} />
+                          <HelpTip text={getAnalyzerHint("marketValidation", t("analyzer.fieldHelp.marketValidation"))} />
                         </div>
                         <input
                           type="range"
@@ -696,7 +770,7 @@ function AnalyzerInner() {
                       <div>
                         <div className="text-xs text-gray-400 mb-2 flex items-center">
                           <span>{t("analyzer.fields.competition")}</span>
-                          <HelpTip text={t("analyzer.fieldHelp.competition")} />
+                          <HelpTip text={getAnalyzerHint("competition", t("analyzer.fieldHelp.competition"))} />
                         </div>
                         <select
                           className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white"
@@ -716,7 +790,7 @@ function AnalyzerInner() {
                           <span>
                             {t("analyzer.fields.moatStrength")} ({moatStrength})
                           </span>
-                          <HelpTip text={t("analyzer.fieldHelp.moatStrength")} />
+                          <HelpTip text={getAnalyzerHint("moatStrength", t("analyzer.fieldHelp.moatStrength"))} />
                         </div>
                         <input
                           type="range"
@@ -727,6 +801,43 @@ function AnalyzerInner() {
                           className="w-full"
                         />
                       </div>
+
+                      {stage === "idea" || mode === "idea" ? (
+                        <div className="mt-2 rounded-3xl border border-white/10 bg-white/5 p-5">
+                          <div className="text-white font-semibold mb-1">Доказательства спроса (опционально, но повышает точность)</div>
+                          <div className="text-xs text-gray-400 mb-4">Эти поля повышают доверие к оценке и снижают риск «самооценки».</div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Интервью с клиентами</span>
+                                <HelpTip text={getAnalyzerHint("customerInterviewsCount")} />
+                              </div>
+                              <MoneyInput value={customerInterviewsCount} onChange={setCustomerInterviewsCount} placeholder="0" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Пилоты</span>
+                                <HelpTip text={getAnalyzerHint("pilotCount")} />
+                              </div>
+                              <MoneyInput value={pilotCount} onChange={setPilotCount} placeholder="0" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>LOI</span>
+                                <HelpTip text={getAnalyzerHint("loiCount")} />
+                              </div>
+                              <MoneyInput value={loiCount} onChange={setLoiCount} placeholder="0" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Лист ожидания</span>
+                                <HelpTip text={getAnalyzerHint("waitlistSize")} />
+                              </div>
+                              <MoneyInput value={waitlistSize} onChange={setWaitlistSize} placeholder="0" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
 
@@ -737,7 +848,7 @@ function AnalyzerInner() {
                           <span>
                             {t("analyzer.fields.tractionScore")} ({tractionScore})
                           </span>
-                          <HelpTip text={t("analyzer.fieldHelp.tractionScore")} />
+                          <HelpTip text={getAnalyzerHint("tractionScore", t("analyzer.fieldHelp.tractionScore"))} />
                         </div>
                         <input
                           type="range"
@@ -754,7 +865,7 @@ function AnalyzerInner() {
                           <span>
                             {t("analyzer.fields.teamStrength")} ({teamStrength})
                           </span>
-                          <HelpTip text={t("analyzer.fieldHelp.teamStrength")} />
+                          <HelpTip text={getAnalyzerHint("teamStrength", t("analyzer.fieldHelp.teamStrength"))} />
                         </div>
                         <input
                           type="range"
@@ -775,7 +886,7 @@ function AnalyzerInner() {
                           <span>
                             {t("analyzer.fields.grossMargin")} ({grossMarginPct}%)
                           </span>
-                          <HelpTip text={t("analyzer.fieldHelp.grossMargin")} />
+                          <HelpTip text={getAnalyzerHint("grossMarginPct", t("analyzer.fieldHelp.grossMargin"))} />
                         </div>
                         <input
                           type="range"
@@ -793,7 +904,7 @@ function AnalyzerInner() {
                             <span>
                               {t("analyzer.fields.monthlyChurnPct")} ({monthlyChurnPct}%)
                             </span>
-                            <HelpTip text={t("analyzer.fieldHelp.monthlyChurnPct")} />
+                            <HelpTip text={getAnalyzerHint("monthlyChurnPct", t("analyzer.fieldHelp.monthlyChurnPct"))} />
                           </div>
                           <input
                             type="range"
@@ -837,35 +948,35 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.newRevenueMonthly")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.newRevenueMonthly")} />
+                            <HelpTip text={getAnalyzerHint("newRevenueMonthly", t("analyzer.fieldHelp.newRevenueMonthly"))} />
                           </div>
                           <MoneyInput value={newRevenueMonthly} onChange={setNewRevenueMonthly} placeholder="0" />
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.salesMarketingSpend")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.salesMarketingSpend")} />
+                            <HelpTip text={getAnalyzerHint("salesMarketingSpend", t("analyzer.fieldHelp.salesMarketingSpend"))} />
                           </div>
                           <MoneyInput value={salesMarketingSpend} onChange={setSalesMarketingSpend} placeholder="0" />
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.arpu")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.arpu")} />
+                            <HelpTip text={getAnalyzerHint("arpu", t("analyzer.fieldHelp.arpu"))} />
                           </div>
                           <MoneyInput value={arpu} onChange={setArpu} placeholder="0" />
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.cac")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.cac")} />
+                            <HelpTip text={getAnalyzerHint("cac", t("analyzer.fieldHelp.cac"))} />
                           </div>
                           <MoneyInput value={cac} onChange={setCac} placeholder="0" />
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.paybackMonths")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.paybackMonths")} />
+                            <HelpTip text={getAnalyzerHint("paybackMonths", t("analyzer.fieldHelp.paybackMonths"))} />
                           </div>
                           <MoneyInput value={unitPaybackMonths} onChange={setUnitPaybackMonths} placeholder="0" />
                           <div className="mt-1 text-gray-500 text-xs">{t("analyzer.hint.paybackMonths")}</div>
@@ -875,7 +986,7 @@ function AnalyzerInner() {
                             <span>
                               {t("analyzer.fields.recurringShare")} ({Math.round(recurringShare * 100)}%)
                             </span>
-                            <HelpTip text={t("analyzer.fieldHelp.recurringShare")} />
+                            <HelpTip text={getAnalyzerHint("recurringShare", t("analyzer.fieldHelp.recurringShare"))} />
                           </div>
                           <input
                             type="range"
@@ -893,14 +1004,14 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.dau")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.dau")} />
+                            <HelpTip text={getAnalyzerHint("dau", t("analyzer.fieldHelp.dau"))} />
                           </div>
                           <MoneyInput value={dau} onChange={setDau} placeholder="0" />
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.mau")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.mau")} />
+                            <HelpTip text={getAnalyzerHint("mau", t("analyzer.fieldHelp.mau"))} />
                           </div>
                           <MoneyInput value={mau} onChange={setMau} placeholder="0" />
                         </div>
@@ -908,7 +1019,7 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.retentionD30")} ({retentionD30Pct}%)</span>
-                            <HelpTip text={t("analyzer.fieldHelp.retentionD30")} />
+                            <HelpTip text={getAnalyzerHint("retentionD30", t("analyzer.fieldHelp.retentionD30"))} />
                           </div>
                           <input
                             type="range"
@@ -923,7 +1034,7 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.repeatPurchaseRate")} ({repeatPurchaseRatePct}%)</span>
-                            <HelpTip text={t("analyzer.fieldHelp.repeatPurchaseRate")} />
+                            <HelpTip text={getAnalyzerHint("repeatPurchaseRate", t("analyzer.fieldHelp.repeatPurchaseRate"))} />
                           </div>
                           <input
                             type="range"
@@ -938,7 +1049,7 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.organicGrowthPct")} ({organicGrowthPct}%)</span>
-                            <HelpTip text={t("analyzer.fieldHelp.organicGrowthPct")} />
+                            <HelpTip text={getAnalyzerHint("organicGrowthPct", t("analyzer.fieldHelp.organicGrowthPct"))} />
                           </div>
                           <input
                             type="range"
@@ -953,11 +1064,45 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.viralCoefficient")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.viralCoefficient")} />
+                            <HelpTip text={getAnalyzerHint("viralCoefficient", t("analyzer.fieldHelp.viralCoefficient"))} />
                           </div>
                           <MoneyInput value={viralCoefficient} onChange={setViralCoefficient} placeholder="0" />
                         </div>
                       </div>
+
+                      {stage === "series_b" || stage === "growth" || stage === "exit" ? (
+                        <div className="mt-2 rounded-3xl border border-white/10 bg-white/5 p-5">
+                          <div className="text-white font-semibold mb-1">Метрики зрелого бизнеса (опционально)</div>
+                          <div className="text-xs text-gray-400 mb-4">
+                            Для поздних стадий эти поля существенно влияют на уверенность в оценке (качество роста и риск концентрации).
+                          </div>
+
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>NRR (Net Revenue Retention): {nrrPct}%</span>
+                              <HelpTip text={getAnalyzerHint("nrrPct")} />
+                            </div>
+                            <input type="range" min={0} max={160} step={1} value={nrrPct} onChange={(e) => setNrrPct(Number(e.target.value))} className="w-full" />
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Доля выручки топ‑клиента: {topCustomerSharePct}%</span>
+                                <HelpTip text={getAnalyzerHint("topCustomerSharePct")} />
+                              </div>
+                              <input type="range" min={0} max={100} step={1} value={topCustomerSharePct} onChange={(e) => setTopCustomerSharePct(Number(e.target.value))} className="w-full" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Концентрация выручки (оценка): {revenueConcentrationPct}%</span>
+                                <HelpTip text={getAnalyzerHint("revenueConcentrationPct")} />
+                              </div>
+                              <input type="range" min={0} max={100} step={1} value={revenueConcentrationPct} onChange={(e) => setRevenueConcentrationPct(Number(e.target.value))} className="w-full" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
 
@@ -967,14 +1112,14 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.burnMonthly")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.burnMonthly")} />
+                            <HelpTip text={getAnalyzerHint("burnMonthly", t("analyzer.fieldHelp.burnMonthly"))} />
                           </div>
                           <MoneyInput value={burnMonthly} onChange={setBurnMonthly} placeholder="0" />
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.cashOnHand")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.cashOnHand")} />
+                            <HelpTip text={getAnalyzerHint("cashOnHand", t("analyzer.fieldHelp.cashOnHand"))} />
                           </div>
                           <MoneyInput value={cashOnHand} onChange={setCashOnHand} placeholder="0" />
                         </div>
@@ -984,21 +1129,21 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.releasesPerMonth")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.releasesPerMonth")} />
+                            <HelpTip text={getAnalyzerHint("releasesPerMonth", t("analyzer.fieldHelp.releasesPerMonth"))} />
                           </div>
                           <MoneyInput value={releasesPerMonth} onChange={setReleasesPerMonth} placeholder="0" />
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.teamSize")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.teamSize")} />
+                            <HelpTip text={getAnalyzerHint("teamSize", t("analyzer.fieldHelp.teamSize"))} />
                           </div>
                           <MoneyInput value={teamSize} onChange={setTeamSize} placeholder="0" />
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.foundersFullTime")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.foundersFullTime")} />
+                            <HelpTip text={getAnalyzerHint("foundersFullTime", t("analyzer.fieldHelp.foundersFullTime"))} />
                           </div>
                           <select
                             className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white"
@@ -1012,14 +1157,14 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.tam")}</span>
-                            <HelpTip text={t("analyzer.fieldHelp.tam")} />
+                            <HelpTip text={getAnalyzerHint("tam", t("analyzer.fieldHelp.tam"))} />
                           </div>
                           <MoneyInput value={tam} onChange={setTam} placeholder="0" />
                         </div>
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.tamGrowthPct")} ({tamGrowthPct}%)</span>
-                            <HelpTip text={t("analyzer.fieldHelp.tamGrowthPct")} />
+                            <HelpTip text={getAnalyzerHint("tamGrowthPct", t("analyzer.fieldHelp.tamGrowthPct"))} />
                           </div>
                           <input
                             type="range"
@@ -1034,7 +1179,7 @@ function AnalyzerInner() {
                         <div>
                           <div className="text-xs text-gray-400 mb-2 flex items-center">
                             <span>{t("analyzer.fields.competitionDensity")} ({competitionDensityPct}%)</span>
-                            <HelpTip text={t("analyzer.fieldHelp.competitionDensity")} />
+                            <HelpTip text={getAnalyzerHint("competitionDensity", t("analyzer.fieldHelp.competitionDensity"))} />
                           </div>
                           <input
                             type="range"
@@ -1051,7 +1196,7 @@ function AnalyzerInner() {
                       <div>
                         <div className="text-xs text-gray-400 mb-2 flex items-center">
                           <span>{t("analyzer.fields.regulatory")}</span>
-                          <HelpTip text={t("analyzer.fieldHelp.regulatory")} />
+                          <HelpTip text={getAnalyzerHint("regulatoryRisk", t("analyzer.fieldHelp.regulatory"))} />
                         </div>
                         <select
                           className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white"
@@ -1069,7 +1214,7 @@ function AnalyzerInner() {
                       <div>
                         <div className="text-xs text-gray-400 mb-2 flex items-center">
                           <span>{t("analyzer.fields.tech")}</span>
-                          <HelpTip text={t("analyzer.fieldHelp.tech")} />
+                          <HelpTip text={getAnalyzerHint("techRisk", t("analyzer.fieldHelp.tech"))} />
                         </div>
                         <select
                           className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white"

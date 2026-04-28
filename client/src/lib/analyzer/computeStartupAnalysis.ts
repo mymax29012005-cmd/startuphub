@@ -1,4 +1,5 @@
 import type { StartupAnalysisInput, StartupAnalysisResult } from "./types";
+import { enrichAnalysisV2 } from "./v2/engine";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -197,7 +198,7 @@ export function computeStartupAnalysis(input: StartupAnalysisInput): StartupAnal
   const techRisk =
     input.tech === "low" ? 20 : input.tech === "medium" ? 50 : 80;
 
-  return {
+  const base: StartupAnalysisResult = {
     monthlyRevenue,
     arr,
     ltv,
@@ -244,5 +245,9 @@ export function computeStartupAnalysis(input: StartupAnalysisInput): StartupAnal
 
     breakEvenMonthlyRevenue,
   };
+
+  // v2 enrichment: stage-aware layers, explainability, ranges, anti-gaming.
+  // Safe for backward compatibility: old consumers can ignore new fields.
+  return enrichAnalysisV2(input, base);
 }
 

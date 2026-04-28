@@ -43,12 +43,12 @@ function fill(template: string, vars: Record<string, string | number>) {
 
 function stageLabel(stage: string) {
   const map: Record<string, string> = {
-    idea: "Idea",
-    seed: "Seed",
+    idea: "идея",
+    seed: "seed (посев)",
     series_a: "Series A",
     series_b: "Series B",
-    growth: "Growth",
-    exit: "Exit",
+    growth: "рост",
+    exit: "exit",
   };
   return map[stage] ?? stage;
 }
@@ -139,6 +139,8 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
 
   const sp = Number(result.successProbability) || 0;
   const spPct = Math.round(sp * 100);
+  const spRange = (result as any).successProbabilityRange as { low: number; high: number } | undefined;
+  const confidenceLabel = (result as any).estimateConfidenceLabel as "low" | "medium" | "high" | undefined;
 
   const growthScore = Number(result.growthScore) || 0;
   const unitScore = Number(result.unitEconomicsScore) || 0;
@@ -177,6 +179,8 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
 
   const executiveSummary = [
     fill(investmentMemoTexts.executive[openKey], { stage: stageLabel(stage), spPct }),
+    spRange ? `Диапазон вероятности: ${spRange.low}–${spRange.high}%.` : "",
+    confidenceLabel ? `Уверенность в оценке: ${confidenceLabel === "high" ? "высокая" : confidenceLabel === "medium" ? "средняя" : "низкая"}.` : "",
     fill(investmentMemoTexts.executive.whatIs, { title, productLine, industry }),
     investmentMemoTexts.executive[qualityKey],
     fill(investmentMemoTexts.executive.strengthPrefix, { strength }),
@@ -365,20 +369,31 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
   }
   const actionPriorities = gaps.slice(0, 5).map(({ action, impact, improves }) => ({ action, impact, improves }));
 
-  let signal: InvestmentMemoVerdict;
-  let verdictBody: string;
-  if (sp >= 0.72 && invScore >= 68 && riskAvg <= 42) {
-    signal = "BUY";
-    verdictBody = investmentMemoTexts.verdict.buy;
+  let signal: InvestmentMemoVerdict = "WATCH";
+  let verdictBody: string = investmentMemoTexts.verdict.watch;
+  const v2Verdict = (result as any).decisionReasoning?.verdict as InvestmentMemoVerdict | undefined;
+  const decide = (v: InvestmentMemoVerdict) => {
+    signal = v;
+    verdictBody =
+      v === "BUY"
+        ? investmentMemoTexts.verdict.buy
+        : v === "HOLD"
+          ? investmentMemoTexts.verdict.hold
+          : v === "WATCH"
+            ? investmentMemoTexts.verdict.watch
+            : investmentMemoTexts.verdict.avoid;
+  };
+
+  if (v2Verdict) {
+    decide(v2Verdict);
+  } else if (sp >= 0.72 && invScore >= 68 && riskAvg <= 42) {
+    decide("BUY");
   } else if (sp >= 0.48 && invScore >= 48 && riskAvg <= 62) {
-    signal = "HOLD";
-    verdictBody = investmentMemoTexts.verdict.hold;
+    decide("HOLD");
   } else if (sp >= 0.28 && riskAvg < 78) {
-    signal = "WATCH";
-    verdictBody = investmentMemoTexts.verdict.watch;
+    decide("WATCH");
   } else {
-    signal = "AVOID";
-    verdictBody = investmentMemoTexts.verdict.avoid;
+    decide("AVOID");
   }
 
   const finalVerdict = {

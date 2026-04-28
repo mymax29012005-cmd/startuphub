@@ -20,8 +20,9 @@ export type StartupAnalysisInput = {
   description?: string;
   industryLabel?: string;
 
-  // Legacy subjective fields (kept for backward compatibility / history UI).
-  // IMPORTANT: must not affect the score model.
+  // Subjective fields (kept for backward compatibility / history UI).
+  // v2: may be used as bounded signals on early stages, but anti-gaming rules
+  // reduce confidence when they contradict objective metrics.
   marketValidation: number; // 0..100 (ignored by the math model)
   competition: CompetitionLevel; // legacy select, mapped to competitionDensity in the new model when needed
   moatStrength: number; // 0..100 (ignored by the math model)
@@ -71,9 +72,65 @@ export type StartupAnalysisInput = {
 
   regulatory: RiskLevel;
   tech: RiskLevel;
+
+  // Optional evidence fields (v2). Safe for backward compatibility.
+  customerInterviewsCount?: number; // count
+  pilotCount?: number; // count
+  loiCount?: number; // count
+  waitlistSize?: number; // count
+
+  // Mature-stage optional fields (v2).
+  nrrPct?: number; // %
+  revenueConcentrationPct?: number; // % revenue from top customer (0..100)
+  topCustomerSharePct?: number; // % revenue share of top customer (0..100)
+};
+
+export type EstimateConfidenceLabel = "low" | "medium" | "high";
+
+export type InvestmentVerdict = "BUY" | "HOLD" | "WATCH" | "AVOID";
+
+export type ConsistencyChecks = {
+  warnings: string[];
+  penalties: string[];
+  contradictionsFound: number;
+};
+
+export type DecisionReasoning = {
+  verdict: InvestmentVerdict;
+  because: string[];
+  blockers: string[];
+  topPositiveDrivers: string[];
+  topNegativeDrivers: string[];
+  whatChangesDecision: string[];
+  nextMilestoneFocus: string[];
+};
+
+export type SensitivityDriver = {
+  key: string;
+  label: string;
+  direction: "positive" | "negative";
+  impactLabel: string;
+  description: string;
+};
+
+export type ActionPriorityItem = {
+  title: string;
+  reason: string;
+  expectedImpact: string;
+  improves: string[];
+  priority: "high" | "medium" | "low";
+};
+
+export type RedFlags = {
+  red: string[];
+  yellow: string[];
+  info: string[];
 };
 
 export type StartupAnalysisResult = {
+  // Versioning (v2 adds explainability & stage-aware layers).
+  analysisVersion?: "v1" | "v2";
+
   monthlyRevenue: number;
   arr: number;
   ltv: number;
@@ -110,6 +167,25 @@ export type StartupAnalysisResult = {
 
   riskAvg: number; // 0..100 (higher = worse)
   successProbability: number; // 0..1
+
+  // v2: ranges & confidence layers
+  businessScore?: number; // 0..100
+  dataConfidenceScore?: number; // 0..100
+  dataCompletenessPct?: number; // 0..100
+  stageFitScore?: number; // 0..100
+  consistencyScore?: number; // 0..100
+  estimateConfidenceLabel?: EstimateConfidenceLabel;
+  successProbabilityRange?: { low: number; high: number }; // percent 0..100
+  valuationRangeHuman?: { low: string; base: string; high: string };
+
+  strongestArea?: string;
+  mainBottleneck?: string;
+
+  decisionReasoning?: DecisionReasoning;
+  consistencyChecks?: ConsistencyChecks;
+  sensitivityAnalysis?: { topDrivers: SensitivityDriver[] };
+  actionPriorities?: ActionPriorityItem[];
+  redFlags?: RedFlags;
 
   discountRate: number; // 0..1
   yearCashflows: number[];
