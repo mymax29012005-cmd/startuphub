@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { HelpTip } from "@/components/analyzer/HelpTip";
 import { ReportHero } from "@/components/analyzer/report/ReportHero";
@@ -12,6 +12,15 @@ import { DriversPanel } from "@/components/analyzer/report/DriversPanel";
 import { RiskPressurePanel, type PressureItem } from "@/components/analyzer/report/RiskPressurePanel";
 import { DataConfidencePanel } from "@/components/analyzer/report/DataConfidencePanel";
 import { ScoreBreakdownPanel } from "@/components/analyzer/report/ScoreBreakdownPanel";
+import { StrengthsPanel } from "@/components/analyzer/report/StrengthsPanel";
+import { BottlenecksPanel } from "@/components/analyzer/report/BottlenecksPanel";
+import { RevenueQualityPanel } from "@/components/analyzer/report/RevenueQualityPanel";
+import { MoatEvidencePanel } from "@/components/analyzer/report/MoatEvidencePanel";
+import { MarketStructurePanel } from "@/components/analyzer/report/MarketStructurePanel";
+import { ScenariosPanel } from "@/components/analyzer/report/ScenariosPanel";
+import { SwotPanel } from "@/components/analyzer/report/SwotPanel";
+import { FunnelQualityPanel } from "@/components/analyzer/report/FunnelQualityPanel";
+import { VerdictShiftPanel } from "@/components/analyzer/report/VerdictShiftPanel";
 import type { ReportNarrative } from "@/lib/analyzer/reportNarrativeEngine";
 import type { StartupAnalysisInput, StartupAnalysisResult } from "@/lib/analyzer/types";
 import type { InvestmentMemoVerdict } from "@/lib/analyzer/investmentMemoEngine";
@@ -86,7 +95,18 @@ export function AnalyzerIntelligenceDashboard({
   const spRange = report.successProbabilityRange ?? { low: Math.max(0, spPct - 12), high: Math.min(100, spPct + 12) };
   const verdict = report.decisionReasoning?.verdict ?? memo.finalVerdict.signal;
   const viewModes = ["founder", "investor"] as const;
-  const [viewMode, setViewMode] = useState<(typeof viewModes)[number]>("founder");
+  const [viewMode, setViewMode] = useState<(typeof viewModes)[number]>(() => {
+    if (typeof window === "undefined") return "founder";
+    const v = new URLSearchParams(window.location.search).get("view");
+    return v === "investor" ? "investor" : "founder";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", viewMode);
+    window.history.replaceState({}, "", url.toString());
+  }, [viewMode]);
 
   const dataConfidence = report.dataConfidenceScore ?? report.confidenceScore ?? 0;
   const consistencyScore = report.consistencyScore ?? 0;
@@ -129,6 +149,105 @@ export function AnalyzerIntelligenceDashboard({
     return parts.join(" · ") || "—";
   }, [report.strongestArea, report.mainBottleneck]);
 
+  const renderKpi = () => (
+    <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+      <div className="ia-w-12 ia-card">
+        <div className="text-white font-semibold mb-2">{viewMode === "investor" ? "KPI overview (факты)" : "Ключевые метрики (что это значит сейчас)"}</div>
+        <div className="ia-small mb-4">
+          {viewMode === "investor"
+            ? "Крупные значения + короткие пояснения. Это «фактовая шапка» для принятия решения."
+            : "Крупные значения + что они означают для действий. Цель — быстро понять, что улучшать в первую очередь."}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <MetricCard title="Рост месяц к месяцу" value={`${growthPct.toFixed(1)}%`} hint={viewMode === "investor" ? "Темп роста по вводным" : "Что происходит с ростом сейчас"} barPct={clamp(growthPct * 4, 0, 100)} barTone="cyan" tooltip={getAnalyzerHint("growthScore")} />
+          <MetricCard title="LTV / CAC" value={ltvCac > 0 ? ltvCac.toFixed(2) : "—"} hint={viewMode === "investor" ? "Экономика привлечения" : "Есть ли экономика масштаба"} barPct={clamp((ltvCac / 4) * 100, 0, 100)} barTone="violet" tooltip={getAnalyzerHint("ltvToCac")} />
+          <MetricCard title="Удержание D30" value={retD30 > 0 ? `${retD30}%` : "—"} hint={viewMode === "investor" ? "Сигнал PMF" : "Закрепляется ли ценность"} barPct={clamp(retD30 * 3.2, 0, 100)} barTone="mint" tooltip={getAnalyzerHint("retentionD30")} />
+          <MetricCard title="Запас денег" value={runwayLabel} hint={viewMode === "investor" ? "Сколько месяцев до кассы" : "Сколько времени есть на улучшения"} barPct={clamp(runwayM * 6.5, 0, 100)} barTone="rose" tooltip={getAnalyzerHint("runwayMonths")} />
+
+          <MetricCard title="Валовая маржа" value={`${Math.round((report.grossMargin || 0) * 100)}%`} hint={viewMode === "investor" ? "Качество маржи" : "Сколько остаётся на рост"} barPct={clamp((report.grossMargin || 0) * 120, 0, 100)} barTone="cyan" tooltip={getAnalyzerHint("grossMarginPct")} />
+          <MetricCard title="Окупаемость CAC" value={report.paybackMonths > 0 ? `${report.paybackMonths.toFixed(0)} мес` : "—"} hint={viewMode === "investor" ? "Payback" : "Когда возвращаются деньги"} barPct={clamp(report.paybackMonths > 0 ? 100 - report.paybackMonths * 6 : 0, 0, 100)} barTone="violet" tooltip={getAnalyzerHint("paybackMonths")} />
+          <MetricCard title="Доля повторной выручки" value={`${Math.round((analysisInput.recurringShare || 0) * 100)}%`} hint={viewMode === "investor" ? "Повторяемость" : "Насколько выручка предсказуема"} barPct={clamp((analysisInput.recurringShare || 0) * 100, 0, 100)} barTone="mint" tooltip={getAnalyzerHint("recurringShare")} />
+          <MetricCard title="Burn‑мультипликатор" value={(report.burnMultiple || 0).toFixed(1)} hint={viewMode === "investor" ? "Эффективность роста" : "Сколько burn на 1₽ новой выручки"} barPct={clamp(report.burnMultiple > 0 ? 100 - report.burnMultiple * 18 : 0, 0, 100)} barTone="rose" tooltip={getAnalyzerHint("burnMultiple")} />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDataAndScores = () => (
+    <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+      <div className="ia-w-4">
+        <DataConfidencePanel
+          confidence={dataConfidence}
+          completeness={completenessPct}
+          consistency={consistencyScore}
+          stageFit={stageFitScore}
+          label={report.estimateConfidenceLabel}
+          contradictionsFound={contradictionsFound}
+          warnings={allConsistencyWarnings}
+          penalties={allConsistencyPenalties}
+          viewMode={viewMode}
+        />
+      </div>
+      <div className="ia-w-8">
+        {viewMode === "investor" ? (
+          <ScoreBreakdownPanel
+            pmf={report.pmfScore}
+            growth={report.growthScore}
+            unit={report.unitEconomicsScore}
+            eff={report.efficiencyScore}
+            market={report.marketScore}
+            investor={report.investorScore}
+          />
+        ) : (
+          <div className="ii-panel">
+            <div className="ii-panelTitle">Короткая интерпретация</div>
+            <div className="ii-panelSubtitle">
+              Диагноз → смысл → действие. Здесь меньше инвест‑жаргона и больше прикладного вывода.
+            </div>
+            <div className="ii-driverList" style={{ marginTop: 14 }}>
+              {memo.executiveSummary.split(". ").slice(0, 4).map((s, idx) => (
+                <div key={idx} className="ii-driverItem">
+                  {s.trim()}
+                  {s.trim().endsWith(".") ? "" : "."}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderFullDoc = () => (
+    <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+      <div className="ia-w-12">
+        <div className="ii-panel">
+          <div className="ii-panelTitle">Полный документ (детерминированный)</div>
+          <div className="ii-panelSubtitle">
+            {viewMode === "investor"
+              ? "Полный текст для сделки/инвесткомитета. Генерация — строго по правилам, без ИИ."
+              : "Полный текст для заметок/Notion. Генерация — строго по правилам, без ИИ."}
+            <HelpTip text="Этот текст генерируется детерминированно из вводных и правил. Никакого ИИ/LLM." />
+          </div>
+          <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 12 }}>
+            <Button type="button" variant="secondary" className="h-10" onClick={() => setShowFullDoc((v) => !v)}>
+              {showFullDoc ? "Скрыть текст" : "Показать текст"}
+            </Button>
+            <div className="ia-small">
+              Версия: <b className="text-[rgba(234,240,255,0.9)]">{report.analysisVersion ?? "v1"}</b> · Формат:{" "}
+              <b className="text-[rgba(234,240,255,0.9)]">plain</b>
+            </div>
+          </div>
+          {showFullDoc ? (
+            <pre className="ii-pre" style={{ marginTop: 12, whiteSpace: "pre-wrap" }}>
+              {fullDoc}
+            </pre>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="ia-container space-y-4">
       <ReportTopBar
@@ -143,109 +262,149 @@ export function AnalyzerIntelligenceDashboard({
         saving={saving}
         saved={saved}
       />
-      <ReportHero input={analysisInput} report={report} verdict={String(verdict)} spRange={spRange} valuationHuman={valuationHuman} heroSubtitle={heroSubtitle} />
+      <ReportHero input={analysisInput} report={report} verdict={String(verdict)} spRange={spRange} valuationHuman={valuationHuman} heroSubtitle={heroSubtitle} viewMode={viewMode} />
 
-      {/* KPI grid — premium metric cards like redesign.html screenshots */}
-      <div className="ia-grid">
-        <div className="ia-w-12 ia-card">
-          <div className="text-white font-semibold mb-2">Ключевые метрики, которые хочется читать глазами</div>
-          <div className="ia-small mb-4">Большие значения + короткие комментарии + мини‑индикаторы. Никаких «табличек ради таблиц».</div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <MetricCard title="Рост месяц к месяцу" value={`${growthPct.toFixed(1)}%`} hint="Темп роста выручки/базы по вводным" barPct={clamp(growthPct * 4, 0, 100)} barTone="cyan" tooltip={getAnalyzerHint("growthScore")} />
-            <MetricCard title="LTV / CAC" value={ltvCac > 0 ? ltvCac.toFixed(2) : "—"} hint="Экономика привлечения" barPct={clamp((ltvCac / 4) * 100, 0, 100)} barTone="violet" tooltip={getAnalyzerHint("ltvToCac")} />
-            <MetricCard title="Удержание D30" value={retD30 > 0 ? `${retD30}%` : "—"} hint="Главный сигнал устойчивости ценности" barPct={clamp(retD30 * 3.2, 0, 100)} barTone="mint" tooltip={getAnalyzerHint("retentionD30")} />
-            <MetricCard title="Запас денег (runway)" value={runwayLabel} hint="Сколько месяцев до кассы" barPct={clamp(runwayM * 6.5, 0, 100)} barTone="rose" tooltip={getAnalyzerHint("runwayMonths")} />
-
-            <MetricCard title="Валовая маржа" value={`${Math.round((report.grossMargin || 0) * 100)}%`} hint="Сколько остаётся после себестоимости" barPct={clamp((report.grossMargin || 0) * 120, 0, 100)} barTone="cyan" tooltip={getAnalyzerHint("grossMarginPct")} />
-            <MetricCard title="Окупаемость CAC" value={report.paybackMonths > 0 ? `${report.paybackMonths.toFixed(0)} мес` : "—"} hint="Окупаемость привлечения" barPct={clamp(report.paybackMonths > 0 ? 100 - report.paybackMonths * 6 : 0, 0, 100)} barTone="violet" tooltip={getAnalyzerHint("paybackMonths")} />
-            <MetricCard title="Доля повторной выручки" value={`${Math.round((analysisInput.recurringShare || 0) * 100)}%`} hint="Повторяемость выручки" barPct={clamp((analysisInput.recurringShare || 0) * 100, 0, 100)} barTone="mint" tooltip={getAnalyzerHint("recurringShare")} />
-            <MetricCard title="Burn‑мультипликатор" value={(report.burnMultiple || 0).toFixed(1)} hint="Эффективность роста (ниже — лучше)" barPct={clamp(report.burnMultiple > 0 ? 100 - report.burnMultiple * 18 : 0, 0, 100)} barTone="rose" tooltip={getAnalyzerHint("burnMultiple")} />
+      {/* Founder = action-first, Investor = judgment-first */}
+      {viewMode === "founder" ? (
+        <>
+          {renderKpi()}
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-6">
+              <StrengthsPanel report={report} decision={report.decisionReasoning} />
+            </div>
+            <div className="ia-w-6">
+              <BottlenecksPanel report={report} decision={report.decisionReasoning} />
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="ia-grid">
-        <div className="ia-w-8">
-          <ActionPrioritySystem actions={report.actionPriorities} />
-        </div>
-        <div className="ia-w-4">
-          <RedFlagsPanel flags={report.redFlags} />
-        </div>
-      </div>
-
-      <div className="ia-grid">
-        <div className="ia-w-8">
-          <DriversPanel decision={report.decisionReasoning} />
-        </div>
-        <div className="ia-w-4">
-          <RiskPressurePanel items={pressureItems} />
-        </div>
-      </div>
-
-      <div className="ia-grid">
-        <div className="ia-w-4">
-          <DataConfidencePanel
-            confidence={dataConfidence}
-            completeness={completenessPct}
-            consistency={consistencyScore}
-            stageFit={stageFitScore}
-            label={report.estimateConfidenceLabel}
-            contradictionsFound={contradictionsFound}
-            warnings={allConsistencyWarnings}
-            penalties={allConsistencyPenalties}
-            viewMode={viewMode}
-          />
-        </div>
-        <div className="ia-w-8">
-          {viewMode === "investor" ? (
-            <ScoreBreakdownPanel
-              pmf={report.pmfScore}
-              growth={report.growthScore}
-              unit={report.unitEconomicsScore}
-              eff={report.efficiencyScore}
-              market={report.marketScore}
-              investor={report.investorScore}
-            />
-          ) : (
-            <div className="ii-panel">
-              <div className="ii-panelTitle">Почему этот отчёт хочется читать</div>
-              <div className="ii-panelSubtitle">
-                Это не «плохой/хороший стартап», а карта сильных сторон, ограничителей и действий на 30/60/90 дней — с отделением качества бизнеса от качества оценки.
-              </div>
-              <div className="ii-driverList" style={{ marginTop: 14 }}>
-                {memo.executiveSummary.split(". ").slice(0, 4).map((s, idx) => (
-                  <div key={idx} className="ii-driverItem">{s.trim()}{s.trim().endsWith(".") ? "" : "."}</div>
-                ))}
-              </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-4">
+              <MoatEvidencePanel input={analysisInput} report={report} viewMode={viewMode} />
             </div>
-          )}
-        </div>
-      </div>
-
-      <div className="ia-grid">
-        <div className="ia-w-12">
-          <div className="ii-panel">
-            <div className="ii-panelTitle">Полный документ (детерминированный)</div>
-            <div className="ii-panelSubtitle">
-              Если нужно скопировать в Notion/Doc или приложить к сделке — здесь полный текстовый отчёт без «воды», но в одном блоке.
-              <HelpTip text="Этот текст генерируется детерминированно из вводных и правил. Никакого ИИ/LLM." />
+            <div className="ia-w-8">
+              <RevenueQualityPanel report={report} viewMode={viewMode} />
             </div>
-            <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 12 }}>
-              <Button type="button" variant="secondary" className="h-10" onClick={() => setShowFullDoc((v) => !v)}>
-                {showFullDoc ? "Скрыть текст" : "Показать текст"}
-              </Button>
-              <div className="ia-small">
-                Версия: <b className="text-[rgba(234,240,255,0.9)]">{report.analysisVersion ?? "v1"}</b> · Формат: <b className="text-[rgba(234,240,255,0.9)]">plain</b>
-              </div>
-            </div>
-            {showFullDoc ? (
-              <pre className="ii-pre" style={{ marginTop: 12, whiteSpace: "pre-wrap" }}>
-                {fullDoc}
-              </pre>
-            ) : null}
           </div>
-        </div>
-      </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-8">
+              <ActionPrioritySystem actions={report.actionPriorities} />
+            </div>
+            <div className="ia-w-4">
+              <RedFlagsPanel flags={report.redFlags} />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-8">
+              <DriversPanel decision={report.decisionReasoning} />
+            </div>
+            <div className="ia-w-4">
+              <DataConfidencePanel
+                confidence={dataConfidence}
+                completeness={completenessPct}
+                consistency={consistencyScore}
+                stageFit={stageFitScore}
+                label={report.estimateConfidenceLabel}
+                contradictionsFound={contradictionsFound}
+                warnings={allConsistencyWarnings}
+                penalties={allConsistencyPenalties}
+                viewMode={viewMode}
+              />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-4">
+              <FunnelQualityPanel report={report} viewMode={viewMode} />
+            </div>
+            <div className="ia-w-8">
+              <SwotPanel swot={report.swot} viewMode={viewMode} />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-8" />
+            <div className="ia-w-4">
+              <ScenariosPanel scenarios={report.scenarioSummary} viewMode={viewMode} />
+            </div>
+          </div>
+          {renderFullDoc()}
+        </>
+      ) : (
+        <>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-8">
+              <DriversPanel decision={report.decisionReasoning} />
+            </div>
+            <div className="ia-w-4">
+              <DataConfidencePanel
+                confidence={dataConfidence}
+                completeness={completenessPct}
+                consistency={consistencyScore}
+                stageFit={stageFitScore}
+                label={report.estimateConfidenceLabel}
+                contradictionsFound={contradictionsFound}
+                warnings={allConsistencyWarnings}
+                penalties={allConsistencyPenalties}
+                viewMode={viewMode}
+              />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-12">
+              <VerdictShiftPanel report={report} />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-6">
+              <RevenueQualityPanel report={report} viewMode={viewMode} />
+            </div>
+            <div className="ia-w-6">
+              <MoatEvidencePanel input={analysisInput} report={report} viewMode={viewMode} />
+            </div>
+          </div>
+          {renderKpi()}
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-4">
+              <FunnelQualityPanel report={report} viewMode={viewMode} />
+            </div>
+            <div className="ia-w-8">
+              <RiskPressurePanel items={pressureItems} />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-8">
+              <ScoreBreakdownPanel
+                pmf={report.pmfScore}
+                growth={report.growthScore}
+                unit={report.unitEconomicsScore}
+                eff={report.efficiencyScore}
+                market={report.marketScore}
+                investor={report.investorScore}
+              />
+            </div>
+            <div className="ia-w-4" />
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-6">
+              <MarketStructurePanel report={report} viewMode={viewMode} />
+            </div>
+            <div className="ia-w-6">
+              <SwotPanel swot={report.swot} viewMode={viewMode} />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-8">
+              <ActionPrioritySystem actions={report.actionPriorities} />
+            </div>
+            <div className="ia-w-4">
+              <RedFlagsPanel flags={report.redFlags} />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-12">
+              <ScenariosPanel scenarios={report.scenarioSummary} viewMode={viewMode} />
+            </div>
+          </div>
+          {renderFullDoc()}
+        </>
+      )}
     </div>
   );
 }

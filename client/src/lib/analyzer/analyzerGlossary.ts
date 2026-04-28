@@ -75,12 +75,37 @@ export type GlossaryKey =
   // Evidence (v2)
   | "customerInterviewsCount"
   | "pilotCount"
+  | "paidPilotCount"
   | "loiCount"
   | "waitlistSize"
+  | "founderSalesCallsCount"
+  | "designPartnerCount"
   // Mature (v2)
   | "nrrPct"
+  | "grrPct"
   | "topCustomerSharePct"
-  | "revenueConcentrationPct";
+  | "top3CustomersSharePct"
+  | "oneOffRevenueSharePct"
+  | "pilotRevenueSharePct"
+  | "revenueConcentrationPct"
+  // Funnel quality (v2)
+  | "visitorToSignupConversionPct"
+  | "signupToActivationPct"
+  | "activationToPaidPct"
+  | "timeToValueDays"
+  | "firstKeyActionCompletionPct"
+  // Objective layers (v2)
+  | "revenueQualityScore"
+  | "concentrationRiskScore"
+  | "moatEvidenceScore"
+  | "moatGapFlag"
+  | "marketStructurePressureScore"
+  | "buyerPowerScore"
+  | "supplierPowerScore"
+  | "threatOfNewEntrantsScore"
+  | "substitutePressureScore"
+  | "rivalryScore"
+  | "swot";
 
 type GlossaryItem = {
   title: string;
@@ -367,6 +392,10 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     title: "Пилоты",
     short: "Количество пилотов/PoC с реальными клиентами. Это сильный детерминированный сигнал спроса.",
   },
+  paidPilotCount: {
+    title: "Платные пилоты",
+    short: "Количество платных пилотов/POC. Сильнее, чем интерес: это сигнал willingness‑to‑pay.",
+  },
   loiCount: {
     title: "LOI",
     short: "Письменные намерения/LOI — подтверждение потенциальной сделки или интереса.",
@@ -375,18 +404,108 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     title: "Waitlist",
     short: "Размер списка ожидания. Важно оценивать не только размер, но и конверсию в активацию.",
   },
+  founderSalesCallsCount: {
+    title: "Продажные звонки",
+    short: "Сколько разговоров с потенциальными покупателями провели фаундеры. На ранней стадии — объективный evidence‑сигнал.",
+  },
+  designPartnerCount: {
+    title: "Design partners",
+    short: "Партнёры, с которыми вы делаете продукт. Сигнал глубины ICP и ценностного предложения.",
+  },
 
   nrrPct: {
     title: "NRR",
     short: "Net Revenue Retention (%): удержание и расширение выручки по существующим клиентам. >100% — сильный сигнал качества роста.",
   },
+  grrPct: {
+    title: "GRR",
+    short: "Gross Revenue Retention (%): удержание выручки без expansion. Помогает увидеть «протекающее ведро».",
+  },
   topCustomerSharePct: {
     title: "Доля выручки топ‑клиента",
     short: "Сколько % выручки даёт один крупнейший клиент. Чем выше — тем выше риск концентрации.",
   },
+  top3CustomersSharePct: {
+    title: "Доля топ‑3 клиентов",
+    short: "Суммарная доля выручки топ‑3 клиентов (%). Показывает зависимость от нескольких аккаунтов.",
+  },
+  oneOffRevenueSharePct: {
+    title: "Доля разовой выручки",
+    short: "Процент выручки, которая не повторяется (one‑off). Чем выше — тем ниже устойчивость.",
+  },
+  pilotRevenueSharePct: {
+    title: "Доля пилотной выручки",
+    short: "Процент выручки из пилотов/POC. Помогает не переоценить «пилотные деньги» как устойчивый ARR.",
+  },
   revenueConcentrationPct: {
     title: "Концентрация выручки",
     short: "Оценка концентрации выручки на нескольких крупнейших клиентах/контрагентах. Высокие значения увеличивают риск.",
+  },
+
+  visitorToSignupConversionPct: {
+    title: "Конверсия визит → регистрация",
+    short: "Верх воронки. Низкая конверсия часто означает проблему позиционирования/оффера.",
+  },
+  signupToActivationPct: {
+    title: "Конверсия регистрация → активация",
+    short: "Переход к моменту ценности. Сильный предиктор retention.",
+  },
+  activationToPaidPct: {
+    title: "Конверсия активация → оплата",
+    short: "Насколько активация превращается в деньги. Влияет на payback и масштабируемость.",
+  },
+  timeToValueDays: {
+    title: "Time‑to‑value (дней)",
+    short: "Сколько дней до первого результата. Чем меньше — тем легче удержание и продажи.",
+  },
+  firstKeyActionCompletionPct: {
+    title: "Доля ключевого действия",
+    short: "Процент пользователей, которые делают ключевое действие. Часто объясняет будущий retention.",
+  },
+
+  revenueQualityScore: {
+    title: "Качество выручки",
+    short: "Сводный слой (0–100): повторяемость + (NRR/GRR при наличии) минус концентрация и доля разовых/пилотных денег.",
+  },
+  concentrationRiskScore: {
+    title: "Риск концентрации",
+    short: "Риск зависимости от нескольких клиентов (0–100, выше = хуже).",
+  },
+  moatEvidenceScore: {
+    title: "Moat evidence",
+    short: "Подтверждённость moat (0–100) по структурным признакам: данные, switching costs, интеграции, канал, сеть и т.д.",
+  },
+  moatGapFlag: {
+    title: "Разрыв moat",
+    short: "Флаг: заявленный moat высокий, но evidence низкий. Anti‑gaming сигнал.",
+  },
+  marketStructurePressureScore: {
+    title: "Давление структуры рынка",
+    short: "Porter‑lite сводка (0–100, выше = хуже). Помогает объяснять market/risk слой.",
+  },
+  buyerPowerScore: {
+    title: "Buyer power",
+    short: "Сила покупателя (0–100): насколько легко клиенту давить на цену/условия. Выше = хуже для маржи.",
+  },
+  supplierPowerScore: {
+    title: "Supplier power",
+    short: "Сила поставщиков (0–100): зависимость от платформ/поставщиков/каналов. Выше = хуже.",
+  },
+  threatOfNewEntrantsScore: {
+    title: "Threat of new entrants",
+    short: "Угроза новых игроков (0–100): ниже барьеры — выше риск входа конкурентов. Выше = хуже.",
+  },
+  substitutePressureScore: {
+    title: "Substitute pressure",
+    short: "Давление заменителей (0–100): насколько легко заменить продукт альтернативой. Выше = хуже.",
+  },
+  rivalryScore: {
+    title: "Rivalry",
+    short: "Конкурентная борьба (0–100): насколько агрессивна конкуренция. Выше = хуже.",
+  },
+  swot: {
+    title: "SWOT (авто)",
+    short: "Авто‑SWOT строится rule‑based из метрик и слоёв и служит structured summary (2–4 пункта на квадрант).",
   },
 };
 

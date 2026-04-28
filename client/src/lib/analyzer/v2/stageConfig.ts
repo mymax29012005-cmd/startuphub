@@ -96,7 +96,17 @@ export function getStageAnalysisConfig(stage: StartupStage, mode: AnalyzerMode):
         subjectiveIdeaSignals: 0.35,
       },
       required: ["stage", "mode", "tam", "competitionDensity", "foundersFullTime", "teamStrength", "marketValidation"],
-      desired: ["tamGrowthPct", "moatStrength", "customerInterviewsCount", "pilotCount", "loiCount", "waitlistSize"],
+      desired: [
+        "tamGrowthPct",
+        "moatStrength",
+        "customerInterviewsCount",
+        "pilotCount",
+        "paidPilotCount",
+        "loiCount",
+        "waitlistSize",
+        "founderSalesCallsCount",
+        "designPartnerCount",
+      ],
       thresholds,
     };
   }
@@ -114,7 +124,22 @@ export function getStageAnalysisConfig(stage: StartupStage, mode: AnalyzerMode):
         subjectiveIdeaSignals: 0.04,
       },
       required: ["stage", "mode", "grossMarginPct", "recurringShare", "monthlyChurnPct", "burnMonthly", "cashOnHand", "retentionD30"],
-      desired: ["activationRate", "conversionRate", "dau", "mau", "monthlyRevenue", "cac", "unitPaybackMonths", "releasesPerMonth", "teamSize"],
+      desired: [
+        "activationRate",
+        "conversionRate",
+        "dau",
+        "mau",
+        "monthlyRevenue",
+        "cac",
+        "unitPaybackMonths",
+        "releasesPerMonth",
+        "teamSize",
+        "visitorToSignupConversionPct",
+        "signupToActivationPct",
+        "activationToPaidPct",
+        "timeToValueDays",
+        "firstKeyActionCompletionPct",
+      ],
       thresholds,
     };
   }
@@ -132,7 +157,20 @@ export function getStageAnalysisConfig(stage: StartupStage, mode: AnalyzerMode):
         subjectiveIdeaSignals: 0.02,
       },
       required: ["stage", "mode", "monthlyRevenue", "grossMarginPct", "cac", "unitPaybackMonths", "burnMonthly", "cashOnHand", "retentionD30"],
-      desired: ["newRevenueMonthly", "salesMarketingSpend", "organicGrowthPct", "releasesPerMonth", "teamSize", "nrrPct", "revenueConcentrationPct", "topCustomerSharePct"],
+      desired: [
+        "newRevenueMonthly",
+        "salesMarketingSpend",
+        "organicGrowthPct",
+        "releasesPerMonth",
+        "teamSize",
+        "nrrPct",
+        "grrPct",
+        "revenueConcentrationPct",
+        "topCustomerSharePct",
+        "top3CustomersSharePct",
+        "oneOffRevenueSharePct",
+        "pilotRevenueSharePct",
+      ],
       thresholds,
     };
   }
@@ -150,7 +188,18 @@ export function getStageAnalysisConfig(stage: StartupStage, mode: AnalyzerMode):
         subjectiveIdeaSignals: 0.02,
       },
       required: ["stage", "mode", "monthlyRevenue", "grossMarginPct", "cac", "unitPaybackMonths", "burnMonthly", "cashOnHand", "retentionD30"],
-      desired: ["nrrPct", "revenueConcentrationPct", "topCustomerSharePct", "dau", "mau", "organicGrowthPct"],
+      desired: [
+        "nrrPct",
+        "grrPct",
+        "revenueConcentrationPct",
+        "topCustomerSharePct",
+        "top3CustomersSharePct",
+        "oneOffRevenueSharePct",
+        "pilotRevenueSharePct",
+        "dau",
+        "mau",
+        "organicGrowthPct",
+      ],
       thresholds,
     };
   }
@@ -168,7 +217,17 @@ export function getStageAnalysisConfig(stage: StartupStage, mode: AnalyzerMode):
       subjectiveIdeaSignals: 0.04,
     },
     required: ["stage", "mode", "monthlyRevenue", "grossMarginPct", "burnMonthly", "cashOnHand", "retentionD30"],
-    desired: ["nrrPct", "revenueConcentrationPct", "topCustomerSharePct", "cac", "unitPaybackMonths"],
+    desired: [
+      "nrrPct",
+      "grrPct",
+      "revenueConcentrationPct",
+      "topCustomerSharePct",
+      "top3CustomersSharePct",
+      "oneOffRevenueSharePct",
+      "pilotRevenueSharePct",
+      "cac",
+      "unitPaybackMonths",
+    ],
     thresholds,
   };
 }

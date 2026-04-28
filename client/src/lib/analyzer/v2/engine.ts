@@ -7,6 +7,13 @@ import type {
   StartupAnalysisInput,
   StartupAnalysisResult,
 } from "../types";
+import { computeRevenueQuality } from "./revenueQuality";
+import { computeMoatEvidence } from "./moatEvidence";
+import { computeStageEvidence } from "./stageEvidence";
+import { computeMarketStructure } from "./marketStructure";
+import { computeAutoSwot } from "./swot";
+import { computeScenarioSummary } from "./scenarios";
+import { computeFunnelQuality } from "./funnelQuality";
 import { computeCompleteness } from "./completeness";
 import { runConsistencyRules } from "./consistencyRules";
 import { formatValuationRangeHuman, makeSuccessRange } from "./formatters";
@@ -216,11 +223,20 @@ function computeDecisionReasoning(
   if (r.unitEconomicsScore >= 65) topPositiveDrivers.push("юнит-экономика близка к устойчивой");
   if (r.pmfScore >= 60) topPositiveDrivers.push("есть признаки PMF (удержание/органика/повтор)");
   if (r.runwayMonths >= 12) topPositiveDrivers.push("runway даёт достаточно времени на улучшения");
+  if ((r.revenueQualityScore ?? 0) >= 65) topPositiveDrivers.push("профиль выручки выглядит устойчивым (повторяемость/концентрация)");
+  if ((r.moatEvidenceScore ?? 0) >= 60) topPositiveDrivers.push("есть признаки подтверждённой защитимости (moat evidence)");
+  if ((r.stageEvidenceScore ?? 0) >= 60 && (stage === "idea" || stage === "seed" || input.mode === "idea"))
+    topPositiveDrivers.push("сильная доказательная база на ранней стадии (evidence)");
+  if ((r.funnelQualityScore ?? 0) >= 65) topPositiveDrivers.push("воронка выглядит здоровой (активация/time‑to‑value/оплата)");
 
   if (input.retentionD30 > 0 && input.retentionD30 < 0.15) topNegativeDrivers.push("удержание D30 низкое — риск отсутствия устойчивой ценности");
   if (r.ltvToCac > 0 && r.ltvToCac < 2) topNegativeDrivers.push("LTV/CAC ниже комфортного уровня для масштаба");
   if (r.runwayMonths > 0 && r.runwayMonths < 9) topNegativeDrivers.push("короткий runway усиливает риск «не успеть исправить»");
   if (dataConfidenceScore < 55) topNegativeDrivers.push("низкая уверенность в данных снижает доверие к выводам");
+  if ((r.concentrationRiskScore ?? 0) >= 70) topNegativeDrivers.push("высокая концентрация выручки — риск зависимости от 1–3 клиентов");
+  if ((r.moatGapFlag ?? false) === true) topNegativeDrivers.push("разрыв между заявленным moat и подтверждённостью (anti‑gaming риск)");
+  if ((r.funnelQualityScore ?? 0) > 0 && (r.funnelQualityScore ?? 0) < 45) topNegativeDrivers.push("воронка слабая: проблема может начинаться ещё до retention");
+  if ((r.marketStructurePressureScore ?? 0) >= 70) topNegativeDrivers.push("высокое давление структуры рынка повышает требования к moat и retention");
 
   // Verdict (stage-aware, deterministic)
   let verdict: DecisionReasoning["verdict"] = "WATCH";
@@ -247,6 +263,9 @@ function computeDecisionReasoning(
     whatChangesDecision.push("поднять D30 retention и/или снизить churn на когортах");
     whatChangesDecision.push("улучшить LTV/CAC (через снижение CAC или рост LTV)");
     whatChangesDecision.push("продлить runway до безопасного коридора (≥ 9–12 месяцев)");
+    if ((r.revenueQualityScore ?? 0) > 0 && (r.revenueQualityScore ?? 0) < 60) whatChangesDecision.push("улучшить качество выручки: повторяемость и диверсификацию (снизить концентрацию)");
+    if ((r.moatEvidenceScore ?? 0) > 0 && (r.moatEvidenceScore ?? 0) < 55) whatChangesDecision.push("собрать evidence moat: данные/switching costs/интеграции/канал");
+    if ((r.funnelQualityScore ?? 0) > 0 && (r.funnelQualityScore ?? 0) < 60) whatChangesDecision.push("сократить time‑to‑value и поднять активацию (до улучшения retention)");
   } else if (verdict === "HOLD") {
     whatChangesDecision.push("доказать устойчивую экономику канала (payback, LTV/CAC) на масштабе");
     whatChangesDecision.push("показать воспроизводимый рост без деградации retention");
@@ -380,6 +399,27 @@ export function enrichAnalysisV2(input: StartupAnalysisInput, base: StartupAnaly
   const redFlags: RedFlags = computeRedFlags(input, base, consistency, cfg);
   const sensitivityAnalysis = { topDrivers: computeSensitivityDrivers(input, base) as SensitivityDriver[] };
 
+  const revenueQuality = computeRevenueQuality(input);
+  const moatEvidence = computeMoatEvidence(input);
+  const stageEvidence = computeStageEvidence(input);
+  const marketStructure = computeMarketStructure(input);
+  const funnelQuality = computeFunnelQuality(input);
+
+  const scenarioSummary = computeScenarioSummary(input, {
+    ...base,
+    dataConfidenceScore,
+  } as StartupAnalysisResult);
+
+  const swot = computeAutoSwot(input, {
+    ...base,
+    dataConfidenceScore,
+    revenueQualityScore: revenueQuality?.revenueQualityScore,
+    concentrationRiskScore: revenueQuality?.concentrationRiskScore,
+    moatEvidenceScore: moatEvidence?.moatEvidenceScore,
+    stageEvidenceScore: stageEvidence?.stageEvidenceScore,
+    funnelQualityScore: funnelQuality?.funnelQualityScore,
+  } as StartupAnalysisResult);
+
   return {
     ...base,
     analysisVersion: "v2",
@@ -402,6 +442,27 @@ export function enrichAnalysisV2(input: StartupAnalysisInput, base: StartupAnaly
     sensitivityAnalysis,
     actionPriorities,
     redFlags,
+
+    revenueQualityScore: revenueQuality?.revenueQualityScore,
+    concentrationRiskScore: revenueQuality?.concentrationRiskScore,
+    customerConcentrationRisk: revenueQuality?.customerConcentrationRisk,
+    revenueQualityNotes: revenueQuality?.notes,
+
+    moatEvidenceScore: moatEvidence?.moatEvidenceScore,
+    moatGapFlag: moatEvidence?.moatGapFlag,
+    moatEvidenceNotes: moatEvidence?.notes,
+
+    stageEvidenceScore: stageEvidence?.stageEvidenceScore,
+    stageEvidenceNotes: stageEvidence?.notes,
+
+    funnelQualityScore: funnelQuality?.funnelQualityScore,
+    funnelQualityNotes: funnelQuality?.notes,
+
+    marketStructurePressureScore: marketStructure?.marketStructurePressureScore,
+    marketStructureNotes: marketStructure?.notes,
+
+    swot,
+    scenarioSummary,
   };
 }
 

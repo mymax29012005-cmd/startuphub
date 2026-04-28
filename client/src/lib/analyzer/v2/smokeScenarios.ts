@@ -139,7 +139,49 @@ export function getAnalyzerSmokeScenarios(): SmokeScenario[] {
     },
   };
 
-  return [s1, s2, s3, s4];
+  const s5: SmokeScenario = {
+    id: "revenue_quality_concentration",
+    title: "Revenue quality + концентрация (late-stage)",
+    input: {
+      ...baseInput(),
+      stage: "series_b",
+      monthlyRevenue: 6000000,
+      nrrPct: 128,
+      grrPct: 72,
+      topCustomerSharePct: 55,
+      top3CustomersSharePct: 65,
+      oneOffRevenueSharePct: 30,
+      pilotRevenueSharePct: 20,
+    },
+  };
+
+  const s6: SmokeScenario = {
+    id: "moat_gap",
+    title: "Moat gap: self-reported высокий, evidence низкий",
+    input: {
+      ...baseInput(),
+      stage: "seed",
+      moatStrength: 92,
+      // leave moat evidence mostly unset/false-ish via input not providing booleans
+      competitionDensity: 0.82,
+      retentionD30: 0.11,
+    },
+  };
+
+  const s7: SmokeScenario = {
+    id: "funnel_retention_mismatch",
+    title: "Сильная воронка при низком D30",
+    input: {
+      ...baseInput(),
+      stage: "seed",
+      signupToActivationPct: 70,
+      firstKeyActionCompletionPct: 65,
+      timeToValueDays: 2,
+      retentionD30: 0.09,
+    },
+  };
+
+  return [s1, s2, s3, s4, s5, s6, s7];
 }
 
 export type SmokeScenarioResult = {
@@ -200,6 +242,23 @@ export function runAnalyzerSmokeScenarios(): SmokeScenarioResult[] {
       if ((r.consistencyScore ?? 100) > 80) {
         ok = false;
         notes.push("anti-gaming: consistencyScore должен снижаться заметно.");
+      }
+    }
+    if (s.id === "revenue_quality_concentration") {
+      const w = r.consistencyChecks?.warnings ?? [];
+      if (!w.some((x) => x.includes("NRR") || x.includes("концентра")) && (r.concentrationRiskScore ?? 0) < 55) {
+        ok = false;
+        notes.push("revenue quality: ожидались признаки концентрации/несостыковок NRR/GRR.");
+      }
+    }
+    if (s.id === "funnel_retention_mismatch") {
+      if ((r.consistencyChecks?.warnings?.length ?? 0) < 1) {
+        ok = false;
+        notes.push("funnel: ожидалось предупреждение при сильной воронке и низком D30.");
+      }
+      if ((r as any).funnelQualityScore && (r as any).funnelQualityScore < 55) {
+        ok = false;
+        notes.push("funnel: ожидался не низкий funnelQualityScore при сильной воронке.");
       }
     }
 

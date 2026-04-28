@@ -14,6 +14,36 @@ function pctTo01(pct: number) {
 export function runConsistencyRules(input: StartupAnalysisInput, result: StartupAnalysisResult) {
   const rules: Rule[] = [
     {
+      id: "high_nrr_low_grr",
+      when: (i) => (i.nrrPct ?? 0) >= 120 && (i.grrPct ?? 0) > 0 && (i.grrPct ?? 0) < 80,
+      warning: "NRR очень высокий при низком GRR: возможны ошибки в определениях (net vs gross) или единоразовые апсейлы при сильном оттоке.",
+      penaltyPoints: 8,
+    },
+    {
+      id: "revenue_shares_over_100",
+      when: (i) => (i.oneOffRevenueSharePct ?? 0) + (i.pilotRevenueSharePct ?? 0) > 100,
+      warning: "Доли выручки (one‑off + пилотная) суммарно > 100%. Проверьте вводные проценты.",
+      penaltyPoints: 14,
+    },
+    {
+      id: "top3_less_than_top1",
+      when: (i) => (i.top3CustomersSharePct ?? 0) > 0 && (i.topCustomerSharePct ?? 0) > 0 && (i.top3CustomersSharePct ?? 0) < (i.topCustomerSharePct ?? 0),
+      warning: "Доля топ‑3 клиентов не может быть меньше доли топ‑клиента. Проверьте вводные.",
+      penaltyPoints: 16,
+    },
+    {
+      id: "moat_gap_high_self_low_evidence",
+      when: (i, r) => i.moatStrength >= 75 && (r as any).moatEvidenceScore !== undefined && Number((r as any).moatEvidenceScore) <= 35,
+      warning: "Заявленный moat высокий, но evidence‑признаков почти нет. Это снижает доверие к self‑reported сигналам.",
+      penaltyPoints: 10,
+    },
+    {
+      id: "funnel_strong_but_low_retention",
+      when: (i) => (i.signupToActivationPct ?? 0) >= 55 && (i.firstKeyActionCompletionPct ?? 0) >= 50 && i.retentionD30 > 0 && i.retentionD30 < 0.12,
+      warning: "Воронка выглядит сильной (активация/ключевое действие), но D30 удержание низкое. Часто это означает, что ценность после активации не закрепляется.",
+      penaltyPoints: 8,
+    },
+    {
       id: "moat_competition_retention",
       when: (i) => i.moatStrength >= 80 && i.competitionDensity >= 0.7 && i.retentionD30 > 0 && i.retentionD30 < 0.12,
       warning: "Высокий «moat» при высокой плотности конкуренции и низком удержании выглядит противоречиво. Проверьте: что именно защищает вас от конкурентов (технология/данные/дистрибуция/сетевой эффект).",

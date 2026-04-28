@@ -149,13 +149,44 @@ function AnalyzerInner() {
   // Evidence (v2)
   const [customerInterviewsCount, setCustomerInterviewsCount] = useState("0");
   const [pilotCount, setPilotCount] = useState("0");
+  const [paidPilotCount, setPaidPilotCount] = useState("0");
   const [loiCount, setLoiCount] = useState("0");
   const [waitlistSize, setWaitlistSize] = useState("0");
+  const [founderSalesCallsCount, setFounderSalesCallsCount] = useState("0");
+  const [designPartnerCount, setDesignPartnerCount] = useState("0");
+
+  // Moat evidence (v2) tri-state: unset | yes | no
+  const [moatEvidenceProprietaryData, setMoatEvidenceProprietaryData] = useState<"unset" | "yes" | "no">("unset");
+  const [moatEvidenceSwitchingCosts, setMoatEvidenceSwitchingCosts] = useState<"unset" | "yes" | "no">("unset");
+  const [moatEvidenceIntegrationDepth, setMoatEvidenceIntegrationDepth] = useState<"unset" | "yes" | "no">("unset");
+  const [moatEvidenceDistributionAdvantage, setMoatEvidenceDistributionAdvantage] = useState<"unset" | "yes" | "no">("unset");
+  const [moatEvidenceRegulatoryBarrier, setMoatEvidenceRegulatoryBarrier] = useState<"unset" | "yes" | "no">("unset");
+  const [moatEvidenceNetworkEffects, setMoatEvidenceNetworkEffects] = useState<"unset" | "yes" | "no">("unset");
+  const [moatEvidenceBrandCommunity, setMoatEvidenceBrandCommunity] = useState<"unset" | "yes" | "no">("unset");
+  const [moatEvidenceOperationalSpeed, setMoatEvidenceOperationalSpeed] = useState<"unset" | "yes" | "no">("unset");
 
   // Mature-stage (v2)
   const [nrrPct, setNrrPct] = useState(0);
+  const [grrPct, setGrrPct] = useState(0);
   const [revenueConcentrationPct, setRevenueConcentrationPct] = useState(0);
   const [topCustomerSharePct, setTopCustomerSharePct] = useState(0);
+  const [top3CustomersSharePct, setTop3CustomersSharePct] = useState(0);
+  const [oneOffRevenueSharePct, setOneOffRevenueSharePct] = useState(0);
+  const [pilotRevenueSharePct, setPilotRevenueSharePct] = useState(0);
+
+  // Funnel quality (v2) — optional
+  const [visitorToSignupConversionPct, setVisitorToSignupConversionPct] = useState(0);
+  const [signupToActivationPct, setSignupToActivationPct] = useState(0);
+  const [activationToPaidPct, setActivationToPaidPct] = useState(0);
+  const [timeToValueDays, setTimeToValueDays] = useState("0");
+  const [firstKeyActionCompletionPct, setFirstKeyActionCompletionPct] = useState(0);
+
+  // Porter-lite overrides (v2) 0..100 — optional
+  const [buyerPowerScore, setBuyerPowerScore] = useState("");
+  const [supplierPowerScore, setSupplierPowerScore] = useState("");
+  const [threatOfNewEntrantsScore, setThreatOfNewEntrantsScore] = useState("");
+  const [substitutePressureScore, setSubstitutePressureScore] = useState("");
+  const [rivalryScore, setRivalryScore] = useState("");
 
   const [result, setResult] = useState<ReturnType<typeof computeStartupAnalysis> | null>(null);
   const [saving, setSaving] = useState(false);
@@ -214,6 +245,17 @@ function AnalyzerInner() {
   }, [me?.id]);
 
   const analysisInput: StartupAnalysisInput = useMemo(() => {
+    function tri(v: "unset" | "yes" | "no"): boolean | undefined {
+      if (v === "yes") return true;
+      if (v === "no") return false;
+      return undefined;
+    }
+    function optPct(s: string): number | undefined {
+      const clean = String(s ?? "").trim();
+      if (!clean) return undefined;
+      const n = Number(clean.replace(",", "."));
+      return Number.isFinite(n) ? clamp(n, 0, 100) : undefined;
+    }
     return {
       mode,
       stage,
@@ -268,12 +310,40 @@ function AnalyzerInner() {
 
       customerInterviewsCount: parseDigits(customerInterviewsCount),
       pilotCount: parseDigits(pilotCount),
+      paidPilotCount: parseDigits(paidPilotCount),
       loiCount: parseDigits(loiCount),
       waitlistSize: parseDigits(waitlistSize),
+      founderSalesCallsCount: parseDigits(founderSalesCallsCount),
+      designPartnerCount: parseDigits(designPartnerCount),
 
       nrrPct,
+      grrPct,
       revenueConcentrationPct,
       topCustomerSharePct,
+      top3CustomersSharePct,
+      oneOffRevenueSharePct,
+      pilotRevenueSharePct,
+
+      visitorToSignupConversionPct,
+      signupToActivationPct,
+      activationToPaidPct,
+      timeToValueDays: parseDigits(timeToValueDays),
+      firstKeyActionCompletionPct,
+
+      moatEvidenceProprietaryData: tri(moatEvidenceProprietaryData),
+      moatEvidenceSwitchingCosts: tri(moatEvidenceSwitchingCosts),
+      moatEvidenceIntegrationDepth: tri(moatEvidenceIntegrationDepth),
+      moatEvidenceDistributionAdvantage: tri(moatEvidenceDistributionAdvantage),
+      moatEvidenceRegulatoryBarrier: tri(moatEvidenceRegulatoryBarrier),
+      moatEvidenceNetworkEffects: tri(moatEvidenceNetworkEffects),
+      moatEvidenceBrandCommunity: tri(moatEvidenceBrandCommunity),
+      moatEvidenceOperationalSpeed: tri(moatEvidenceOperationalSpeed),
+
+      buyerPowerScore: optPct(buyerPowerScore),
+      supplierPowerScore: optPct(supplierPowerScore),
+      threatOfNewEntrantsScore: optPct(threatOfNewEntrantsScore),
+      substitutePressureScore: optPct(substitutePressureScore),
+      rivalryScore: optPct(rivalryScore),
     };
   }, [
     mode,
@@ -319,11 +389,36 @@ function AnalyzerInner() {
     tech,
     customerInterviewsCount,
     pilotCount,
+    paidPilotCount,
     loiCount,
     waitlistSize,
+    founderSalesCallsCount,
+    designPartnerCount,
     nrrPct,
+    grrPct,
     revenueConcentrationPct,
     topCustomerSharePct,
+    top3CustomersSharePct,
+    oneOffRevenueSharePct,
+    pilotRevenueSharePct,
+    visitorToSignupConversionPct,
+    signupToActivationPct,
+    activationToPaidPct,
+    timeToValueDays,
+    firstKeyActionCompletionPct,
+    moatEvidenceProprietaryData,
+    moatEvidenceSwitchingCosts,
+    moatEvidenceIntegrationDepth,
+    moatEvidenceDistributionAdvantage,
+    moatEvidenceRegulatoryBarrier,
+    moatEvidenceNetworkEffects,
+    moatEvidenceBrandCommunity,
+    moatEvidenceOperationalSpeed,
+    buyerPowerScore,
+    supplierPowerScore,
+    threatOfNewEntrantsScore,
+    substitutePressureScore,
+    rivalryScore,
   ]);
 
   const scores = useMemo(() => {
@@ -412,12 +507,41 @@ function AnalyzerInner() {
 
     setCustomerInterviewsCount(String((item.data as any).customerInterviewsCount ?? 0));
     setPilotCount(String((item.data as any).pilotCount ?? 0));
+    setPaidPilotCount(String((item.data as any).paidPilotCount ?? 0));
     setLoiCount(String((item.data as any).loiCount ?? 0));
     setWaitlistSize(String((item.data as any).waitlistSize ?? 0));
+    setFounderSalesCallsCount(String((item.data as any).founderSalesCallsCount ?? 0));
+    setDesignPartnerCount(String((item.data as any).designPartnerCount ?? 0));
 
     setNrrPct(Number((item.data as any).nrrPct ?? 0));
+    setGrrPct(Number((item.data as any).grrPct ?? 0));
     setRevenueConcentrationPct(Number((item.data as any).revenueConcentrationPct ?? 0));
     setTopCustomerSharePct(Number((item.data as any).topCustomerSharePct ?? 0));
+    setTop3CustomersSharePct(Number((item.data as any).top3CustomersSharePct ?? 0));
+    setOneOffRevenueSharePct(Number((item.data as any).oneOffRevenueSharePct ?? 0));
+    setPilotRevenueSharePct(Number((item.data as any).pilotRevenueSharePct ?? 0));
+
+    const triToState = (v: any): "unset" | "yes" | "no" => (v === true ? "yes" : v === false ? "no" : "unset");
+    setMoatEvidenceProprietaryData(triToState((item.data as any).moatEvidenceProprietaryData));
+    setMoatEvidenceSwitchingCosts(triToState((item.data as any).moatEvidenceSwitchingCosts));
+    setMoatEvidenceIntegrationDepth(triToState((item.data as any).moatEvidenceIntegrationDepth));
+    setMoatEvidenceDistributionAdvantage(triToState((item.data as any).moatEvidenceDistributionAdvantage));
+    setMoatEvidenceRegulatoryBarrier(triToState((item.data as any).moatEvidenceRegulatoryBarrier));
+    setMoatEvidenceNetworkEffects(triToState((item.data as any).moatEvidenceNetworkEffects));
+    setMoatEvidenceBrandCommunity(triToState((item.data as any).moatEvidenceBrandCommunity));
+    setMoatEvidenceOperationalSpeed(triToState((item.data as any).moatEvidenceOperationalSpeed));
+
+    setVisitorToSignupConversionPct(Number((item.data as any).visitorToSignupConversionPct ?? 0));
+    setSignupToActivationPct(Number((item.data as any).signupToActivationPct ?? 0));
+    setActivationToPaidPct(Number((item.data as any).activationToPaidPct ?? 0));
+    setTimeToValueDays(String((item.data as any).timeToValueDays ?? 0));
+    setFirstKeyActionCompletionPct(Number((item.data as any).firstKeyActionCompletionPct ?? 0));
+
+    setBuyerPowerScore(String((item.data as any).buyerPowerScore ?? ""));
+    setSupplierPowerScore(String((item.data as any).supplierPowerScore ?? ""));
+    setThreatOfNewEntrantsScore(String((item.data as any).threatOfNewEntrantsScore ?? ""));
+    setSubstitutePressureScore(String((item.data as any).substitutePressureScore ?? ""));
+    setRivalryScore(String((item.data as any).rivalryScore ?? ""));
 
     // Backward compatibility: if old saved result has no v2 layers, enrich it on the client.
     const enriched = (item.result as any)?.analysisVersion === "v2" ? item.result : enrichAnalysisV2(item.data as any, item.result as any);
@@ -802,6 +926,40 @@ function AnalyzerInner() {
                         />
                       </div>
 
+                      <div className="mt-2 rounded-3xl border border-white/10 bg-white/5 p-5">
+                        <div className="text-white font-semibold mb-1">Подтверждённость moat (структурно)</div>
+                        <div className="text-xs text-gray-400 mb-4">Опционально. Это не “эссе”, а чек‑лист признаков защитимости.</div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {[
+                            ["Преимущество в данных", moatEvidenceProprietaryData, setMoatEvidenceProprietaryData, "moatEvidenceScore"],
+                            ["Switching costs / встроенность", moatEvidenceSwitchingCosts, setMoatEvidenceSwitchingCosts, "moatEvidenceScore"],
+                            ["Глубина интеграций", moatEvidenceIntegrationDepth, setMoatEvidenceIntegrationDepth, "moatEvidenceScore"],
+                            ["Преимущество дистрибуции", moatEvidenceDistributionAdvantage, setMoatEvidenceDistributionAdvantage, "moatEvidenceScore"],
+                            ["Регуляторный барьер", moatEvidenceRegulatoryBarrier, setMoatEvidenceRegulatoryBarrier, "moatEvidenceScore"],
+                            ["Сетевой эффект", moatEvidenceNetworkEffects, setMoatEvidenceNetworkEffects, "moatEvidenceScore"],
+                            ["Бренд/комьюнити lock‑in", moatEvidenceBrandCommunity, setMoatEvidenceBrandCommunity, "moatEvidenceScore"],
+                            ["Операционная скорость", moatEvidenceOperationalSpeed, setMoatEvidenceOperationalSpeed, "moatEvidenceScore"],
+                          ].map(([label, v, setV, hintKey]) => (
+                            <div key={String(label)}>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>{String(label)}</span>
+                                <HelpTip text={getAnalyzerHint(hintKey as any)} />
+                              </div>
+                              <select
+                                className="w-full bg-[#1A1A24] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white"
+                                value={v as any}
+                                onChange={(e) => (setV as any)(e.target.value)}
+                              >
+                                <option value="unset">Не указано</option>
+                                <option value="yes">Да</option>
+                                <option value="no">Нет</option>
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       {stage === "idea" || mode === "idea" ? (
                         <div className="mt-2 rounded-3xl border border-white/10 bg-white/5 p-5">
                           <div className="text-white font-semibold mb-1">Доказательства спроса (опционально, но повышает точность)</div>
@@ -823,6 +981,13 @@ function AnalyzerInner() {
                             </div>
                             <div>
                               <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Платные пилоты</span>
+                                <HelpTip text={getAnalyzerHint("paidPilotCount")} />
+                              </div>
+                              <MoneyInput value={paidPilotCount} onChange={setPaidPilotCount} placeholder="0" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
                                 <span>LOI</span>
                                 <HelpTip text={getAnalyzerHint("loiCount")} />
                               </div>
@@ -834,6 +999,20 @@ function AnalyzerInner() {
                                 <HelpTip text={getAnalyzerHint("waitlistSize")} />
                               </div>
                               <MoneyInput value={waitlistSize} onChange={setWaitlistSize} placeholder="0" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Продажные звонки</span>
+                                <HelpTip text={getAnalyzerHint("founderSalesCallsCount")} />
+                              </div>
+                              <MoneyInput value={founderSalesCallsCount} onChange={setFounderSalesCallsCount} placeholder="0" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Design partners</span>
+                                <HelpTip text={getAnalyzerHint("designPartnerCount")} />
+                              </div>
+                              <MoneyInput value={designPartnerCount} onChange={setDesignPartnerCount} placeholder="0" />
                             </div>
                           </div>
                         </div>
@@ -1070,6 +1249,50 @@ function AnalyzerInner() {
                         </div>
                       </div>
 
+                      <div className="mt-2 rounded-3xl border border-white/10 bg-white/5 p-5">
+                        <div className="text-white font-semibold mb-1">Воронка (опционально)</div>
+                        <div className="text-xs text-gray-400 mb-4">
+                          Эти метрики помогают объяснить, откуда “берётся” слабое удержание: часто проблема начинается ещё на активации и time‑to‑value.
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Визит → регистрация: {visitorToSignupConversionPct}%</span>
+                              <HelpTip text={getAnalyzerHint("visitorToSignupConversionPct")} />
+                            </div>
+                            <input type="range" min={0} max={60} step={1} value={visitorToSignupConversionPct} onChange={(e) => setVisitorToSignupConversionPct(Number(e.target.value))} className="w-full" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Регистрация → активация: {signupToActivationPct}%</span>
+                              <HelpTip text={getAnalyzerHint("signupToActivationPct")} />
+                            </div>
+                            <input type="range" min={0} max={100} step={1} value={signupToActivationPct} onChange={(e) => setSignupToActivationPct(Number(e.target.value))} className="w-full" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Активация → оплата: {activationToPaidPct}%</span>
+                              <HelpTip text={getAnalyzerHint("activationToPaidPct")} />
+                            </div>
+                            <input type="range" min={0} max={100} step={1} value={activationToPaidPct} onChange={(e) => setActivationToPaidPct(Number(e.target.value))} className="w-full" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Time‑to‑value (дней)</span>
+                              <HelpTip text={getAnalyzerHint("timeToValueDays")} />
+                            </div>
+                            <MoneyInput value={timeToValueDays} onChange={setTimeToValueDays} placeholder="0" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Ключевое действие: {firstKeyActionCompletionPct}%</span>
+                              <HelpTip text={getAnalyzerHint("firstKeyActionCompletionPct")} />
+                            </div>
+                            <input type="range" min={0} max={100} step={1} value={firstKeyActionCompletionPct} onChange={(e) => setFirstKeyActionCompletionPct(Number(e.target.value))} className="w-full" />
+                          </div>
+                        </div>
+                      </div>
+
                       {stage === "series_b" || stage === "growth" || stage === "exit" ? (
                         <div className="mt-2 rounded-3xl border border-white/10 bg-white/5 p-5">
                           <div className="text-white font-semibold mb-1">Метрики зрелого бизнеса (опционально)</div>
@@ -1083,6 +1306,14 @@ function AnalyzerInner() {
                               <HelpTip text={getAnalyzerHint("nrrPct")} />
                             </div>
                             <input type="range" min={0} max={160} step={1} value={nrrPct} onChange={(e) => setNrrPct(Number(e.target.value))} className="w-full" />
+                          </div>
+
+                          <div className="mt-4">
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>GRR (Gross Revenue Retention): {grrPct}%</span>
+                              <HelpTip text={getAnalyzerHint("grrPct")} />
+                            </div>
+                            <input type="range" min={0} max={120} step={1} value={grrPct} onChange={(e) => setGrrPct(Number(e.target.value))} className="w-full" />
                           </div>
 
                           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1099,6 +1330,27 @@ function AnalyzerInner() {
                                 <HelpTip text={getAnalyzerHint("revenueConcentrationPct")} />
                               </div>
                               <input type="range" min={0} max={100} step={1} value={revenueConcentrationPct} onChange={(e) => setRevenueConcentrationPct(Number(e.target.value))} className="w-full" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Доля топ‑3 клиентов: {top3CustomersSharePct}%</span>
+                                <HelpTip text={getAnalyzerHint("top3CustomersSharePct")} />
+                              </div>
+                              <input type="range" min={0} max={100} step={1} value={top3CustomersSharePct} onChange={(e) => setTop3CustomersSharePct(Number(e.target.value))} className="w-full" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Доля разовой выручки: {oneOffRevenueSharePct}%</span>
+                                <HelpTip text={getAnalyzerHint("oneOffRevenueSharePct")} />
+                              </div>
+                              <input type="range" min={0} max={100} step={1} value={oneOffRevenueSharePct} onChange={(e) => setOneOffRevenueSharePct(Number(e.target.value))} className="w-full" />
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-2 flex items-center">
+                                <span>Доля пилотной выручки: {pilotRevenueSharePct}%</span>
+                                <HelpTip text={getAnalyzerHint("pilotRevenueSharePct")} />
+                              </div>
+                              <input type="range" min={0} max={100} step={1} value={pilotRevenueSharePct} onChange={(e) => setPilotRevenueSharePct(Number(e.target.value))} className="w-full" />
                             </div>
                           </div>
                         </div>
@@ -1190,6 +1442,50 @@ function AnalyzerInner() {
                             onChange={(e) => setCompetitionDensityPct(Number(e.target.value))}
                             className="w-full"
                           />
+                        </div>
+                      </div>
+
+                      <div className="mt-2 rounded-3xl border border-white/10 bg-white/5 p-5">
+                        <div className="text-white font-semibold mb-1">Porter‑lite (опционально)</div>
+                        <div className="text-xs text-gray-400 mb-4">
+                          Если вы уверенно понимаете структуру рынка — можно задать давление вручную (0–100). Иначе модель использует эвристику.
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Buyer power (0–100)</span>
+                              <HelpTip text={getAnalyzerHint("buyerPowerScore")} />
+                            </div>
+                            <Input value={buyerPowerScore} onChange={(e) => setBuyerPowerScore(e.target.value)} placeholder="(пусто = auto)" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Supplier power (0–100)</span>
+                              <HelpTip text={getAnalyzerHint("supplierPowerScore")} />
+                            </div>
+                            <Input value={supplierPowerScore} onChange={(e) => setSupplierPowerScore(e.target.value)} placeholder="(пусто = auto)" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Threat of new entrants (0–100)</span>
+                              <HelpTip text={getAnalyzerHint("threatOfNewEntrantsScore")} />
+                            </div>
+                            <Input value={threatOfNewEntrantsScore} onChange={(e) => setThreatOfNewEntrantsScore(e.target.value)} placeholder="(пусто = auto)" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Substitute pressure (0–100)</span>
+                              <HelpTip text={getAnalyzerHint("substitutePressureScore")} />
+                            </div>
+                            <Input value={substitutePressureScore} onChange={(e) => setSubstitutePressureScore(e.target.value)} placeholder="(пусто = auto)" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 mb-2 flex items-center">
+                              <span>Rivalry (0–100)</span>
+                              <HelpTip text={getAnalyzerHint("rivalryScore")} />
+                            </div>
+                            <Input value={rivalryScore} onChange={(e) => setRivalryScore(e.target.value)} placeholder="(пусто = auto)" />
+                          </div>
                         </div>
                       </div>
 

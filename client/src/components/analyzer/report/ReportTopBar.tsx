@@ -56,10 +56,10 @@ export function ReportTopBar({
       <div className="ii-toolbar">
         <div className="ii-tabs" role="tablist" aria-label="Режим отчёта">
           <button type="button" className={`ii-tab ${viewMode === "founder" ? "is-active" : ""}`} onClick={() => onViewModeChange("founder")}>
-            Founder mode
+            Режим основателя
           </button>
           <button type="button" className={`ii-tab ${viewMode === "investor" ? "is-active" : ""}`} onClick={() => onViewModeChange("investor")}>
-            Investor mode
+            Режим инвестора
           </button>
         </div>
 

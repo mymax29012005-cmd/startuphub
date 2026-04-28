@@ -76,13 +76,44 @@ export type StartupAnalysisInput = {
   // Optional evidence fields (v2). Safe for backward compatibility.
   customerInterviewsCount?: number; // count
   pilotCount?: number; // count
+  paidPilotCount?: number; // count
   loiCount?: number; // count
   waitlistSize?: number; // count
+  founderSalesCallsCount?: number; // count
+  designPartnerCount?: number; // count
 
   // Mature-stage optional fields (v2).
   nrrPct?: number; // %
+  grrPct?: number; // % (gross revenue retention)
   revenueConcentrationPct?: number; // % revenue from top customer (0..100)
   topCustomerSharePct?: number; // % revenue share of top customer (0..100)
+  top3CustomersSharePct?: number; // % revenue share of top-3 customers (0..100)
+  oneOffRevenueSharePct?: number; // % one-off revenue share (0..100)
+  pilotRevenueSharePct?: number; // % pilot/POC revenue share (0..100)
+
+  // Funnel quality (optional, v2)
+  visitorToSignupConversionPct?: number; // %
+  signupToActivationPct?: number; // %
+  activationToPaidPct?: number; // %
+  timeToValueDays?: number; // days
+  firstKeyActionCompletionPct?: number; // %
+
+  // Moat evidence (structured, optional, v2)
+  moatEvidenceProprietaryData?: boolean;
+  moatEvidenceSwitchingCosts?: boolean;
+  moatEvidenceIntegrationDepth?: boolean;
+  moatEvidenceDistributionAdvantage?: boolean;
+  moatEvidenceRegulatoryBarrier?: boolean;
+  moatEvidenceNetworkEffects?: boolean;
+  moatEvidenceBrandCommunity?: boolean;
+  moatEvidenceOperationalSpeed?: boolean;
+
+  // Market structure (Porter-lite, optional overrides, v2) 0..100
+  buyerPowerScore?: number;
+  supplierPowerScore?: number;
+  threatOfNewEntrantsScore?: number;
+  substitutePressureScore?: number;
+  rivalryScore?: number;
 };
 
 export type EstimateConfidenceLabel = "low" | "medium" | "high";
@@ -125,6 +156,24 @@ export type RedFlags = {
   red: string[];
   yellow: string[];
   info: string[];
+};
+
+export type SwotQuadrant = "strengths" | "weaknesses" | "opportunities" | "threats";
+export type SwotItem = { quadrant: SwotQuadrant; title: string; evidence: string[] };
+export type AutoSwot = {
+  strengths: SwotItem[];
+  weaknesses: SwotItem[];
+  opportunities: SwotItem[];
+  threats: SwotItem[];
+};
+
+export type ScenarioCase = "base" | "upside" | "stress";
+export type ScenarioSummary = {
+  case: ScenarioCase;
+  title: string;
+  assumptions: string[];
+  successProbabilityRange?: { low: number; high: number }; // percent
+  notes: string[];
 };
 
 export type StartupAnalysisResult = {
@@ -186,6 +235,23 @@ export type StartupAnalysisResult = {
   sensitivityAnalysis?: { topDrivers: SensitivityDriver[] };
   actionPriorities?: ActionPriorityItem[];
   redFlags?: RedFlags;
+
+  // v2 extra objective layers (optional for backward compatibility)
+  revenueQualityScore?: number; // 0..100
+  concentrationRiskScore?: number; // 0..100 (higher = worse)
+  customerConcentrationRisk?: number; // 0..100 (higher = worse)
+  revenueQualityNotes?: string[];
+  moatEvidenceScore?: number; // 0..100
+  moatGapFlag?: boolean;
+  moatEvidenceNotes?: string[];
+  stageEvidenceScore?: number; // 0..100
+  stageEvidenceNotes?: string[];
+  funnelQualityScore?: number; // 0..100
+  funnelQualityNotes?: string[];
+  marketStructurePressureScore?: number; // 0..100 (higher = worse)
+  marketStructureNotes?: string[];
+  swot?: AutoSwot;
+  scenarioSummary?: ScenarioSummary[];
 
   discountRate: number; // 0..1
   yearCashflows: number[];
