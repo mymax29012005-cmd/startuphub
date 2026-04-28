@@ -18,8 +18,9 @@ function band(v: number, low: number, high: number) {
 export function VerdictShiftPanel({ report }: { report: StartupAnalysisResult }) {
   const r = report;
 
-  const d30 = (r as any)?.inputRetentionD30Pct ?? undefined; // fallback not available; use pmfScore heuristics
-  const d30Label = band(Number((r as any)?.retentionD30Pct ?? 0), 18, 22);
+  // We don't store raw D30% in result; use pmfScore as the proxy band.
+  const pmf = clamp(r.pmfScore ?? 0, 0, 100);
+  const pmfLabel = pmf >= 70 ? "уверенно" : pmf >= 55 ? "приемлемо" : "ниже нормы";
 
   const runway = Number(r.runwayMonths || 0);
   const runwayLabel = runway > 0 ? (runway >= 12 ? "уверенно" : runway >= 9 ? "приемлемо" : "ниже нормы") : "—";
@@ -40,7 +41,7 @@ export function VerdictShiftPanel({ report }: { report: StartupAnalysisResult })
   const confLabel = conf > 0 ? (conf >= 70 ? "уверенно" : conf >= 55 ? "приемлемо" : "ниже нормы") : "—";
 
   const items = [
-    { k: "Удержание/PMF", v: clamp(r.pmfScore ?? 0, 0, 100), label: d30Label, hint: "Ключевой сигнал устойчивости ценности (через retention/повторяемость)." },
+    { k: "Удержание/PMF", v: pmf, label: pmfLabel, hint: "Ключевой сигнал устойчивости ценности (через retention/повторяемость)." },
     { k: "Runway", v: clamp((runway / 15) * 100, 0, 100), label: runwayLabel, hint: "Время до кассы: влияет на downside и способность исправлять метрики." },
     { k: "LTV/CAC", v: clamp((ltvCac / 3.5) * 100, 0, 100), label: ltvLabel, hint: "Экономика масштаба: без запаса рост часто становится дорогим." },
     { k: "Качество выручки", v: revQ ? clamp(revQ, 0, 100) : 0, label: revLabel, hint: "Повторяемость + концентрация + (NRR/GRR при наличии)." },
