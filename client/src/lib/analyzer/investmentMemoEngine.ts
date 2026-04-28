@@ -174,7 +174,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
   if (churn > 0.15) weaknesses.push("высокий churn ограничивает LTV");
   if (ltvCacDisplay < 2) weaknesses.push("LTV/CAC ниже комфортного коридора для агрессивного масштаба");
   if (runway < 6) weaknesses.push("узкий runway сокращает время на исправления");
-  if (Number(result.burnMultiple) > 3) weaknesses.push("высокий burn multiple относительно новой выручки");
+  if (Number(result.burnMultiple) > 3) weaknesses.push("высокий burn‑мультипликатор относительно новой выручки");
   const weakness = weaknesses[0] ?? "недостаточная полнота входных данных для сужения ключевого ограничения";
 
   const executiveSummary = [
@@ -305,7 +305,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
   if (dom !== "churn" && churn > 0.12) secondaryBits.push("повышенный churn");
   if (dom !== "runway" && runway < 9) secondaryBits.push("средний runway");
   if (dom !== "unit" && ltvCacDisplay < 2.2) secondaryBits.push("пограничная юнит-экономика");
-  if (dom !== "burn" && Number(result.burnMultiple) > 2.5) secondaryBits.push("напряжённый burn multiple");
+  if (dom !== "burn" && Number(result.burnMultiple) > 2.5) secondaryBits.push("напряжённый burn‑мультипликатор");
   const secondary = secondaryBits.length ? secondaryBits.join(", ") : "конкуренция за внимание пользователя и скорость продуктовых релизов";
 
   const riskAnalysis = [investmentMemoTexts.risk.lead, domText, fill(investmentMemoTexts.risk.secondary, { secondary })].join(" ");
@@ -322,7 +322,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
         ? "runway и чувствительность к burn"
         : dom === "unit"
           ? "LTV/CAC и окупаемость привлечения"
-          : "burn multiple и соотношение новой выручки к расходам";
+          : "burn‑мультипликатор и соотношение новой выручки к расходам";
 
   const investorReasoning = [
     fill(investmentMemoTexts.reasoning.lead, {
@@ -355,9 +355,9 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
   const growthGap = Math.max(0, 15 - growthPct);
   if (growthGap > 0) gaps.push({ action: "Ускорить рост MoM за счёт воспроизводимых GTM-механик и апсейла.", impact: growthGap > 8 ? "high" : "medium", improves: "Growth", score: growthGap * 1.2 });
   const retGap = Math.max(0, 0.28 - retentionD30);
-  if (retGap > 0) gaps.push({ action: "Усилить удержание: ключевые сценарии активации и привычка к продукту.", impact: retGap > 0.12 ? "high" : "medium", improves: "Retention D30", score: retGap * 1.25 });
+  if (retGap > 0) gaps.push({ action: "Усилить удержание: ключевые сценарии активации и привычка к продукту.", impact: retGap > 0.12 ? "high" : "medium", improves: "Удержание D30", score: retGap * 1.25 });
   const runwayGap = Math.max(0, 12 - runway);
-  if (runwayGap > 0) gaps.push({ action: "Продлить runway: снизить burn или ускорить приток выручки по уже работающим воронкам.", impact: runwayGap > 6 ? "high" : "low", improves: "Runway", score: runwayGap * 1.0 });
+  if (runwayGap > 0) gaps.push({ action: "Продлить запас денег: снизить burn или ускорить приток выручки по уже работающим воронкам.", impact: runwayGap > 6 ? "high" : "low", improves: "Запас денег", score: runwayGap * 1.0 });
   gaps.sort((a, b) => b.score - a.score);
   while (gaps.length < 3) {
     gaps.push({

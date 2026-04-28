@@ -123,7 +123,7 @@ function computeActionPriorities(input: StartupAnalysisInput, r: StartupAnalysis
       title: "Поднять D30 удержание",
       reason: "Без удержания рост не конвертируется в LTV и масштабируемость.",
       expectedImpact: "Рост PMF и улучшение юнит‑экономики через увеличение LTV.",
-      improves: ["PMF", "LTV", "Business score"],
+      improves: ["PMF", "LTV", "Сила бизнеса"],
       priority: "high",
     });
   }
@@ -171,8 +171,8 @@ function computeRedFlags(input: StartupAnalysisInput, r: StartupAnalysisResult, 
   const yellow: string[] = [];
   const info: string[] = [];
 
-  if (r.runwayMonths > 0 && r.runwayMonths < cfg.thresholds.runwayRedMonths) red.push(`Runway меньше ${cfg.thresholds.runwayRedMonths} мес`);
-  else if (r.runwayMonths > 0 && r.runwayMonths < cfg.thresholds.runwayYellowMonths) yellow.push(`Runway меньше ${cfg.thresholds.runwayYellowMonths} мес`);
+  if (r.runwayMonths > 0 && r.runwayMonths < cfg.thresholds.runwayRedMonths) red.push(`Запас денег меньше ${cfg.thresholds.runwayRedMonths} мес`);
+  else if (r.runwayMonths > 0 && r.runwayMonths < cfg.thresholds.runwayYellowMonths) yellow.push(`Запас денег меньше ${cfg.thresholds.runwayYellowMonths} мес`);
 
   if (r.churn > cfg.thresholds.churnRed) red.push("Слишком высокий churn");
   else if (r.churn > cfg.thresholds.churnYellow) yellow.push("Повышенный churn");
@@ -263,7 +263,7 @@ function computeDecisionReasoning(
     nextMilestoneFocus.push("закрыть петлю удержания и активации (D30, activation)");
     nextMilestoneFocus.push("показать первые признаки воспроизводимого канала роста");
   } else {
-    nextMilestoneFocus.push("подтвердить экономику масштаба: LTV/CAC, payback, burn multiple");
+    nextMilestoneFocus.push("подтвердить экономику масштаба: LTV/CAC, окупаемость, burn‑мультипликатор");
     nextMilestoneFocus.push("показать устойчивость retention и качество роста (NRR/expansion, если применимо)");
   }
 
@@ -293,7 +293,7 @@ function computeSensitivityDrivers(input: StartupAnalysisInput, r: StartupAnalys
   const runway = r.runwayMonths || 0;
   drivers.push({
     key: "runwayMonths",
-    label: "Runway",
+    label: "Запас денег",
     direction: runway >= 12 ? "positive" : "negative",
     impactLabel: runway >= 15 ? "сильное" : runway >= 9 ? "среднее" : "высокое",
     description: runway >= 12 ? "Есть окно для улучшений без давления по кассе." : "Короткий runway усиливает риск и снижает качество решения.",

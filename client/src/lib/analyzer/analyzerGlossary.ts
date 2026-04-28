@@ -100,11 +100,11 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
   },
 
   marketValidation: {
-    title: "Market validation",
+    title: "Валидация рынка",
     short: "Оценка подтверждённости боли и спроса (интервью, пилоты, выручка, повторяемость). Чем выше — тем меньше риск «строить не то».",
   },
   competition: {
-    title: "Competition level",
+    title: "Уровень конкуренции",
     short: "Уровень конкуренции в сегменте (low/medium/high). Влияет на требования к дифференциации и удержанию.",
   },
   competitionDensity: {
@@ -112,32 +112,32 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     short: "Насколько «тесный» рынок по вашему ощущению/оценке (0–100%). Высокая плотность обычно требует сильного удержания и moat.",
   },
   moatStrength: {
-    title: "Moat strength",
+    title: "Защитный ров (moat)",
     short: "Сила конкурентной защиты: насколько сложно повторить продукт или вытеснить вас (технология/данные/дистрибуция/сетевой эффект).",
   },
   tractionScore: {
-    title: "Traction score",
+    title: "Тракция (субъективно)",
     short: "Субъективная оценка тяги (интерес/рост/сигналы спроса). В v2 влияет осторожно и может снижать доверие при противоречиях с метриками.",
   },
   teamStrength: {
-    title: "Team strength",
+    title: "Сила команды (субъективно)",
     short: "Субъективная оценка силы команды (опыт, скорость, компетенции). Важно для execution‑риска.",
   },
 
   grossMarginPct: {
-    title: "Gross margin",
+    title: "Валовая маржа",
     short: "Валовая маржа: какая часть выручки остаётся после прямых затрат на оказание услуги/себестоимость.",
   },
   recurringShare: {
-    title: "Recurring share",
+    title: "Доля повторной выручки",
     short: "Доля повторяемой выручки (подписка/повторы). Чем выше — тем лучше предсказуемость и качество модели.",
   },
   monthlyChurnPct: {
-    title: "Monthly churn",
+    title: "Отток (churn) в месяц",
     short: "Отток за месяц: какой процент клиентов/пользователей перестаёт быть активным/платить.",
   },
   activeUsers: {
-    title: "Active users",
+    title: "Активные пользователи",
     short: "Активные пользователи за месяц (если выручка неизвестна, используется вместе с ARPU для оценки выручки).",
   },
   arpu: {
@@ -145,15 +145,15 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     short: "Средняя выручка на одного активного пользователя за месяц (₽).",
   },
   monthlyRevenue: {
-    title: "Monthly revenue",
+    title: "Выручка в месяц",
     short: "Текущая месячная выручка (₽). Если неизвестна — можно оставить 0, но точность поздних стадий снизится.",
   },
   newRevenueMonthly: {
-    title: "New revenue monthly",
-    short: "Новая выручка за месяц (₽). Используется для burn multiple и оценки эффективности роста.",
+    title: "Новая выручка за месяц",
+    short: "Новая выручка за месяц (₽). Используется для burn‑мультипликатора и оценки эффективности роста.",
   },
   salesMarketingSpend: {
-    title: "Sales/marketing spend",
+    title: "Расходы на продажи/маркетинг",
     short: "Расходы на продажи и маркетинг за месяц (₽). Нужны для magic number и проверки эффективности привлечения.",
   },
   cac: {
@@ -161,7 +161,7 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     short: "Стоимость привлечения одного платящего клиента (₽).",
   },
   paybackMonths: {
-    title: "Payback months",
+    title: "Окупаемость (payback), мес",
     short: "За сколько месяцев окупаются затраты на привлечение клиента (CAC) валовой прибылью.",
   },
   dau: {
@@ -173,60 +173,60 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     short: "Monthly Active Users: активные пользователи в месяц.",
   },
   retentionD1: {
-    title: "Retention D1",
+    title: "Удержание D1",
     short: "Доля пользователей, которые возвращаются на следующий день после первого использования.",
   },
   retentionD7: {
-    title: "Retention D7",
+    title: "Удержание D7",
     short: "Доля пользователей, активных через 7 дней.",
   },
   retentionD30: {
-    title: "Retention D30",
+    title: "Удержание D30",
     short: "Доля пользователей, активных через 30 дней. Один из главных детерминированных сигналов PMF.",
   },
   activationRate: {
-    title: "Activation rate",
+    title: "Активация",
     short: "Доля пользователей, которые доходят до «момента ценности» (ключевого действия) после входа в продукт.",
   },
   conversionRate: {
-    title: "Conversion rate",
+    title: "Конверсия",
     short: "Доля пользователей, переходящих в оплату/целевой статус (в зависимости от вашей модели).",
   },
   organicGrowthPct: {
-    title: "Organic growth",
+    title: "Органический рост",
     short: "Доля/темп органического роста (%). Сигнал качества продукта и дистрибуции.",
   },
   viralCoefficient: {
-    title: "Viral coefficient",
+    title: "Вирусный коэффициент",
     short: "Сколько новых пользователей приводит один активный пользователь (k‑factor).",
   },
   repeatPurchaseRate: {
-    title: "Repeat purchase rate",
+    title: "Повторные покупки",
     short: "Доля пользователей, которые покупают повторно (если модель транзакционная).",
   },
 
   burnMonthly: {
-    title: "Burn monthly",
+    title: "Burn (сжигание), ₽/мес",
     short: "Сколько денег компания тратит в месяц сверх поступлений (₽).",
   },
   cashOnHand: {
-    title: "Cash on hand",
+    title: "Денег на счету",
     short: "Сколько денег сейчас на счетах/в кассе (₽).",
   },
   runwayMonths: {
-    title: "Runway",
-    short: "На сколько месяцев хватит денег при текущем burn. Runway задаёт предел времени на исправление экономики.",
+    title: "Запас денег (runway)",
+    short: "На сколько месяцев хватит денег при текущем burn. Запас денег задаёт предел времени на исправление экономики.",
   },
   releasesPerMonth: {
-    title: "Releases per month",
+    title: "Релизы в месяц",
     short: "Скорость продуктовой разработки: сколько релизов в месяц (прокси execution‑скорости).",
   },
   teamSize: {
-    title: "Team size",
+    title: "Размер команды",
     short: "Размер команды. Влияет на реалистичность темпа и burn.",
   },
   foundersFullTime: {
-    title: "Founders full time",
+    title: "Фаундеры full‑time",
     short: "Работают ли фаундеры над проектом full‑time. Для ранних стадий это сильный фактор доверия.",
   },
   tam: {
@@ -234,40 +234,40 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     short: "Total Addressable Market: общий объём рынка, на который теоретически может претендовать продукт (₽).",
   },
   tamGrowthPct: {
-    title: "TAM growth",
+    title: "Рост TAM, %/год",
     short: "Оценка роста рынка в год (%). Высокий рост увеличивает «ветер в спину», но не заменяет PMF.",
   },
   regulatoryRisk: {
-    title: "Regulatory risk",
+    title: "Регуляторный риск",
     short: "Регуляторная неопределённость: насколько сильно правила/законы могут повлиять на бизнес.",
   },
   techRisk: {
-    title: "Tech risk",
+    title: "Технический риск",
     short: "Технический риск: зависимость от сложных R&D, стабильности инфраструктуры, качества данных и т.п.",
   },
 
   businessScore: {
-    title: "Business score",
+    title: "Сила бизнеса",
     short: "Итоговая сила бизнеса/идеи (0–100) с учётом стадии. Это не «уверенность», а «качество» объекта оценки.",
   },
   dataConfidenceScore: {
-    title: "Data confidence",
+    title: "Доверие к данным",
     short: "Насколько можно доверять оценке по полноте, согласованности и наличию объективных метрик (0–100).",
   },
   dataCompletenessPct: {
-    title: "Completeness",
+    title: "Полнота данных",
     short: "Процент заполненности значимых полей для стадии. Низкая полнота расширяет диапазоны и снижает уверенность.",
   },
   consistencyScore: {
-    title: "Consistency",
+    title: "Согласованность",
     short: "Оценка отсутствия противоречий в вводных данных (0–100). При противоречиях снижается доверие к результату.",
   },
   stageFitScore: {
-    title: "Stage fit",
+    title: "Соответствие стадии",
     short: "Насколько текущие метрики и состояние соответствуют выбранной стадии (0–100).",
   },
   successProbabilityRange: {
-    title: "Success probability range",
+    title: "Диапазон вероятности успеха",
     short: "Диапазон вероятности успеха (в %), а не «ложно точное» число. Ширина зависит от уверенности в данных и стадии.",
   },
   ltv: {
@@ -279,7 +279,7 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     short: "Отношение ценности клиента к стоимости привлечения. Для масштабирования обычно нужен запас (например ≥2–3 в зависимости от стадии).",
   },
   burnMultiple: {
-    title: "Burn multiple",
+    title: "Burn‑мультипликатор",
     short: "Сколько burn тратится на 1 ₽ новой выручки. Чем ниже — тем эффективнее рост.",
   },
   dcf: {
@@ -287,7 +287,7 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     short: "Discounted Cash Flow — ориентир по оценке через будущие денежные потоки. На ранних стадиях носит справочный характер.",
   },
   valuationRange: {
-    title: "Valuation range",
+    title: "Диапазон оценки",
     short: "Диапазон оценки (low/base/high) в человекочитаемом виде. Это ориентир, а не юридическая оценка стоимости.",
   },
   valuationRangeHuman: {
@@ -299,39 +299,39 @@ export const analyzerGlossary: Record<GlossaryKey, GlossaryItem> = {
     short: "Annual Recurring Revenue: годовая повторяемая выручка (≈ месячная выручка × 12).",
   },
   expectedValue: {
-    title: "Expected value",
+    title: "Ожидаемая ценность",
     short: "Ожидаемая ценность: ориентир, учитывающий вероятность успеха и базовый диапазон оценки. Это не гарантия результата.",
   },
   riskAvg: {
-    title: "Risk profile",
+    title: "Профиль риска",
     short: "Совокупный риск (0–100, где больше = хуже). Влияет на вероятность успеха и диапазоны вывода.",
   },
   pmfScore: {
-    title: "PMF score",
+    title: "PMF‑скоринг",
     short: "Скоринг PMF (0–100): детерминированная оценка по удержанию, органике и повторным покупкам/повторяемости.",
   },
   growthScore: {
-    title: "Growth score",
+    title: "Скоринг роста",
     short: "Скоринг роста (0–100): темп MoM и органический рост как сигналы спроса и дистрибуции.",
   },
   unitEconomicsScore: {
-    title: "Unit economics score",
+    title: "Скоринг юнит‑экономики",
     short: "Скоринг юнит‑экономики (0–100): LTV/CAC, маржа и окупаемость привлечения.",
   },
   efficiencyScore: {
-    title: "Efficiency score",
-    short: "Скоринг эффективности (0–100): burn multiple и эффективность маркетинга (magic number).",
+    title: "Скоринг эффективности",
+    short: "Скоринг эффективности (0–100): burn‑мультипликатор и эффективность маркетинга (magic number).",
   },
   marketScore: {
-    title: "Market score",
+    title: "Скоринг рынка",
     short: "Скоринг рынка (0–100): размер TAM, рост рынка и конкурентное давление.",
   },
   investorScore: {
-    title: "Investor score",
+    title: "Инвест‑скоринг",
     short: "Инвест‑скоринг (0–100): агрегирует рост, юниты, PMF, эффективность и рынок в одну инвестиционную ось.",
   },
   confidenceScore: {
-    title: "Confidence score",
+    title: "Уверенность (legacy)",
     short: "Legacy‑уверенность (0–100): старый слой полноты данных. В v2 используется как fallback, если нет dataConfidenceScore.",
   },
   stickiness: {

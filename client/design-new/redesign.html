@@ -1,536 +1,1754 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Startup Intelligence Interface</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StartupHub — Investment Intelligence</title>
+  <style>
+    :root {
+      --bg: #06080d;
+      --bg-soft: #0a0f17;
+      --panel: rgba(13, 19, 30, 0.72);
+      --panel-strong: rgba(15, 24, 38, 0.92);
+      --panel-2: rgba(10, 16, 26, 0.9);
+      --line: rgba(255,255,255,0.08);
+      --line-2: rgba(255,255,255,0.14);
+      --text: #f3f7ff;
+      --muted: #99a7c2;
+      --muted-2: #73819b;
+      --cyan: #56c7ff;
+      --cyan-2: #18a8ff;
+      --violet: #8b5cf6;
+      --pink: #ff4fd8;
+      --green: #2dd4bf;
+      --lime: #84cc16;
+      --amber: #f59e0b;
+      --red: #f43f5e;
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+      --shadow-soft: 0 20px 60px rgba(0,0,0,.35);
+      --shadow-glow: 0 0 0 1px rgba(255,255,255,0.03), 0 8px 50px rgba(86,199,255,.10), 0 8px 60px rgba(139,92,246,.08);
+      --grad-brand: linear-gradient(135deg, #ff4fd8 0%, #8b5cf6 45%, #56c7ff 100%);
+      --grad-cool: linear-gradient(135deg, rgba(86,199,255,.22), rgba(139,92,246,.16));
+      --grad-success: linear-gradient(135deg, #2dd4bf, #56c7ff);
+      --grad-warn: linear-gradient(135deg, #f59e0b, #ff4fd8);
+      --maxw: 1420px;
+    }
 
-<style>
-:root {
-  --bg: #050507;
-  --text: #eaf0ff;
-  --muted: rgba(234,240,255,0.7);
+    * { box-sizing: border-box; }
 
-  --blue: #6ea8ff;
-  --violet: #7c3aed;
-  --rose: #e11d48;
-  --mint: #00f5d4;
+    html, body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(86,199,255,.10), transparent 20%),
+        radial-gradient(circle at 85% 0%, rgba(255,79,216,.08), transparent 22%),
+        radial-gradient(circle at 80% 20%, rgba(139,92,246,.10), transparent 24%),
+        linear-gradient(180deg, #05070b 0%, #070b11 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      letter-spacing: -0.01em;
+    }
 
-  --glass: rgba(255,255,255,0.06);
-  --border: rgba(255,255,255,0.12);
-}
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle at center, black 35%, transparent 85%);
+      opacity: .45;
+    }
 
-/* BASE */
-body {
-  margin:0;
-  font-family: Inter, system-ui;
-  background:
-    radial-gradient(circle at 20% 10%, rgba(124,58,237,0.25), transparent 40%),
-    radial-gradient(circle at 80% 20%, rgba(110,168,255,0.18), transparent 45%),
-    radial-gradient(circle at 50% 80%, rgba(0,245,212,0.12), transparent 50%),
-    var(--bg);
-  color:var(--text);
-}
+    .container {
+      width: min(var(--maxw), calc(100vw - 40px));
+      margin: 0 auto;
+    }
 
-.container {
-  max-width:1200px;
-  margin:0 auto;
-  padding:40px 20px;
-}
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(20px);
+      background: linear-gradient(180deg, rgba(8,11,18,.82), rgba(8,11,18,.58));
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
 
-/* GRID SYSTEM */
-.grid {
-  display:grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap:16px;
-}
+    .topbar-inner {
+      width: min(var(--maxw), calc(100vw - 40px));
+      margin: 0 auto;
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
 
-/* CARDS */
-.card {
-  background:var(--glass);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:20px;
-  backdrop-filter: blur(18px);
-  box-shadow:0 25px 80px rgba(0,0,0,0.4);
-  transition:0.3s;
-}
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 700;
+    }
 
-.card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(110,168,255,0.3);
-}
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--grad-brand);
+      box-shadow: 0 10px 30px rgba(86,199,255,.25), 0 8px 25px rgba(255,79,216,.18);
+      position: relative;
+      overflow: hidden;
+    }
 
-/* SIZES */
-.w-4 { grid-column: span 4; }
-.w-6 { grid-column: span 6; }
-.w-8 { grid-column: span 8; }
-.w-12 { grid-column: span 12; }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 11px;
+      background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.02));
+      mix-blend-mode: overlay;
+    }
 
-/* HIGHLIGHT BLOCKS */
-.violet {
-  background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(124,58,237,0.05));
-  border:1px solid rgba(124,58,237,0.3);
-}
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.05;
+    }
 
-.blue {
-  background: linear-gradient(135deg, rgba(110,168,255,0.18), rgba(110,168,255,0.05));
-}
+    .brand-text strong {
+      font-size: 15px;
+      font-weight: 700;
+    }
 
-.mint {
-  background: linear-gradient(135deg, rgba(0,245,212,0.15), rgba(0,245,212,0.03));
-}
+    .brand-text span {
+      color: var(--muted);
+      font-size: 12px;
+    }
 
-.rose {
-  background: linear-gradient(135deg, rgba(225,29,72,0.15), rgba(225,29,72,0.03));
-}
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
-/* TYPO */
-h1,h2,h3 { margin:0 0 10px 0; }
+    .pill, .tab-btn, .ghost-btn, .primary-btn {
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--text);
+      background: rgba(255,255,255,.04);
+      height: 42px;
+      padding: 0 16px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: .25s ease;
+      backdrop-filter: blur(10px);
+      text-decoration: none;
+    }
 
-p {
-  color:var(--muted);
-  line-height:1.6;
-  font-size:14.5px;
-}
+    .pill:hover, .tab-btn:hover, .ghost-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(86,199,255,.25);
+      background: rgba(255,255,255,.06);
+    }
 
-/* BADGES */
-.badge {
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:12px;
-  background:rgba(124,58,237,0.12);
-  border:1px solid rgba(124,58,237,0.3);
-}
+    .primary-btn {
+      background: linear-gradient(135deg, rgba(255,79,216,.16), rgba(86,199,255,.16));
+      border-color: rgba(86,199,255,.24);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.03), 0 12px 30px rgba(86,199,255,.16);
+    }
 
-/* METRICS */
-.metric {
-  font-size:18px;
-  font-weight:600;
-}
+    .hero {
+      padding: 42px 0 18px;
+    }
 
-/* SMALL TEXT */
-.small {
-  font-size:12px;
-  color:rgba(234,240,255,0.6);
-}
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(86,199,255,.10), transparent 26%),
+        radial-gradient(circle at 90% 10%, rgba(255,79,216,.10), transparent 25%),
+        linear-gradient(180deg, rgba(13,19,30,.92), rgba(9,14,24,.98));
+      box-shadow: var(--shadow-soft);
+      padding: 30px;
+      min-height: 380px;
+      isolation: isolate;
+    }
 
-/* CHART */
-.chartBox {
-  height:220px;
-}
-</style>
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: 34px;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(255,79,216,.35), rgba(86,199,255,.35), rgba(255,255,255,.06));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .hero-glow {
+      position: absolute;
+      right: -120px;
+      top: -100px;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(86,199,255,.18), transparent 60%);
+      filter: blur(20px);
+      z-index: -1;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.35fr .95fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 8px 14px;
+      border-radius: 999px;
+      color: #d8e4ff;
+      background: rgba(255,255,255,.04);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink), var(--cyan));
+      box-shadow: 0 0 18px rgba(86,199,255,.8);
+    }
+
+    .hero-title {
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: .98;
+      margin: 0 0 14px;
+      letter-spacing: -0.04em;
+      max-width: 860px;
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.65;
+      max-width: 760px;
+      margin-bottom: 22px;
+    }
+
+    .hero-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .glass-stat {
+      position: relative;
+      background: rgba(255,255,255,.035);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 22px;
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .glass-stat::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), transparent 45%);
+      pointer-events: none;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .10em;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+    }
+
+    .stat-help {
+      color: #b7c3d9;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #d8ebff;
+      border: 1px solid rgba(86,199,255,.18);
+      background: rgba(86,199,255,.08);
+      border-radius: 999px;
+      padding: 7px 10px;
+    }
+
+    .score-side {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 16px;
+    }
+
+    .score-panel {
+      position: relative;
+      background: rgba(255,255,255,.035);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 30px;
+      padding: 24px;
+      min-height: 100%;
+      box-shadow: var(--shadow-glow);
+      overflow: hidden;
+    }
+
+    .score-panel::before {
+      content: "";
+      position: absolute;
+      inset: auto -50px -100px auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(255,79,216,.18), transparent 60%);
+      border-radius: 50%;
+      filter: blur(10px);
+    }
+
+    .verdict-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, rgba(245,158,11,.18), rgba(255,79,216,.18));
+      border: 1px solid rgba(245,158,11,.24);
+      color: #fff3da;
+      margin-bottom: 16px;
+    }
+
+    .ring-wrap {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .score-ring {
+      width: 220px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      position: relative;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at center, #0b111b 59%, transparent 60%),
+        conic-gradient(from 180deg, var(--pink), var(--violet), var(--cyan), rgba(255,255,255,.10) 0);
+      box-shadow: inset 0 0 40px rgba(255,255,255,.03), 0 20px 50px rgba(0,0,0,.35);
+    }
+
+    .score-ring::before {
+      content: "";
+      position: absolute;
+      inset: 16px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(86,199,255,.10), transparent 55%),
+        linear-gradient(180deg, #09101a, #0d1623);
+      border: 1px solid rgba(255,255,255,.06);
+      box-shadow: inset 0 10px 30px rgba(255,255,255,.03);
+    }
+
+    .score-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .score-percent {
+      font-size: 52px;
+      font-weight: 900;
+      line-height: .9;
+      letter-spacing: -0.05em;
+      margin-bottom: 8px;
+    }
+
+    .score-caption {
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .score-meta h3 {
+      margin: 0 0 12px;
+      font-size: 26px;
+      letter-spacing: -0.03em;
+    }
+
+    .score-meta p {
+      color: var(--muted);
+      margin: 0 0 16px;
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    .inline-tags {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 999px;
+      color: #dce9ff;
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .score-mini-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .mini-tile {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.035);
+      border: 1px solid rgba(255,255,255,.07);
+    }
+
+    .mini-tile .k {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .mini-tile .v {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .tabs-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 26px 0 18px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(255,79,216,.14), rgba(86,199,255,.14));
+      border-color: rgba(86,199,255,.24);
+      box-shadow: 0 10px 25px rgba(86,199,255,.10);
+    }
+
+    .section {
+      margin: 16px 0 24px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid-12 {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .span-12 { grid-column: span 12; }
+    .span-8  { grid-column: span 8; }
+    .span-7  { grid-column: span 7; }
+    .span-6  { grid-column: span 6; }
+    .span-5  { grid-column: span 5; }
+    .span-4  { grid-column: span 4; }
+    .span-3  { grid-column: span 3; }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.07);
+      background:
+        linear-gradient(180deg, rgba(14,20,32,.88), rgba(10,15,24,.96));
+      box-shadow: var(--shadow-soft);
+      padding: 24px;
+    }
+
+    .card.glow::before {
+      content: "";
+      position: absolute;
+      inset: -120px auto auto -120px;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(86,199,255,.14), transparent 60%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .card-title {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .card-sub {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .metric-card {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.035);
+      border: 1px solid rgba(255,255,255,.07);
+      min-height: 126px;
+      transition: .25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(86,199,255,.18);
+      background: rgba(255,255,255,.045);
+    }
+
+    .metric-card::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(86,199,255,.13), transparent 65%);
+    }
+
+    .metric-name {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      margin-bottom: 12px;
+    }
+
+    .metric-value {
+      font-size: 30px;
+      font-weight: 850;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      margin-bottom: 8px;
+    }
+
+    .metric-note {
+      color: #c8d4ea;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .metric-bar {
+      margin-top: 12px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      overflow: hidden;
+    }
+
+    .metric-bar > span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--pink), var(--violet), var(--cyan));
+      box-shadow: 0 0 18px rgba(86,199,255,.25);
+    }
+
+    .story-card {
+      padding: 28px;
+    }
+
+    .story-card .lede {
+      font-size: 22px;
+      line-height: 1.45;
+      color: #eef4ff;
+      letter-spacing: -0.02em;
+      margin: 0 0 20px;
+    }
+
+    .story-columns {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+    }
+
+    .quote-block {
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 20px;
+    }
+
+    .quote-block .q-title {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .10em;
+      margin-bottom: 10px;
+    }
+
+    .quote-block p {
+      margin: 0;
+      color: #e7efff;
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    .signal-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .signal {
+      border-radius: 20px;
+      padding: 16px 18px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+    }
+
+    .signal h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #dce9ff;
+    }
+
+    .signal p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .accent-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .accent-title .line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(86,199,255,.25), rgba(255,255,255,.04));
+    }
+
+    .heatmap {
+      display: grid;
+      gap: 14px;
+    }
+
+    .heat-row {
+      display: grid;
+      grid-template-columns: 170px 1fr 64px;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .heat-label {
+      color: #d9e6ff;
+      font-size: 14px;
+    }
+
+    .heat-track {
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.05);
+      position: relative;
+    }
+
+    .heat-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2dd4bf 0%, #56c7ff 40%, #f59e0b 75%, #f43f5e 100%);
+      box-shadow: 0 0 20px rgba(86,199,255,.18);
+    }
+
+    .heat-val {
+      text-align: right;
+      font-weight: 700;
+      color: #d9e6ff;
+      font-size: 14px;
+    }
+
+    .flag-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .flag {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.07);
+    }
+
+    .flag-icon {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+
+    .flag.red .flag-icon { background: rgba(244,63,94,.14); color: #ff8ca0; }
+    .flag.amber .flag-icon { background: rgba(245,158,11,.14); color: #ffd495; }
+    .flag.blue .flag-icon { background: rgba(86,199,255,.14); color: #b7ecff; }
+
+    .flag h4 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      color: #edf3ff;
+    }
+
+    .flag p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .action-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .action {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 88px 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 18px;
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.025));
+      border: 1px solid rgba(255,255,255,.07);
+    }
+
+    .action::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: var(--grad-brand);
+    }
+
+    .action-priority {
+      width: 88px;
+      height: 88px;
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(86,199,255,.12), rgba(139,92,246,.12));
+      border: 1px solid rgba(86,199,255,.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      text-align: center;
+    }
+
+    .action-priority strong {
+      display: block;
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .action-priority span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-top: 6px;
+    }
+
+    .action-body h4 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .action-body p {
+      margin: 0 0 10px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.07);
+      color: #dce9ff;
+      font-size: 12px;
+    }
+
+    .impact {
+      text-align: right;
+      min-width: 130px;
+    }
+
+    .impact strong {
+      display: block;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .impact span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .why-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .why {
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.035);
+      border: 1px solid rgba(255,255,255,.07);
+    }
+
+    .why h4 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      color: #eaf2ff;
+    }
+
+    .why p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .progress-card {
+      display: grid;
+      gap: 14px;
+    }
+
+    .progress-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .progress-row .label {
+      color: #dce9ff;
+      font-size: 14px;
+    }
+
+    .progress-row .val {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .progress-track {
+      height: 11px;
+      background: rgba(255,255,255,.05);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.05);
+      margin-bottom: 14px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--pink), var(--violet), var(--cyan));
+    }
+
+    .driver-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .driver {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.07);
+    }
+
+    .driver-left strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+
+    .driver-left span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .driver-badge {
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      white-space: nowrap;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .driver-badge.good {
+      color: #bcfff1;
+      background: rgba(45,212,191,.12);
+      border-color: rgba(45,212,191,.18);
+    }
+
+    .driver-badge.bad {
+      color: #ffd3da;
+      background: rgba(244,63,94,.10);
+      border-color: rgba(244,63,94,.18);
+    }
+
+    .footer-note {
+      padding: 14px 18px;
+      margin-top: 16px;
+      border-radius: 18px;
+      font-size: 13px;
+      color: var(--muted);
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.06);
+      line-height: 1.6;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .fade-in {
+      animation: fadeUp .6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1180px) {
+      .hero-grid,
+      .story-columns,
+      .ring-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-summary,
+      .metrics-grid,
+      .score-mini-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .span-8, .span-7, .span-6, .span-5, .span-4, .span-3 {
+        grid-column: span 12;
+      }
+
+      .action {
+        grid-template-columns: 1fr;
+      }
+
+      .impact {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .container, .topbar-inner {
+        width: min(var(--maxw), calc(100vw - 22px));
+      }
+
+      .hero-card {
+        padding: 20px;
+        border-radius: 26px;
+      }
+
+      .hero-summary,
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card,
+      .score-panel {
+        padding: 20px;
+      }
+
+      .score-ring {
+        width: 180px;
+      }
+
+      .hero-title {
+        font-size: 34px;
+      }
+
+      .tabs-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .heat-row {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar-inner {
+        height: auto;
+        padding: 14px 0;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="container">
-
-<!-- HERO (wide, colorful) -->
-<div class="grid">
-  <div class="card w-8 violet">
-    <span class="badge">Investment Intelligence</span>
-    <h1>Startup Deep Analysis Interface</h1>
-    <p>
-      Интерактивный инвестиционный анализ, объединяющий бизнес-логику,
-      метрики роста и поведенческие сигналы пользователей в единую систему интерпретации.
-    </p>
-  </div>
-
-  <div class="card w-4 rose">
-    <h2>Success Score</h2>
-    <div class="metric">63%</div>
-    <p class="small">вероятность устойчивого роста</p>
-  </div>
-</div>
-
-<!-- KPI ROW -->
-<div class="grid">
-
-  <div class="card w-3 blue">
-    <h3>Growth</h3>
-    <div class="metric">+14%</div>
-    <p class="small">MoM</p>
-  </div>
-
-  <div class="card w-3 violet">
-    <h3>LTV/CAC</h3>
-    <div class="metric">2.6</div>
-    <p class="small">borderline efficiency</p>
-  </div>
-
-  <div class="card w-3 mint">
-    <h3>Retention</h3>
-    <div class="metric">32%</div>
-    <p class="small">D30 users</p>
-  </div>
-
-  <div class="card w-3 rose">
-    <h3>Runway</h3>
-    <div class="metric">9m</div>
-    <p class="small">cash survival</p>
-  </div>
-
-</div>
-
-<!-- BIG ANALYSIS SPLIT -->
-<div class="grid">
-
-  <!-- LEFT BIG BLOCK -->
-  <div class="card w-8 violet">
-    <h2>Business Narrative</h2>
-
-    <p>
-      Проект демонстрирует устойчивую траекторию раннего SaaS-бизнеса с признаками
-      частичного product-market fit, однако без выраженной экспоненциальной динамики роста.
-    </p>
-
-    <p>
-      Основная ценность продукта заключается в снижении стоимости и сложности выполнения
-      пользовательской задачи, что создаёт потенциал для масштабирования при улучшении удержания.
-    </p>
-
-    <p>
-      В текущем состоянии бизнес находится в зоне “validation → early traction transition”.
-    </p>
-  </div>
-
-  <!-- RIGHT INSIGHT STACK -->
-  <div class="card w-4 blue">
-    <h3>Key Insights</h3>
-
-    <p>⚠ churn является главным ограничением</p>
-    <p>✔ есть частичный PMF</p>
-    <p>✔ рост стабилен</p>
-    <p>⚠ экономика пока не масштабируется</p>
-  </div>
-
-</div>
-
-<!-- GROWTH + CHART -->
-<div class="grid">
-
-  <div class="card w-6 blue">
-    <h2>Growth Dynamics</h2>
-    <p>
-      Рост стабилен, но не экспоненциален — это ограничивает венчурный потенциал
-      без усиления retention loop.
-    </p>
-  </div>
-
-  <div class="card w-6">
-    <canvas id="growthChart"></canvas>
-  </div>
-
-</div>
-
-<!-- ECONOMICS -->
-<div class="grid">
-
-  <div class="card w-4 violet">
-    <h2>Unit Economics</h2>
-    <p>
-      Модель близка к устойчивой, но LTV/CAC ниже оптимального уровня для агрессивного масштабирования.
-    </p>
-  </div>
-
-  <div class="card w-4 mint">
-    <h2>Market</h2>
-    <p>
-      Рынок большой, конкурентный, без явного доминирующего игрока.
-    </p>
-  </div>
-
-  <div class="card w-4 rose">
-    <h2>Risk</h2>
-    <p>
-      Основной риск — удержание пользователей и ограниченная повторная монетизация.
-    </p>
-  </div>
-
-</div>
-
-</div>
-
-<script>
-new Chart(document.getElementById("growthChart"), {
-  type: "line",
-  data: {
-    labels: ["M1","M2","M3","M4","M5","M6"],
-    datasets: [{
-      data: [3,5,7,9,12,14],
-      borderColor: "#7c3aed",
-      tension: 0.4
-    }]
-  }
-});
-</script>
-
-
-<!-- =========================
-     ADVANCED INSIGHT LAYER
-========================= -->
-
-<div class="container">
-
-<!-- RISK HEAT LAYER -->
-<div class="grid">
-
-  <div class="card w-6 rose">
-    <h2>Risk Heatmap</h2>
-    <p>
-      Визуализация распределения ключевых рисков по системе бизнеса.
-      Чем ярче зона — тем выше влияние на стабильность компании.
-    </p>
-
-    <canvas id="riskChart"></canvas>
-  </div>
-
-  <div class="card w-6 violet">
-    <h2>Economic Efficiency Curve</h2>
-    <p>
-      Отражает баланс между ростом, затратами и удержанием.
-      Критическая зона возникает при несоответствии LTV и CAC.
-    </p>
-
-    <canvas id="ecoChart"></canvas>
-  </div>
-
-</div>
-
-<!-- INVESTOR THINKING -->
-<div class="grid">
-
-  <div class="card w-8 blue">
-    <h2>Investor Interpretation</h2>
-
-    <p>
-      С точки зрения венчурного инвестора, проект находится в стадии
-      <b>“selective conviction”</b> — когда есть потенциал, но нет полной уверенности
-      в масштабируемости модели.
-    </p>
-
-    <p>
-      Основная гипотеза инвестирования:
-      при улучшении retention и снижении CAC бизнес может перейти в
-      категорию высокорастущих SaaS-активов.
-    </p>
-
-    <p>
-      Однако текущая структура юнит-экономики требует доказательства
-      устойчивости при увеличении масштаба.
-    </p>
-  </div>
-
-  <div class="card w-4 rose">
-    <h2>Decision Signal</h2>
-
-    <p><b>→ HOLD</b></p>
-    <p class="small">недостаточно сильных сигналов для aggressive investment</p>
-
-    <hr style="border:0;height:1px;background:rgba(255,255,255,0.1);margin:12px 0;">
-
-    <p class="small">
-      Основные триггеры решения:
-    </p>
-
-    <p class="small">• retention ниже идеала</p>
-    <p class="small">• LTV/CAC пограничный</p>
-    <p class="small">• рост стабильный, но не экспоненциальный</p>
-  </div>
-
-</div>
-
-<!-- FINAL SUMMARY -->
-<div class="card violet">
-  <h2>Final Investment Thesis</h2>
-
-  <p>
-    Проект представляет собой раннюю стадию масштабируемого SaaS-бизнеса с
-    частично подтверждённым спросом и устойчивым ростом.
-  </p>
-
-  <p>
-    Однако ключевое ограничение заключается в отсутствии сильного
-    retention loop и недостаточной эффективности монетизации клиентской базы.
-  </p>
-
-  <p>
-    Инвестиционная логика:
-    <b>ставка на улучшение продукта → затем масштабирование</b>.
-  </p>
-</div>
-
-</div>
-
-<!-- =========================
-     CHARTS
-========================= -->
-
-<script>
-// RISK HEAT (simplified)
-new Chart(document.getElementById("riskChart"), {
-  type: "bar",
-  data: {
-    labels: ["Churn","CAC","Runway","Market","Tech"],
-    datasets: [{
-      data: [80,65,50,40,30],
-      backgroundColor: [
-        "#e11d48",
-        "#7c3aed",
-        "#6ea8ff",
-        "#00f5d4",
-        "#6ea8ff"
-      ]
-    }]
-  }
-});
-
-// ECONOMIC CURVE
-new Chart(document.getElementById("ecoChart"), {
-  type: "line",
-  data: {
-    labels: ["Stage 1","Stage 2","Stage 3","Stage 4"],
-    datasets: [{
-      label: "Efficiency",
-      data: [30,45,55,52],
-      borderColor: "#00f5d4",
-      tension: 0.4
-    }]
-  }
-});
-</script>
-
-
-<!-- =========================
-     REASONING LAYER
-========================= -->
-
-<div class="container">
-
-<div class="grid">
-
-  <div class="card w-12 violet">
-    <h2>Why this score? (Reasoning Layer)</h2>
-
-    <p>
-      Итоговая оценка формируется не как среднее значение метрик,
-      а как взвешенная система причинно-следственных связей между ростом,
-      удержанием пользователей и экономикой привлечения.
-    </p>
-
-    <p>
-      Основное снижение score вызвано:
-    </p>
-
-    <p>• недостаточным удержанием пользователей (retention loop не замкнут)</p>
-    <p>• пограничной юнит-экономикой (LTV/CAC < оптимального уровня)</p>
-    <p>• отсутствием экспоненциального ускорения роста</p>
-
-    <p>
-      При этом положительные факторы:
-    </p>
-
-    <p>• стабильный рост MoM</p>
-    <p>• наличие платящего ядра пользователей</p>
-    <p>• подтверждённый спрос на продукт</p>
-  </div>
-
-</div>
-
-<!-- =========================
-     BENCHMARK LAYER
-========================= -->
-
-<div class="grid">
-
-  <div class="card w-6 blue">
-    <h2>Market Benchmark Comparison</h2>
-
-    <p>
-      Сравнение с типичными SaaS-стартапами ранней стадии:
-    </p>
-
-    <p>Growth: <b>средний уровень</b> (top 40%)</p>
-    <p>Retention: <b>ниже среднего</b> (bottom 35%)</p>
-    <p>LTV/CAC: <b>пограничный</b> (median range)</p>
-    <p>Runway: <b>нормальный</b> (safe zone)</p>
-  </div>
-
-  <div class="card w-6 mint">
-    <h2>Interpretation vs Market</h2>
-
-    <p>
-      Проект находится в зоне “early competitive SaaS”.
-      Это означает, что он уже не является экспериментом,
-      но ещё не перешёл в категорию устойчивого scale-up бизнеса.
-    </p>
-
-    <p>
-      Главный фактор отставания от топ-проекта рынка — удержание и монетизация.
-    </p>
-  </div>
-
-</div>
-
-<!-- =========================
-     ACTION PRIORITY SYSTEM
-========================= -->
-
-<div class="grid">
-
-  <div class="card w-12 rose">
-    <h2>Action Priority System (What to do next)</h2>
-
-    <p>
-      Система автоматически ранжирует действия по влиянию на рост и инвестиционную привлекательность.
-    </p>
-
-    <br>
-
-    <p><b>Priority 1 — Retention Optimization</b></p>
-    <p>Фокус: увеличение D30 retention и формирование привычки использования продукта</p>
-
-    <p><b>Priority 2 — CAC Reduction</b></p>
-    <p>Оптимизация каналов привлечения и снижение стоимости клиента</p>
-
-    <p><b>Priority 3 — Product Value Expansion</b></p>
-    <p>Увеличение ценности продукта для роста ARPU и LTV</p>
-
-    <p><b>Priority 4 — Growth Acceleration</b></p>
-    <p>Усиление органического и платного роста после стабилизации экономики</p>
-
-  </div>
-
-</div>
-
-<!-- =========================
-     FINAL SYSTEM VERDICT
-========================= -->
-
-<div class="grid">
-
-  <div class="card w-12 violet">
-    <h2>System Final Verdict</h2>
-
-    <p>
-      Проект демонстрирует характеристики раннего инвестиционно-перспективного SaaS,
-      однако не обладает достаточной устойчивостью для агрессивного масштабирования.
-    </p>
-
-    <p>
-      Рекомендуемая стратегия:
-      <b>итеративное улучшение продукта → оптимизация экономики → последующее масштабирование</b>
-    </p>
-
-    <p>
-      Инвестиционный статус: <b>HOLD / MONITOR</b>
-    </p>
-  </div>
-
-</div>
-
-</div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div class="brand-text">
+          <strong>StartupHub</strong>
+          <span>Investment Intelligence Report</span>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="pill">Seed stage</button>
+        <button class="pill">Founder mode</button>
+        <button class="ghost-btn">PDF</button>
+        <button class="ghost-btn">Поделиться</button>
+        <button class="primary-btn">Создать карточку стартапа</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero fade-in">
+      <div class="hero-card">
+        <div class="hero-glow"></div>
+
+        <div class="hero-grid">
+          <div>
+            <div class="hero-kicker">
+              <span class="dot"></span>
+              Детерминированный инвестиционный анализ без ИИ-галлюцинаций
+            </div>
+
+            <h1 class="hero-title">NeuroFlow AI CRM</h1>
+
+            <p class="hero-sub">
+              Компания демонстрирует убедительный рыночный потенциал и достойную операционную базу для seed-stage,
+              но итоговую инвестиционную привлекательность сдерживают слабоватое удержание на D30, умеренно длинный
+              payback и ограниченный runway. Отчёт должен не просто показать цифры, а визуально объяснить,
+              <strong>почему решение именно WATCH</strong> и что именно нужно улучшить, чтобы перейти в HOLD.
+            </p>
+
+            <div class="hero-summary">
+              <div class="glass-stat">
+                <div class="stat-label">Вердикт</div>
+                <div class="stat-value">WATCH</div>
+                <div class="stat-help">Рынок и команда выглядят сильнее среднего, но метрики удержания ещё не подтверждают устойчивый PMF.</div>
+                <div class="stat-chip">Что переведёт в HOLD → D30 retention, runway, payback</div>
+              </div>
+
+              <div class="glass-stat">
+                <div class="stat-label">Вероятность успеха</div>
+                <div class="stat-value"><span class="counter" data-target="42">0</span>–<span class="counter" data-target="58">0</span>%</div>
+                <div class="stat-help">Показывается как диапазон, а не псевдоточное число — это усиливает доверие к оценке.</div>
+              </div>
+
+              <div class="glass-stat">
+                <div class="stat-label">Уверенность в оценке</div>
+                <div class="stat-value">Средняя</div>
+                <div class="stat-help">Данные заполнены хорошо, но есть несколько self-reported метрик с умеренной степенью неопределённости.</div>
+              </div>
+
+              <div class="glass-stat">
+                <div class="stat-label">Главный ограничитель</div>
+                <div class="stat-value">Retention & Runway</div>
+                <div class="stat-help">Сильнее всего итог сейчас тянут вниз удержание пользователей и короткий запас по кэшу.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="score-side">
+            <div class="score-panel">
+              <div class="verdict-chip">Decision signal · WATCH</div>
+
+              <div class="ring-wrap">
+                <div class="score-ring" id="scoreRing">
+                  <div class="score-content">
+                    <div class="score-percent"><span class="counter" data-target="52">0</span>%</div>
+                    <div class="score-caption">Success score</div>
+                  </div>
+                </div>
+
+                <div class="score-meta">
+                  <h3>Оценка выглядит честной, а не “магической”</h3>
+                  <p>
+                    В этом экране нужно визуально подчёркивать не только итоговый score, но и доверие к нему:
+                    насколько данные полные, согласованные и подходят выбранной стадии.
+                  </p>
+
+                  <div class="inline-tags">
+                    <span class="tag">Сильная сторона: команда</span>
+                    <span class="tag">Bottleneck: D30 retention</span>
+                    <span class="tag">Stage fit: высокий</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="score-mini-grid">
+              <div class="mini-tile">
+                <div class="k">Business score</div>
+                <div class="v"><span class="counter" data-target="71">0</span>/100</div>
+              </div>
+              <div class="mini-tile">
+                <div class="k">Data confidence</div>
+                <div class="v"><span class="counter" data-target="76">0</span>/100</div>
+              </div>
+              <div class="mini-tile">
+                <div class="k">Consistency</div>
+                <div class="v"><span class="counter" data-target="69">0</span>/100</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="tabs-row">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="founder">Founder mode</button>
+        <button class="tab-btn" data-tab="investor">Investor mode</button>
+      </div>
+
+      <div class="toolbar">
+        <button class="pill">Сохранено в историю</button>
+        <button class="pill">analysis v2</button>
+      </div>
+    </div>
+
+    <section class="tab-content" id="tab-founder">
+      <div class="section grid grid-12 fade-in">
+        <div class="card glow span-12">
+          <h2 class="card-title">Ключевые метрики, которые хочется читать глазами</h2>
+          <p class="card-sub">
+            Вместо сухой таблицы — большие, контрастные показатели с коротким смысловым пояснением, чтобы пользователь
+            мгновенно считал, где у проекта сила, а где торможение.
+          </p>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-name">Рост месяц к месяцу</div>
+              <div class="metric-value"><span class="counter" data-target="14">0</span>%</div>
+              <div class="metric-note">Уверенный для seed-stage темп, но важно удержать качество роста.</div>
+              <div class="metric-bar"><span style="width: 72%"></span></div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-name">LTV / CAC</div>
+              <div class="metric-value">2.7x</div>
+              <div class="metric-note">Близко к комфортной зоне, но пока не выглядит по-настоящему мощно.</div>
+              <div class="metric-bar"><span style="width: 61%"></span></div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-name">D30 retention</div>
+              <div class="metric-value"><span class="counter" data-target="11">0</span>%</div>
+              <div class="metric-note">Главная точка напряжения. Именно она сильнее всего влияет на verdict.</div>
+              <div class="metric-bar"><span style="width: 34%"></span></div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-name">Runway</div>
+              <div class="metric-value"><span class="counter" data-target="7">0</span> мес.</div>
+              <div class="metric-note">Допустимо, но слишком коротко для уверенного HOLD-решения.</div>
+              <div class="metric-bar"><span style="width: 39%"></span></div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-name">Gross margin</div>
+              <div class="metric-value"><span class="counter" data-target="73">0</span>%</div>
+              <div class="metric-note">Хорошая база для улучшения юнит-экономики по мере роста.</div>
+              <div class="metric-bar"><span style="width: 76%"></span></div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-name">CAC Payback</div>
+              <div class="metric-value"><span class="counter" data-target="15">0</span> мес.</div>
+              <div class="metric-note">Пока длиннее желаемого. Есть пространство для повышения эффективности.</div>
+              <div class="metric-bar"><span style="width: 44%"></span></div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-name">Recurring share</div>
+              <div class="metric-value"><span class="counter" data-target="64">0</span>%</div>
+              <div class="metric-note">Повторяемость выручки уже выглядит неплохо и поддерживает thesis.</div>
+              <div class="metric-bar"><span style="width: 68%"></span></div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-name">Burn multiple</div>
+              <div class="metric-value">1.8</div>
+              <div class="metric-note">Рабочий уровень, но всё ещё требует более аккуратного роста.</div>
+              <div class="metric-bar"><span style="width: 58%"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card story-card span-8">
+          <div class="accent-title">
+            <h2 class="card-title" style="margin:0">Почему этот отчёт хочется читать</h2>
+            <div class="line"></div>
+          </div>
+
+          <p class="lede">
+            NeuroFlow AI CRM — не история про “плохой стартап”, а про компанию с
+            <span style="background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800;">хорошим рыночным потенциалом</span>,
+            которая уже нащупала рабочий спрос, но пока не доказала устойчивую повторяемость пользовательской ценности на горизонте 30 дней.
+          </p>
+
+          <div class="story-columns">
+            <div class="quote-block">
+              <div class="q-title">Executive summary</div>
+              <p>
+                Рынок достаточно крупный и растущий, команда выглядит собранной и релевантной, а выручка уже имеет заметную повторяемую основу.
+                Однако при текущем D30 retention и runway модель видит повышенную вероятность того, что рост может оказаться менее устойчивым,
+                чем кажется на первом взгляде. Поэтому текущий вердикт — WATCH: наблюдать внимательно, улучшать ключевые сигналы,
+                но пока не интерпретировать результаты как сильную инвестиционную готовность.
+              </p>
+            </div>
+
+            <div class="signal-grid">
+              <div class="signal">
+                <h4>Самая сильная сторона</h4>
+                <p>Команда + размер рынка + понятная категория продукта.</p>
+              </div>
+              <div class="signal">
+                <h4>Главный риск</h4>
+                <p>Удержание недостаточно подтверждает устойчивый PMF.</p>
+              </div>
+              <div class="signal">
+                <h4>Что изменит решение</h4>
+                <p>Рост D30 retention, удлинение runway и сокращение payback.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card span-4">
+          <h2 class="card-title">Red flags</h2>
+          <p class="card-sub">Блок должен быть очень визуальным и сканируемым — инвесторы мыслят флагами.</p>
+
+          <div class="flag-list">
+            <div class="flag red">
+              <div class="flag-icon">!</div>
+              <div>
+                <h4>Короткий runway</h4>
+                <p>7 месяцев — этого недостаточно для спокойного прохождения следующего цикла валидации.</p>
+              </div>
+            </div>
+
+            <div class="flag amber">
+              <div class="flag-icon">!</div>
+              <div>
+                <h4>Слабый D30 retention</h4>
+                <p>Пользователи приходят, но значимая часть не закрепляется на месячном горизонте.</p>
+              </div>
+            </div>
+
+            <div class="flag blue">
+              <div class="flag-icon">i</div>
+              <div>
+                <h4>Умеренная уверенность в self-reported данных</h4>
+                <p>Часть полей вводится вручную, поэтому итог показывает диапазон и confidence-слой.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card glow span-7">
+          <h2 class="card-title">Что именно тянет итог вверх и вниз</h2>
+          <p class="card-sub">Этот блок показывает причинность, а не просто вывод.</p>
+
+          <div class="driver-list">
+            <div class="driver">
+              <div class="driver-left">
+                <strong>Команда и founders commitment</strong>
+                <span>Сильный positive driver. Для seed-stage это один из основных аргументов в пользу интереса.</span>
+              </div>
+              <div class="driver-badge good">Позитивный драйвер</div>
+            </div>
+
+            <div class="driver">
+              <div class="driver-left">
+                <strong>Recurring revenue share</strong>
+                <span>Повторяемая выручка выглядит лучше среднего и поддерживает бизнес-модель.</span>
+              </div>
+              <div class="driver-badge good">Поддерживает thesis</div>
+            </div>
+
+            <div class="driver">
+              <div class="driver-left">
+                <strong>D30 retention</strong>
+                <span>Ключевой негативный драйвер: пока продукт не удерживает пользователей на уровне, достаточном для сильного verdict.</span>
+              </div>
+              <div class="driver-badge bad">Тянет оценку вниз</div>
+            </div>
+
+            <div class="driver">
+              <div class="driver-left">
+                <strong>Runway</strong>
+                <span>Короткий запас по кэшу усиливает execution-risk и снижает пространство для экспериментов.</span>
+              </div>
+              <div class="driver-badge bad">Повышает риск</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card span-5">
+          <h2 class="card-title">Профиль риска</h2>
+          <p class="card-sub">Не скучная таблица, а визуальная теплокарта давления по ключевым осям.</p>
+
+          <div class="heatmap">
+            <div class="heat-row">
+              <div class="heat-label">Retention pressure</div>
+              <div class="heat-track"><div class="heat-fill" style="width: 76%"></div></div>
+              <div class="heat-val">76/100</div>
+            </div>
+            <div class="heat-row">
+              <div class="heat-label">Runway pressure</div>
+              <div class="heat-track"><div class="heat-fill" style="width: 68%"></div></div>
+              <div class="heat-val">68/100</div>
+            </div>
+            <div class="heat-row">
+              <div class="heat-label">Unit economics risk</div>
+              <div class="heat-track"><div class="heat-fill" style="width: 51%"></div></div>
+              <div class="heat-val">51/100</div>
+            </div>
+            <div class="heat-row">
+              <div class="heat-label">Competition pressure</div>
+              <div class="heat-track"><div class="heat-fill" style="width: 58%"></div></div>
+              <div class="heat-val">58/100</div>
+            </div>
+            <div class="heat-row">
+              <div class="heat-label">Tech / execution risk</div>
+              <div class="heat-track"><div class="heat-fill" style="width: 42%"></div></div>
+              <div class="heat-val">42/100</div>
+            </div>
+          </div>
+
+          <div class="footer-note">
+            Чем ярче и длиннее полоса, тем сильнее соответствующее давление на итоговую инвестиционную картину.
+          </div>
+        </div>
+
+        <div class="card span-12">
+          <h2 class="card-title">Action Priority System</h2>
+          <p class="card-sub">Самый “липкий” блок отчёта: не просто что плохо, а что делать дальше и какой будет эффект.</p>
+
+          <div class="action-list">
+            <div class="action">
+              <div class="action-priority">
+                <div>
+                  <strong>#1</strong>
+                  <span>High</span>
+                </div>
+              </div>
+              <div class="action-body">
+                <h4>Повысить D30 retention до 16–18%</h4>
+                <p>
+                  Сейчас именно месячное удержание больше всего ограничивает переход из WATCH в HOLD.
+                  Приоритет — улучшить onboarding, time-to-value и первые сценарии повторного использования.
+                </p>
+                <div class="chips">
+                  <span class="chip">Улучшает PMF</span>
+                  <span class="chip">Снижает riskAvg</span>
+                  <span class="chip">Повышает investor score</span>
+                </div>
+              </div>
+              <div class="impact">
+                <strong>+8–12%</strong>
+                <span>к success range</span>
+              </div>
+            </div>
+
+            <div class="action">
+              <div class="action-priority">
+                <div>
+                  <strong>#2</strong>
+                  <span>High</span>
+                </div>
+              </div>
+              <div class="action-body">
+                <h4>Продлить runway минимум до 10–12 месяцев</h4>
+                <p>
+                  Без достаточного финансового горизонта даже хорошие продуктовые улучшения воспринимаются как менее надёжные.
+                  Возможные пути: умерить burn, ускорить денежные циклы, увеличить cash buffer.
+                </p>
+                <div class="chips">
+                  <span class="chip">Снижает financial risk</span>
+                  <span class="chip">Улучшает verdict stability</span>
+                </div>
+              </div>
+              <div class="impact">
+                <strong>+5–8%</strong>
+                <span>к confidence и verdict strength</span>
+              </div>
+            </div>
+
+            <div class="action">
+              <div class="action-priority">
+                <div>
+                  <strong>#3</strong>
+                  <span>Medium</span>
+                </div>
+              </div>
+              <div class="action-body">
+                <h4>Сократить CAC payback ниже 12 месяцев</h4>
+                <p>
+                  Это усилит качество роста и снизит сомнения вокруг эффективности масштабирования.
+                  Работать через каналы, квалификацию лидов и повышение конверсии в активацию.
+                </p>
+                <div class="chips">
+                  <span class="chip">Улучшает efficiency</span>
+                  <span class="chip">Усиливает LTV/CAC</span>
+                </div>
+              </div>
+              <div class="impact">
+                <strong>+4–7%</strong>
+                <span>к business score</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content hidden" id="tab-investor">
+      <div class="section grid grid-12 fade-in">
+        <div class="card span-8 glow">
+          <h2 class="card-title">Why this verdict</h2>
+          <p class="card-sub">Investor mode — глубже, холоднее, аналитичнее.</p>
+
+          <div class="why-list">
+            <div class="why">
+              <h4>Почему WATCH</h4>
+              <p>
+                Модель видит комбинацию из сильного рынка, достойной команды и уже неплохой повторяемой выручки,
+                но не получает достаточного подтверждения устойчивости продукта на уровне месячного удержания.
+                При текущем runway это ограничивает способность компании спокойно доработать продуктовую кривую без дополнительного давления.
+              </p>
+            </div>
+
+            <div class="why">
+              <h4>Что поддерживает интерес</h4>
+              <p>
+                TAM и темп роста рынка выглядят достаточно привлекательными, founders full-time,
+                gross margin формирует пространство для улучшения unit economics, а recurring share уже создаёт аргумент
+                в пользу более устойчивой модели, чем у многих ранних команд.
+              </p>
+            </div>
+
+            <div class="why">
+              <h4>Что мешает перейти в HOLD</h4>
+              <p>
+                Недостаточный D30 retention, runway ниже комфортного горизонта и payback, который пока не выглядит достаточно быстрым
+                для уверенного масштабирования без роста капитального давления.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card span-4">
+          <h2 class="card-title">Data confidence</h2>
+          <p class="card-sub">Верхнеуровневый слой доверия к анализу.</p>
+
+          <div class="progress-card">
+            <div class="progress-row">
+              <div class="label">Полнота данных</div>
+              <div class="val">82%</div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:82%"></div></div>
+
+            <div class="progress-row">
+              <div class="label">Согласованность данных</div>
+              <div class="val">69%</div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:69%"></div></div>
+
+            <div class="progress-row">
+              <div class="label">Соответствие стадии</div>
+              <div class="val">88%</div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:88%"></div></div>
+
+            <div class="progress-row">
+              <div class="label">Уверенность в оценке</div>
+              <div class="val">Средняя</div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:76%"></div></div>
+          </div>
+
+          <div class="footer-note">
+            Идея блока: визуально отделить “качество бизнеса” от “насколько уверенно модель вообще может его оценить”.
+          </div>
+        </div>
+
+        <div class="card span-5">
+          <h2 class="card-title">Consistency checks</h2>
+          <p class="card-sub">Anti-gaming слой — показывает сомнительные или конфликтующие сочетания.</p>
+
+          <div class="flag-list">
+            <div class="flag amber">
+              <div class="flag-icon">!</div>
+              <div>
+                <h4>Moat оценён высоко, но рынок достаточно конкурентный</h4>
+                <p>Нужна более сильная защита в распределении, данных или switching costs.</p>
+              </div>
+            </div>
+
+            <div class="flag amber">
+              <div class="flag-icon">!</div>
+              <div>
+                <h4>Recurring share хороший, но retention пока не подтверждает полноту повторяемости</h4>
+                <p>Это не ошибка, но инвестору захочется проверить качество когорт.</p>
+              </div>
+            </div>
+
+            <div class="flag blue">
+              <div class="flag-icon">i</div>
+              <div>
+                <h4>Revenue-level метрики выглядят правдоподобно для seed-stage</h4>
+                <p>Stage fit остаётся высоким, даже несмотря на отдельные зоны неопределённости.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card span-7 glow">
+          <h2 class="card-title">Скоринги и инвестиционная кривая эффективности</h2>
+          <p class="card-sub">Вместо скучного radar можно показать жирные прогресс-бары, которые легче читаются в dark UI.</p>
+
+          <div class="progress-card">
+            <div class="progress-row"><div class="label">PMF score</div><div class="val">58/100</div></div>
+            <div class="progress-track"><div class="progress-fill" style="width:58%"></div></div>
+
+            <div class="progress-row"><div class="label">Growth score</div><div class="val">74/100</div></div>
+            <div class="progress-track"><div class="progress-fill" style="width:74%"></div></div>
+
+            <div class="progress-row"><div class="label">Unit economics score</div><div class="val">63/100</div></div>
+            <div class="progress-track"><div class="progress-fill" style="width:63%"></div></div>
+
+            <div class="progress-row"><div class="label">Efficiency score</div><div class="val">61/100</div></div>
+            <div class="progress-track"><div class="progress-fill" style="width:61%"></div></div>
+
+            <div class="progress-row"><div class="label">Market score</div><div class="val">79/100</div></div>
+            <div class="progress-track"><div class="progress-fill" style="width:79%"></div></div>
+
+            <div class="progress-row"><div class="label">Investor score</div><div class="val">66/100</div></div>
+            <div class="progress-track"><div class="progress-fill" style="width:66%"></div></div>
+          </div>
+        </div>
+
+        <div class="card span-6">
+          <h2 class="card-title">Valuation range</h2>
+          <p class="card-sub">Показываем диапазон красиво и честно, без ложной точности.</p>
+
+          <div class="metrics-grid" style="grid-template-columns: repeat(3,1fr);">
+            <div class="metric-card">
+              <div class="metric-name">Low</div>
+              <div class="metric-value">$2.8M</div>
+              <div class="metric-note">Сценарий при слабом улучшении удержания и без роста confidence.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-name">Base</div>
+              <div class="metric-value">$4.1M</div>
+              <div class="metric-note">Базовый диапазон для текущего набора данных и seed-stage логики.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-name">High</div>
+              <div class="metric-value">$5.6M</div>
+              <div class="metric-note">Сценарий при улучшении retention и удлинении runway.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card span-6">
+          <h2 class="card-title">Что изменит решение</h2>
+          <p class="card-sub">Один из самых полезных блоков для инвестора и основателя.</p>
+
+          <div class="why-list">
+            <div class="why">
+              <h4>WATCH → HOLD</h4>
+              <p>D30 retention &gt; 16%, runway &gt; 10 месяцев, CAC payback &lt; 12 месяцев.</p>
+            </div>
+            <div class="why">
+              <h4>HOLD → BUY</h4>
+              <p>Стабилизация когорт, более сильная повторяемость выручки и подтверждение масштабируемого acquisition loop.</p>
+            </div>
+            <div class="why">
+              <h4>Что может ухудшить verdict</h4>
+              <p>Снижение темпа роста при сохранении burn, просадка активной аудитории или дальнейшее ухудшение месячного удержания.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div style="height: 38px;"></div>
+  </main>
+
+  <script>
+    // Tabs
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const founderTab = document.getElementById('tab-founder');
+    const investorTab = document.getElementById('tab-investor');
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const tab = btn.dataset.tab;
+        if (tab === 'founder') {
+          founderTab.classList.remove('hidden');
+          investorTab.classList.add('hidden');
+        } else {
+          investorTab.classList.remove('hidden');
+          founderTab.classList.add('hidden');
+        }
+      });
+    });
+
+    // Animated counters
+    const counters = document.querySelectorAll('.counter');
+    const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+    const animateCounter = (el) => {
+      const target = +el.dataset.target;
+      const duration = 1300;
+      const start = performance.now();
+
+      const frame = (now) => {
+        const progress = Math.min((now - start) / duration, 1);
+        const value = Math.round(target * easeOut(progress));
+        el.textContent = value;
+        if (progress < 1) requestAnimationFrame(frame);
+      };
+
+      requestAnimationFrame(frame);
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          animateCounter(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.4 });
+
+    counters.forEach(counter => observer.observe(counter));
+
+    // Dynamic ring progress
+    const scoreRing = document.getElementById('scoreRing');
+    const scoreValue = 52; // example
+    scoreRing.style.background =
+      `radial-gradient(circle at center, #0b111b 59%, transparent 60%),
+       conic-gradient(from 180deg, #ff4fd8 0 ${scoreValue * 1.6}deg, #8b5cf6 ${scoreValue * 1.6}deg ${scoreValue * 3}deg, #56c7ff ${scoreValue * 3}deg ${scoreValue * 3.6}deg, rgba(255,255,255,.10) ${scoreValue * 3.6}deg 360deg)`;
+  </script>
 </body>
 </html>

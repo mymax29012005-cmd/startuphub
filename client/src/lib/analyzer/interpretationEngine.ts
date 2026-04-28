@@ -96,7 +96,7 @@ export function interpretationEngine(result: StartupAnalysisResult, input: Start
   if (churn > 0.15) weaknesses.push(`Высокий churn: ${fmtPct(churn)}`);
   if (ltvToCac < 2) weaknesses.push(`Слабый LTV/CAC: ${ltvToCac.toFixed(2)}`);
   if (runway < 6) weaknesses.push(`Низкий runway: ${runway.toFixed(1)} мес`);
-  if (burnMultiple > 3) weaknesses.push(`Высокий burn multiple: ${burnMultiple.toFixed(2)}`);
+  if (burnMultiple > 3) weaknesses.push(`Высокий burn‑мультипликатор: ${burnMultiple.toFixed(2)}`);
 
   const weaknessesTop = weaknesses.slice(0, 3);
 
@@ -203,7 +203,7 @@ export function interpretationEngine(result: StartupAnalysisResult, input: Start
     weaknesses: weaknessesTop,
     sections: {
       growth: {
-        title: "Growth",
+        title: "Рост",
         text: growthText,
         keyMetrics: [
           { key: "growthMonthlyPct", label: "Рост/мес", value: `${growthMonthlyPct.toFixed(1)}%`, status: growthStatus },
@@ -211,23 +211,23 @@ export function interpretationEngine(result: StartupAnalysisResult, input: Start
         ],
       },
       unit: {
-        title: "Unit economics",
+        title: "Юнит-экономика",
         text: unitText,
         keyMetrics: [
           { key: "ltvToCac", label: "LTV/CAC", value: ltvToCac ? ltvToCac.toFixed(2) : "—", status: ltvToCacStatus },
-          { key: "payback", label: "Payback", value: Number(result.paybackMonths) ? `${Number(result.paybackMonths).toFixed(1)} мес` : "—", status: Number(result.paybackMonths) > 0 && Number(result.paybackMonths) <= 6 ? "отлично" : Number(result.paybackMonths) <= 12 ? "нормально" : Number(result.paybackMonths) <= 18 ? "риск" : "критично" },
+          { key: "payback", label: "Окупаемость", value: Number(result.paybackMonths) ? `${Number(result.paybackMonths).toFixed(1)} мес` : "—", status: Number(result.paybackMonths) > 0 && Number(result.paybackMonths) <= 6 ? "отлично" : Number(result.paybackMonths) <= 12 ? "нормально" : Number(result.paybackMonths) <= 18 ? "риск" : "критично" },
         ],
       },
       pmf: {
         title: "PMF",
         text: pmfText,
         keyMetrics: [
-          { key: "retentionD30", label: "Retention D30", value: fmtPct(retentionD30), status: retentionD30Status },
+          { key: "retentionD30", label: "Удержание D30", value: fmtPct(retentionD30), status: retentionD30Status },
           { key: "churn", label: "Churn/мес", value: fmtPct(churn), status: churnStatus },
         ],
       },
       market: {
-        title: "Market",
+        title: "Рынок",
         text: marketParts.join(" "),
         keyMetrics: [
           { key: "tam", label: "TAM", value: tam ? fmtMoney(tam) : "—", status: tam > 1e9 ? "отлично" : tam >= 1e7 ? "нормально" : tam > 0 ? "риск" : "критично" },
@@ -235,11 +235,11 @@ export function interpretationEngine(result: StartupAnalysisResult, input: Start
         ],
       },
       risk: {
-        title: "Risk",
+        title: "Риски",
         text: `${t(primaryRiskKey)} ${profitComment}`,
         keyMetrics: [
-          { key: "runway", label: "Runway", value: runway ? `${runway.toFixed(1)} мес` : "—", status: runwayStatus },
-          { key: "burnMultiple", label: "Burn multiple", value: burnMultiple ? burnMultiple.toFixed(2) : "—", status: burnMultipleStatus },
+          { key: "runway", label: "Запас денег", value: runway ? `${runway.toFixed(1)} мес` : "—", status: runwayStatus },
+          { key: "burnMultiple", label: "Burn‑мультипликатор", value: burnMultiple ? burnMultiple.toFixed(2) : "—", status: burnMultipleStatus },
         ],
       },
     },
