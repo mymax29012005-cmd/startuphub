@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { HelpTip } from "@/components/analyzer/HelpTip";
 import type { EstimateConfidenceLabel } from "@/lib/analyzer/types";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -56,22 +57,22 @@ export function DataConfidencePanel({
   const [showAudit, setShowAudit] = useState(false);
   return (
     <div className="ii-panel">
-      <div className="ii-panelTitle">Доверие к данным</div>
+      <div className="ii-panelTitle">{reportCopy.trust.title}</div>
       <div className="ii-panelSubtitle">
-        Верхнеуровневый слой доверия к анализу. Он отделяет “качество бизнеса” от “качества оценки”.
-        <HelpTip text="Если данные неполные или противоречивые, диапазоны (вероятность/оценка) расширяются, а выводы становятся осторожнее." />
+        {reportCopy.trust.subtitle}
+        <HelpTip text={reportCopy.tooltips.reliability} />
       </div>
 
       <div className="ii-qSummary">
         <div className="ii-qBig">{labelRu(label)}</div>
-        <div className="ii-qSmall">Уверенность в оценке</div>
+        <div className="ii-qSmall">Сводная надёжность</div>
       </div>
 
       <div className="ii-qList">
         <Bar label="Полнота данных" value={completeness} />
         <Bar label="Согласованность данных" value={consistency} />
         <Bar label="Соответствие стадии" value={stageFit} />
-        <Bar label="Сводный confidence" value={confidence} />
+        <Bar label="Сводная надёжность" value={confidence} />
       </div>
 
       {(topWarnings.length || (viewMode === "investor" && (contradictions > 0 || pen.length))) ? (

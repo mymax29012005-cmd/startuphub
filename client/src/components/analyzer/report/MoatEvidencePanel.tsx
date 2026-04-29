@@ -3,6 +3,7 @@
 import React from "react";
 import type { StartupAnalysisInput, StartupAnalysisResult } from "@/lib/analyzer/types";
 import { HelpTip } from "@/components/analyzer/HelpTip";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function fmt(n?: number) {
   if (typeof n !== "number" || !Number.isFinite(n)) return "—";
@@ -23,18 +24,14 @@ export function MoatEvidencePanel({
   return (
     <div className="ii-panel">
       <div className="ii-panelTitle">
-        Подтверждённость moat
-        <HelpTip text="Разделяет self‑reported moat от доказуемых признаков: данные, switching costs, интеграции, канал, регуляторика, сетевой эффект и т.д." />
+        {reportCopy.moat.title}
+        <HelpTip text={reportCopy.tooltips.moat} />
       </div>
-      <div className="ii-panelSubtitle">
-        {viewMode === "investor"
-          ? "Если заявленный moat высок, но evidence слаб — это риск «хорошо заполненной анкеты»."
-          : "Moat — это не только идея. Полезно собрать доказательства: данные, интеграции, switching costs, канал."}
-      </div>
+      <div className="ii-panelSubtitle">{viewMode === "investor" ? reportCopy.moat.subtitle : reportCopy.moat.short}</div>
 
       <div className="ii-driverList" style={{ marginTop: 14 }}>
         <div className="ii-driverItem">
-          <b>Заявленный moat:</b> {Math.round(input.moatStrength || 0)}/100 · <b>Moat evidence:</b> {fmt(report.moatEvidenceScore)}
+          <b>Заявленный moat:</b> {Math.round(input.moatStrength || 0)}/100 · <b>Подтверждённость moat:</b> {fmt(report.moatEvidenceScore)}
           {report.moatGapFlag ? <span className="ml-2 text-rose-200">· есть разрыв</span> : null}
         </div>
         {(report.moatEvidenceNotes ?? []).slice(0, viewMode === "investor" ? 7 : 4).map((x, idx) => (

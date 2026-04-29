@@ -11,14 +11,15 @@ export type ReportNarrative = {
 export function reportNarrativeEngine(result: StartupAnalysisResult, input: StartupAnalysisInput): ReportNarrative {
   const memo = buildInvestmentMemo(input, result);
   const v2 = result.analysisVersion === "v2";
+  const priorityRu = (p: "high" | "medium" | "low") => (p === "high" ? "высокий" : p === "medium" ? "средний" : "низкий");
 
   const qualityBlock = v2
     ? [
-        `Качество бизнеса (businessScore): ${Math.round(result.businessScore ?? 0)}/100`,
-        `Уверенность в данных (dataConfidenceScore): ${Math.round(result.dataConfidenceScore ?? 0)}/100`,
+        `Сила бизнеса: ${Math.round(result.businessScore ?? 0)}/100`,
+        `Надёжность оценки: ${Math.round(result.dataConfidenceScore ?? 0)}/100`,
         `Полнота данных: ${Math.round(result.dataCompletenessPct ?? 0)}%`,
         `Согласованность данных: ${Math.round(result.consistencyScore ?? 0)}/100`,
-        `Stage fit: ${Math.round(result.stageFitScore ?? 0)}/100`,
+        `Соответствие стадии: ${Math.round(result.stageFitScore ?? 0)}/100`,
         `Диапазон вероятности успеха: ${result.successProbabilityRange ? `${result.successProbabilityRange.low}–${result.successProbabilityRange.high}%` : "—"}`,
       ].join("\n")
     : "";
@@ -36,7 +37,7 @@ export function reportNarrativeEngine(result: StartupAnalysisResult, input: Star
         ...(result.decisionReasoning?.because?.length ? result.decisionReasoning.because.map((x) => `- ${x}`) : []),
         ...(result.decisionReasoning?.blockers?.length ? ["Блокеры:", ...result.decisionReasoning.blockers.map((x) => `- ${x}`)] : []),
         ...(result.decisionReasoning?.whatChangesDecision?.length ? ["Что изменит решение:", ...result.decisionReasoning.whatChangesDecision.map((x) => `- ${x}`)] : []),
-        ...(result.decisionReasoning?.nextMilestoneFocus?.length ? ["Следующий milestone:", ...result.decisionReasoning.nextMilestoneFocus.map((x) => `- ${x}`)] : []),
+        ...(result.decisionReasoning?.nextMilestoneFocus?.length ? ["Следующий этап:", ...result.decisionReasoning.nextMilestoneFocus.map((x) => `- ${x}`)] : []),
       ]
         .filter(Boolean)
         .join("\n")
@@ -46,7 +47,7 @@ export function reportNarrativeEngine(result: StartupAnalysisResult, input: Star
     ? [
         "План действий:",
         ...(result.actionPriorities?.length
-          ? result.actionPriorities.map((a, i) => `${i + 1}. ${a.title} (${a.priority}) — ${a.reason} Ожидаемый эффект: ${a.expectedImpact}`)
+          ? result.actionPriorities.map((a, i) => `${i + 1}. ${a.title} (приоритет: ${priorityRu(a.priority)}) — ${a.reason} Ожидаемый эффект: ${a.expectedImpact}`)
           : []),
       ].join("\n")
     : "";

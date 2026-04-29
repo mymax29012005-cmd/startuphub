@@ -3,6 +3,7 @@
 import React from "react";
 import type { AutoSwot, SwotItem } from "@/lib/analyzer/types";
 import { HelpTip } from "@/components/analyzer/HelpTip";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function Quad({ title, items, tone }: { title: string; items: SwotItem[]; tone: "pos" | "neg" }) {
   return (
@@ -36,20 +37,16 @@ export function SwotPanel({ swot, viewMode }: { swot?: AutoSwot; viewMode: "foun
   return (
     <div className="ii-panel">
       <div className="ii-panelTitle">
-        SWOT (авто, rule‑based)
-        <HelpTip text="SWOT строится автоматически по метрикам/скорингам и служит структурным summary. Это не ручной текст и не «магический интеллект»." />
+        {reportCopy.swot.title}
+        <HelpTip text={reportCopy.tooltips.swot} />
       </div>
-      <div className="ii-panelSubtitle">
-        {viewMode === "investor"
-          ? "Короткий структурный снимок: strengths/weaknesses как internal факты, opportunities/threats как внешний контекст."
-          : "Стратегический снимок: что усиливать, где уязвимость и где апсайд."}
-      </div>
+      <div className="ii-panelSubtitle">{reportCopy.swot.subtitle}</div>
 
       <div className="ii-driversGrid" style={{ marginTop: 14 }}>
-        <Quad title="Strengths" items={swot.strengths} tone="pos" />
-        <Quad title="Weaknesses" items={swot.weaknesses} tone="neg" />
-        <Quad title="Opportunities" items={swot.opportunities} tone="pos" />
-        <Quad title="Threats" items={swot.threats} tone="neg" />
+        <Quad title={reportCopy.swot.quad.strengths} items={swot.strengths} tone="pos" />
+        <Quad title={reportCopy.swot.quad.weaknesses} items={swot.weaknesses} tone="neg" />
+        <Quad title={reportCopy.swot.quad.opportunities} items={swot.opportunities} tone="pos" />
+        <Quad title={reportCopy.swot.quad.threats} items={swot.threats} tone="neg" />
       </div>
     </div>
   );

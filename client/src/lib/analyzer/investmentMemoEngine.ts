@@ -44,11 +44,11 @@ function fill(template: string, vars: Record<string, string | number>) {
 function stageLabel(stage: string) {
   const map: Record<string, string> = {
     idea: "идея",
-    seed: "seed (посев)",
-    series_a: "Series A",
-    series_b: "Series B",
+    seed: "посев",
+    series_a: "раунд A",
+    series_b: "раунд B",
     growth: "рост",
-    exit: "exit",
+    exit: "выход",
   };
   return map[stage] ?? stage;
 }
@@ -173,7 +173,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
   const weaknesses: string[] = [];
   if (churn > 0.15) weaknesses.push("высокий churn ограничивает LTV");
   if (ltvCacDisplay < 2) weaknesses.push("LTV/CAC ниже комфортного коридора для агрессивного масштаба");
-  if (runway < 6) weaknesses.push("узкий runway сокращает время на исправления");
+  if (runway < 6) weaknesses.push("узкий запас денег сокращает время на исправления");
   if (Number(result.burnMultiple) > 3) weaknesses.push("высокий burn‑мультипликатор относительно новой выручки");
   const weakness = weaknesses[0] ?? "недостаточная полнота входных данных для сужения ключевого ограничения";
 
@@ -205,7 +205,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
     growthIsAggressive ? investmentMemoTexts.growth.expHint : investmentMemoTexts.growth.linear,
     investmentMemoTexts.growth.drivers,
     retentionD30 >= rTh.median && ltvCacDisplay >= lTh.median ? investmentMemoTexts.growth.sustainOk : investmentMemoTexts.growth.sustainBad,
-    fill("Сопоставление с рынком: темп MoM {growthBench} для стадии {stage}.", {
+    fill("Сопоставление с рынком: темп месяц к месяцу — {growthBench} для стадии {stage}.", {
       growthBench,
       stage: stageLabel(stage),
     }),
@@ -223,7 +223,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
   const productMarketFit = [
     pmfText,
     fill(
-      "Обоснование: D30 {d30} при порогах top/median/early {top}/{med}/{ea} для стадии {stage}; доля повторяемой выручки {rec}%.",
+      "Обоснование: D30 {d30} при порогах уверенно/приемлемо/ниже нормы {top}/{med}/{ea} для стадии {stage}; доля повторяемой выручки {rec}%.",
       {
         d30: `${Math.round(retentionD30 * 100)}%`,
         top: `${Math.round(rTh.top * 100)}%`,
@@ -281,7 +281,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
       tamBench: tamBench2,
       compBench,
     }),
-    fill("Темп роста рынка по вводным: {tg}% год-к году; это влияет на допустимую агрессию GTM.", { tg: tamGrowth.toFixed(0) }),
+    fill("Темп роста рынка по вводным: {tg}% год к году; это влияет на допустимую агрессию выхода на рынок.", { tg: tamGrowth.toFixed(0) }),
   ].join(" ");
 
   type RiskDom = "churn" | "runway" | "unit" | "burn";
@@ -303,7 +303,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
 
   const secondaryBits: string[] = [];
   if (dom !== "churn" && churn > 0.12) secondaryBits.push("повышенный churn");
-  if (dom !== "runway" && runway < 9) secondaryBits.push("средний runway");
+  if (dom !== "runway" && runway < 9) secondaryBits.push("средний запас денег");
   if (dom !== "unit" && ltvCacDisplay < 2.2) secondaryBits.push("пограничная юнит-экономика");
   if (dom !== "burn" && Number(result.burnMultiple) > 2.5) secondaryBits.push("напряжённый burn‑мультипликатор");
   const secondary = secondaryBits.length ? secondaryBits.join(", ") : "конкуренция за внимание пользователя и скорость продуктовых релизов";
@@ -319,7 +319,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
     dom === "churn"
       ? "churn и его влияние на LTV"
       : dom === "runway"
-        ? "runway и чувствительность к burn"
+        ? "запас денег и чувствительность к burn"
         : dom === "unit"
           ? "LTV/CAC и окупаемость привлечения"
           : "burn‑мультипликатор и соотношение новой выручки к расходам";
@@ -337,7 +337,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
     fill(investmentMemoTexts.reasoning.sp, { spPct, dominant: dominantFactors }),
     investmentMemoTexts.reasoning.interactions,
     fill(
-      "Финансовый слой: валовая прибыль минус burn даёт {sign}; runway {rm} мес читается как {rb}.",
+      "Финансовый слой: валовая прибыль минус burn даёт {sign}; запас денег {rm} мес читается как {rb}.",
       {
         sign: profit < 0 ? "отрицательный вклад в текущем месяце" : "неотрицательный вклад при введённых допущениях",
         rm: runway.toFixed(1),
@@ -349,11 +349,11 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
   type Gap = { action: string; impact: "high" | "medium" | "low"; improves: string; score: number };
   const gaps: Gap[] = [];
   const churnGap = Math.max(0, churn - 0.05);
-  if (churnGap > 0) gaps.push({ action: "Снизить churn через продуктовый onboarding и ценность в первые 14 дней.", impact: churnGap > 0.08 ? "high" : "medium", improves: "LTV / PMF", score: churnGap * 1.5 });
+  if (churnGap > 0) gaps.push({ action: "Снизить churn через онбординг и ценность в первые 14 дней.", impact: churnGap > 0.08 ? "high" : "medium", improves: "LTV / PMF", score: churnGap * 1.5 });
   const ltvGap = Math.max(0, 3 - ltvCacDisplay);
   if (ltvGap > 0) gaps.push({ action: "Оптимизировать CAC: сузить каналы, усилить конверсию и квалификацию лида.", impact: ltvGap > 1.2 ? "high" : "medium", improves: "LTV/CAC", score: ltvGap * 1.4 });
   const growthGap = Math.max(0, 15 - growthPct);
-  if (growthGap > 0) gaps.push({ action: "Ускорить рост MoM за счёт воспроизводимых GTM-механик и апсейла.", impact: growthGap > 8 ? "high" : "medium", improves: "Growth", score: growthGap * 1.2 });
+  if (growthGap > 0) gaps.push({ action: "Ускорить рост месяц к месяцу за счёт воспроизводимых каналов и апсейла.", impact: growthGap > 8 ? "high" : "medium", improves: "Рост", score: growthGap * 1.2 });
   const retGap = Math.max(0, 0.28 - retentionD30);
   if (retGap > 0) gaps.push({ action: "Усилить удержание: ключевые сценарии активации и привычка к продукту.", impact: retGap > 0.12 ? "high" : "medium", improves: "Удержание D30", score: retGap * 1.25 });
   const runwayGap = Math.max(0, 12 - runway);
@@ -363,7 +363,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
     gaps.push({
       action: "Заполнить недостающие метрики (удержание, выручка, маркетинг) для снижения неопределённости модели.",
       impact: "medium",
-      improves: "Confidence",
+      improves: "Надёжность оценки",
       score: 0.01,
     });
   }
@@ -400,7 +400,7 @@ export function buildInvestmentMemo(input: StartupAnalysisInput, result: Startup
     signal,
     explanation: verdictBody,
     wouldChange: fill(
-      "Решение меняется при сдвиге: LTV/CAC выше {ltvOk}, churn ниже {chOk}, runway выше {rwOk} мес при сохранении темпа роста.",
+      "Решение меняется при сдвиге: LTV/CAC выше {ltvOk}, churn ниже {chOk}, запас денег выше {rwOk} мес при сохранении темпа роста.",
       { ltvOk: "2.5", chOk: "12%", rwOk: "9" },
     ),
   };

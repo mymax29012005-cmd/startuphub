@@ -34,7 +34,7 @@ export function runConsistencyRules(input: StartupAnalysisInput, result: Startup
     {
       id: "moat_gap_high_self_low_evidence",
       when: (i, r) => i.moatStrength >= 75 && (r as any).moatEvidenceScore !== undefined && Number((r as any).moatEvidenceScore) <= 35,
-      warning: "Заявленный moat высокий, но evidence‑признаков почти нет. Это снижает доверие к self‑reported сигналам.",
+      warning: "Заявленный moat высокий, но подтверждающих признаков почти нет. Это снижает доверие к заявленным сигналам.",
       penaltyPoints: 10,
     },
     {
@@ -46,13 +46,13 @@ export function runConsistencyRules(input: StartupAnalysisInput, result: Startup
     {
       id: "moat_competition_retention",
       when: (i) => i.moatStrength >= 80 && i.competitionDensity >= 0.7 && i.retentionD30 > 0 && i.retentionD30 < 0.12,
-      warning: "Высокий «moat» при высокой плотности конкуренции и низком удержании выглядит противоречиво. Проверьте: что именно защищает вас от конкурентов (технология/данные/дистрибуция/сетевой эффект).",
+      warning: "Высокий «moat» при высокой плотности конкуренции и низком удержании выглядит противоречиво. Проверьте, что именно защищает вас от конкурентов (технология, данные, канал, сетевой эффект).",
       penaltyPoints: 10,
     },
     {
       id: "team_strong_not_fulltime",
       when: (i) => i.teamStrength >= 75 && i.foundersFullTime === false,
-      warning: "Сильная команда при отсутствии full-time фаундеров — риск исполнения. Инвестор обычно ожидает full-time commitment на ранних стадиях.",
+      warning: "Сильная команда при отсутствии фаундеров в полном фокусе — риск исполнения. На ранних стадиях это снижает доверие к плану.",
       penaltyPoints: 8,
     },
     {
@@ -70,7 +70,7 @@ export function runConsistencyRules(input: StartupAnalysisInput, result: Startup
     {
       id: "high_score_short_runway",
       when: (_i, r) => r.successProbability >= 0.55 && r.runwayMonths > 0 && r.runwayMonths < 4,
-      warning: "Высокая оценка при runway < 4 месяцев: даже хороший бизнес может не успеть «дожить» до улучшений. Это снижает надёжность позитивного сценария.",
+      warning: "Высокая оценка при запасе денег меньше 4 месяцев: даже хороший бизнес может не успеть «дожить» до улучшений. Это снижает надёжность позитивного сценария.",
       penaltyPoints: 14,
     },
     {
@@ -112,7 +112,7 @@ export function runConsistencyRules(input: StartupAnalysisInput, result: Startup
     {
       id: "revenue_concentration_risk",
       when: (i) => (i.topCustomerSharePct ?? 0) >= 50 || (i.revenueConcentrationPct ?? 0) >= 60,
-      warning: "Высокая концентрация выручки на одном клиенте/группе клиентов повышает риск: потеря 1 контрагента может обнулить рост и ухудшить runway.",
+      warning: "Высокая концентрация выручки на одном клиенте или группе клиентов повышает риск: потеря одного контрагента может обнулить рост и ухудшить запас денег.",
       penaltyPoints: 10,
     },
     {
@@ -142,10 +142,10 @@ export function runConsistencyRules(input: StartupAnalysisInput, result: Startup
     penaltyPoints += rule.penaltyPoints;
   }
 
-  // Extra small penalties for self-reported extremes with weak evidence.
+  // Небольшой дополнительный штраф за завышенные субъективные оценки без доказательной базы.
   const evidence = (input.customerInterviewsCount ?? 0) + (input.pilotCount ?? 0) + (input.loiCount ?? 0) + (input.waitlistSize ?? 0);
   if (input.marketValidation >= 85 && evidence < 3 && input.monthlyRevenue === 0) {
-    warnings.push("Очень высокая оценка market validation при слабой доказательной базе. Это снижает доверие к субъективным сигналам.");
+    warnings.push("Очень высокая оценка валидации рынка при слабой доказательной базе. Это снижает доверие к субъективным сигналам.");
     penalties.push("evidence_gap: −6");
     contradictionsFound += 1;
     penaltyPoints += 6;

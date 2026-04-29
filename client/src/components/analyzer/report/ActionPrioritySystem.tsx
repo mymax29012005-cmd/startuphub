@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { ActionPriorityItem } from "@/lib/analyzer/types";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function upliftHint(title: string, priority: ActionPriorityItem["priority"]) {
   const base = priority === "high" ? [8, 12] : priority === "medium" ? [4, 7] : [2, 4];
@@ -13,9 +14,9 @@ function upliftHint(title: string, priority: ActionPriorityItem["priority"]) {
 }
 
 function priorityChip(p: ActionPriorityItem["priority"]) {
-  if (p === "high") return "HIGH";
-  if (p === "medium") return "MEDIUM";
-  return "LOW";
+  if (p === "high") return "ВЫСОКИЙ";
+  if (p === "medium") return "СРЕДНИЙ";
+  return "НИЗКИЙ";
 }
 
 export function ActionPrioritySystem({ actions }: { actions?: ActionPriorityItem[] }) {
@@ -24,8 +25,8 @@ export function ActionPrioritySystem({ actions }: { actions?: ActionPriorityItem
 
   return (
     <div className="ii-panel ii-panel-action">
-      <div className="ii-panelTitle">Action Priority System</div>
-      <div className="ii-panelSubtitle">Самый полезный блок: что делать дальше и какой будет эффект.</div>
+      <div className="ii-panelTitle">{reportCopy.actions.title}</div>
+      <div className="ii-panelSubtitle">{reportCopy.actions.subtitle}</div>
 
       <div className="ii-actionList">
         {list.map((a, idx) => {
@@ -50,7 +51,7 @@ export function ActionPrioritySystem({ actions }: { actions?: ActionPriorityItem
 
               <div className="ii-actionRight">
                 <div className="ii-actionImpact">+{up[0]}–{up[1]}%</div>
-                <div className="ii-actionImpactHint">к success range / силе вердикта</div>
+                <div className="ii-actionImpactHint">к вероятности успеха и силе вердикта</div>
                 <div className="ii-actionExpected">{a.expectedImpact}</div>
               </div>
             </div>

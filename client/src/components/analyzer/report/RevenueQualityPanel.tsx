@@ -3,6 +3,7 @@
 import React from "react";
 import type { StartupAnalysisResult } from "@/lib/analyzer/types";
 import { HelpTip } from "@/components/analyzer/HelpTip";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function fmt(n?: number) {
   if (typeof n !== "number" || !Number.isFinite(n)) return "—";
@@ -14,18 +15,14 @@ export function RevenueQualityPanel({ report, viewMode }: { report: StartupAnaly
   return (
     <div className="ii-panel">
       <div className="ii-panelTitle">
-        Качество выручки
-        <HelpTip text="Слой про устойчивость выручки: повторяемость, концентрация, пилотность/разовость, (NRR/GRR при наличии). Детеминированно, без ИИ." />
+        {reportCopy.revenue.title}
+        <HelpTip text={reportCopy.tooltips.revenue} />
       </div>
-      <div className="ii-panelSubtitle">
-        {viewMode === "investor"
-          ? "Насколько выручка выглядит устойчивой для стадии: повторяемость + концентрация + (NRR/GRR, если доступны)."
-          : "Если улучшать одно — улучшайте повторяемость и снижайте концентрацию: это быстрее всего поднимает инвестиционный сигнал."}
-      </div>
+      <div className="ii-panelSubtitle">{viewMode === "investor" ? reportCopy.revenue.subtitle : reportCopy.revenue.short}</div>
 
       <div className="ii-driverList" style={{ marginTop: 14 }}>
         <div className="ii-driverItem">
-          <b>Revenue quality:</b> {fmt(report.revenueQualityScore)} · <b>Concentration risk:</b> {fmt(report.concentrationRiskScore)}
+          <b>Качество выручки:</b> {fmt(report.revenueQualityScore)} · <b>Риск концентрации выручки:</b> {fmt(report.concentrationRiskScore)}
         </div>
         {(report.revenueQualityNotes ?? []).slice(0, viewMode === "investor" ? 6 : 3).map((x, idx) => (
           <div key={idx} className="ii-driverItem">

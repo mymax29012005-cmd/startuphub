@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { RedFlags } from "@/lib/analyzer/types";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function Item({ tone, title, desc }: { tone: "red" | "yellow" | "info"; title: string; desc?: string }) {
   return (
@@ -26,8 +27,8 @@ export function RedFlagsPanel({ flags }: { flags?: RedFlags }) {
 
   return (
     <div className="ii-panel">
-      <div className="ii-panelTitle">Red flags</div>
-      <div className="ii-panelSubtitle">Блок быстро сканируется глазами: то, о чём инвестор спросит в первую очередь.</div>
+      <div className="ii-panelTitle">{reportCopy.risks.title}</div>
+      <div className="ii-panelSubtitle">{reportCopy.risks.subtitle}</div>
 
       <div className="ii-flagGrid">
         {red.slice(0, 4).map((t, idx) => (

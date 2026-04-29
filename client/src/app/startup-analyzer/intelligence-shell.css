@@ -171,7 +171,8 @@
 
 .ia-shell .ii-heroCard {
   position: relative;
-  overflow: hidden;
+  /* Keep tooltips above the card without clipping */
+  overflow: visible;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 34px;
   background:
@@ -322,6 +323,8 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  position: relative;
+  z-index: 4;
 }
 
 .ia-shell .ii-valuationLabel {

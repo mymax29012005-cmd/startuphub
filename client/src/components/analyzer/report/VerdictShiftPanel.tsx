@@ -3,6 +3,7 @@
 import React from "react";
 import type { StartupAnalysisResult } from "@/lib/analyzer/types";
 import { HelpTip } from "@/components/analyzer/HelpTip";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -42,23 +43,21 @@ export function VerdictShiftPanel({ report }: { report: StartupAnalysisResult })
 
   const items = [
     { k: "Удержание/PMF", v: pmf, label: pmfLabel, hint: "Ключевой сигнал устойчивости ценности (через retention/повторяемость)." },
-    { k: "Runway", v: clamp((runway / 15) * 100, 0, 100), label: runwayLabel, hint: "Время до кассы: влияет на downside и способность исправлять метрики." },
+    { k: "Запас денег", v: clamp((runway / 15) * 100, 0, 100), label: runwayLabel, hint: "Время до кассы: влияет на риск снижения и способность исправлять метрики." },
     { k: "LTV/CAC", v: clamp((ltvCac / 3.5) * 100, 0, 100), label: ltvLabel, hint: "Экономика масштаба: без запаса рост часто становится дорогим." },
     { k: "Качество выручки", v: revQ ? clamp(revQ, 0, 100) : 0, label: revLabel, hint: "Повторяемость + концентрация + (NRR/GRR при наличии)." },
-    { k: "Moat evidence", v: moatE ? clamp(moatE, 0, 100) : 0, label: moatLabel, hint: "Подтверждённость защитимости по структурным признакам." },
-    { k: "Funnel quality", v: funnel ? clamp(funnel, 0, 100) : 0, label: funnelLabel, hint: "Конверсии и time‑to‑value: где начинается проблема retention." },
-    { k: "Data confidence", v: conf ? clamp(conf, 0, 100) : 0, label: confLabel, hint: "Полнота/согласованность/объективность вводных." },
+    { k: "Подтверждённость moat", v: moatE ? clamp(moatE, 0, 100) : 0, label: moatLabel, hint: "Подтверждённость защитимости по структурным признакам." },
+    { k: "Качество воронки", v: funnel ? clamp(funnel, 0, 100) : 0, label: funnelLabel, hint: "Конверсии и time‑to‑value: где начинается проблема retention." },
+    { k: "Надёжность оценки", v: conf ? clamp(conf, 0, 100) : 0, label: confLabel, hint: "Полнота/согласованность/объективность вводных." },
   ];
 
   return (
     <div className="ii-panel">
       <div className="ii-panelTitle">
-        Лестница смены вердикта
-        <HelpTip text="Это не пересчёт. Это детерминированные условия, которые чаще всего двигают решение WATCH→HOLD→BUY (или обратно) на основе текущих слоёв." />
+        {reportCopy.ladder.title}
+        <HelpTip text={reportCopy.tooltips.ladder} />
       </div>
-      <div className="ii-panelSubtitle">
-        Смысл: какие оси должны стать «приемлемо/уверенно», чтобы сигнал стал сильнее. Используйте как decision‑shift checklist.
-      </div>
+      <div className="ii-panelSubtitle">{reportCopy.ladder.subtitle}</div>
 
       <div className="ii-scoreList" style={{ marginTop: 14 }}>
         {items.map((x) => (

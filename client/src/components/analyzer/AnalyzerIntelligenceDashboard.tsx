@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { HelpTip } from "@/components/analyzer/HelpTip";
 import { ReportHero } from "@/components/analyzer/report/ReportHero";
 import { MetricCard } from "@/components/analyzer/report/MetricCard";
 import { ReportTopBar } from "@/components/analyzer/report/ReportTopBar";
@@ -21,11 +20,14 @@ import { ScenariosPanel } from "@/components/analyzer/report/ScenariosPanel";
 import { SwotPanel } from "@/components/analyzer/report/SwotPanel";
 import { FunnelQualityPanel } from "@/components/analyzer/report/FunnelQualityPanel";
 import { VerdictShiftPanel } from "@/components/analyzer/report/VerdictShiftPanel";
+import { MissingConfidencePanel } from "@/components/analyzer/report/MissingConfidencePanel";
+import { ThesisWeakeningPanel } from "@/components/analyzer/report/ThesisWeakeningPanel";
+import { StageEvidencePanel } from "@/components/analyzer/report/StageEvidencePanel";
 import type { ReportNarrative } from "@/lib/analyzer/reportNarrativeEngine";
 import type { StartupAnalysisInput, StartupAnalysisResult } from "@/lib/analyzer/types";
 import type { InvestmentMemoVerdict } from "@/lib/analyzer/investmentMemoEngine";
 import { getAnalyzerHint } from "@/lib/analyzer/analyzerGlossary";
-import { formatCompactMoneyRu } from "@/lib/analyzer/v2/formatters";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 type Props = {
   report: StartupAnalysisResult;
@@ -152,22 +154,18 @@ export function AnalyzerIntelligenceDashboard({
   const renderKpi = () => (
     <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
       <div className="ia-w-12 ia-card">
-        <div className="text-white font-semibold mb-2">{viewMode === "investor" ? "KPI overview (факты)" : "Ключевые метрики (что это значит сейчас)"}</div>
-        <div className="ia-small mb-4">
-          {viewMode === "investor"
-            ? "Крупные значения + короткие пояснения. Это «фактовая шапка» для принятия решения."
-            : "Крупные значения + что они означают для действий. Цель — быстро понять, что улучшать в первую очередь."}
-        </div>
+        <div className="text-white font-semibold mb-2">{reportCopy.kpi.title}</div>
+        <div className="ia-small mb-4">{reportCopy.kpi.subtitle}</div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <MetricCard title="Рост месяц к месяцу" value={`${growthPct.toFixed(1)}%`} hint={viewMode === "investor" ? "Темп роста по вводным" : "Что происходит с ростом сейчас"} barPct={clamp(growthPct * 4, 0, 100)} barTone="cyan" tooltip={getAnalyzerHint("growthScore")} />
-          <MetricCard title="LTV / CAC" value={ltvCac > 0 ? ltvCac.toFixed(2) : "—"} hint={viewMode === "investor" ? "Экономика привлечения" : "Есть ли экономика масштаба"} barPct={clamp((ltvCac / 4) * 100, 0, 100)} barTone="violet" tooltip={getAnalyzerHint("ltvToCac")} />
-          <MetricCard title="Удержание D30" value={retD30 > 0 ? `${retD30}%` : "—"} hint={viewMode === "investor" ? "Сигнал PMF" : "Закрепляется ли ценность"} barPct={clamp(retD30 * 3.2, 0, 100)} barTone="mint" tooltip={getAnalyzerHint("retentionD30")} />
-          <MetricCard title="Запас денег" value={runwayLabel} hint={viewMode === "investor" ? "Сколько месяцев до кассы" : "Сколько времени есть на улучшения"} barPct={clamp(runwayM * 6.5, 0, 100)} barTone="rose" tooltip={getAnalyzerHint("runwayMonths")} />
+          <MetricCard title="Рост месяц к месяцу" value={`${growthPct.toFixed(1)}%`} hint={reportCopy.kpi.hints.growth} barPct={clamp(growthPct * 4, 0, 100)} barTone="cyan" tooltip={getAnalyzerHint("growthScore")} />
+          <MetricCard title="LTV / CAC" value={ltvCac > 0 ? ltvCac.toFixed(2) : "—"} hint={reportCopy.kpi.hints.economics} barPct={clamp((ltvCac / 4) * 100, 0, 100)} barTone="violet" tooltip={getAnalyzerHint("ltvToCac")} />
+          <MetricCard title="Удержание D30" value={retD30 > 0 ? `${retD30}%` : "—"} hint={reportCopy.kpi.hints.retention} barPct={clamp(retD30 * 3.2, 0, 100)} barTone="mint" tooltip={getAnalyzerHint("retentionD30")} />
+          <MetricCard title="Запас денег" value={runwayLabel} hint={reportCopy.kpi.hints.runway} barPct={clamp(runwayM * 6.5, 0, 100)} barTone="rose" tooltip={getAnalyzerHint("runwayMonths")} />
 
-          <MetricCard title="Валовая маржа" value={`${Math.round((report.grossMargin || 0) * 100)}%`} hint={viewMode === "investor" ? "Качество маржи" : "Сколько остаётся на рост"} barPct={clamp((report.grossMargin || 0) * 120, 0, 100)} barTone="cyan" tooltip={getAnalyzerHint("grossMarginPct")} />
-          <MetricCard title="Окупаемость CAC" value={report.paybackMonths > 0 ? `${report.paybackMonths.toFixed(0)} мес` : "—"} hint={viewMode === "investor" ? "Payback" : "Когда возвращаются деньги"} barPct={clamp(report.paybackMonths > 0 ? 100 - report.paybackMonths * 6 : 0, 0, 100)} barTone="violet" tooltip={getAnalyzerHint("paybackMonths")} />
-          <MetricCard title="Доля повторной выручки" value={`${Math.round((analysisInput.recurringShare || 0) * 100)}%`} hint={viewMode === "investor" ? "Повторяемость" : "Насколько выручка предсказуема"} barPct={clamp((analysisInput.recurringShare || 0) * 100, 0, 100)} barTone="mint" tooltip={getAnalyzerHint("recurringShare")} />
-          <MetricCard title="Burn‑мультипликатор" value={(report.burnMultiple || 0).toFixed(1)} hint={viewMode === "investor" ? "Эффективность роста" : "Сколько burn на 1₽ новой выручки"} barPct={clamp(report.burnMultiple > 0 ? 100 - report.burnMultiple * 18 : 0, 0, 100)} barTone="rose" tooltip={getAnalyzerHint("burnMultiple")} />
+          <MetricCard title="Валовая маржа" value={`${Math.round((report.grossMargin || 0) * 100)}%`} hint={reportCopy.kpi.hints.margin} barPct={clamp((report.grossMargin || 0) * 120, 0, 100)} barTone="cyan" tooltip={getAnalyzerHint("grossMarginPct")} />
+          <MetricCard title="Окупаемость CAC" value={report.paybackMonths > 0 ? `${report.paybackMonths.toFixed(0)} мес` : "—"} hint={reportCopy.kpi.hints.payback} barPct={clamp(report.paybackMonths > 0 ? 100 - report.paybackMonths * 6 : 0, 0, 100)} barTone="violet" tooltip={getAnalyzerHint("paybackMonths")} />
+          <MetricCard title="Доля повторной выручки" value={`${Math.round((analysisInput.recurringShare || 0) * 100)}%`} hint={reportCopy.kpi.hints.recurring} barPct={clamp((analysisInput.recurringShare || 0) * 100, 0, 100)} barTone="mint" tooltip={getAnalyzerHint("recurringShare")} />
+          <MetricCard title="Burn‑мультипликатор" value={(report.burnMultiple || 0).toFixed(1)} hint={reportCopy.kpi.hints.burn} barPct={clamp(report.burnMultiple > 0 ? 100 - report.burnMultiple * 18 : 0, 0, 100)} barTone="rose" tooltip={getAnalyzerHint("burnMultiple")} />
         </div>
       </div>
     </div>
@@ -222,20 +220,14 @@ export function AnalyzerIntelligenceDashboard({
     <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
       <div className="ia-w-12">
         <div className="ii-panel">
-          <div className="ii-panelTitle">Полный документ (детерминированный)</div>
-          <div className="ii-panelSubtitle">
-            {viewMode === "investor"
-              ? "Полный текст для сделки/инвесткомитета. Генерация — строго по правилам, без ИИ."
-              : "Полный текст для заметок/Notion. Генерация — строго по правилам, без ИИ."}
-            <HelpTip text="Этот текст генерируется детерминированно из вводных и правил. Никакого ИИ/LLM." />
-          </div>
+          <div className="ii-panelTitle">{reportCopy.full.title}</div>
+          <div className="ii-panelSubtitle">{reportCopy.full.subtitle}</div>
           <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 12 }}>
             <Button type="button" variant="secondary" className="h-10" onClick={() => setShowFullDoc((v) => !v)}>
               {showFullDoc ? "Скрыть текст" : "Показать текст"}
             </Button>
             <div className="ia-small">
-              Версия: <b className="text-[rgba(234,240,255,0.9)]">{report.analysisVersion ?? "v1"}</b> · Формат:{" "}
-              <b className="text-[rgba(234,240,255,0.9)]">plain</b>
+              Версия анализа: <b className="text-[rgba(234,240,255,0.9)]">{report.analysisVersion ?? "v1"}</b>
             </div>
           </div>
           {showFullDoc ? (
@@ -285,6 +277,14 @@ export function AnalyzerIntelligenceDashboard({
             </div>
           </div>
           <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-6">
+              <StageEvidencePanel input={analysisInput} report={report} />
+            </div>
+            <div className="ia-w-6">
+              <FunnelQualityPanel report={report} viewMode={viewMode} />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
             <div className="ia-w-8">
               <ActionPrioritySystem actions={report.actionPriorities} />
             </div>
@@ -311,11 +311,11 @@ export function AnalyzerIntelligenceDashboard({
             </div>
           </div>
           <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
-            <div className="ia-w-4">
-              <FunnelQualityPanel report={report} viewMode={viewMode} />
-            </div>
             <div className="ia-w-8">
               <SwotPanel swot={report.swot} viewMode={viewMode} />
+            </div>
+            <div className="ia-w-4">
+              <MissingConfidencePanel input={analysisInput} report={report} />
             </div>
           </div>
           <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
@@ -349,6 +349,14 @@ export function AnalyzerIntelligenceDashboard({
           <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
             <div className="ia-w-12">
               <VerdictShiftPanel report={report} />
+            </div>
+          </div>
+          <div className="ia-grid ii-fadeSwap" data-view={viewMode}>
+            <div className="ia-w-6">
+              <MissingConfidencePanel input={analysisInput} report={report} />
+            </div>
+            <div className="ia-w-6">
+              <ThesisWeakeningPanel input={analysisInput} report={report} />
             </div>
           </div>
           <div className="ia-grid ii-fadeSwap" data-view={viewMode}>

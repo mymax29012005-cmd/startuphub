@@ -2,12 +2,13 @@
 
 import React from "react";
 import type { DecisionReasoning, StartupAnalysisResult } from "@/lib/analyzer/types";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function LayerBadges({ report }: { report: StartupAnalysisResult }) {
   const tags: string[] = [];
   if ((report.revenueQualityScore ?? 0) > 0) tags.push("выручка");
-  if ((report.moatEvidenceScore ?? 0) > 0) tags.push("moat evidence");
-  if ((report.stageEvidenceScore ?? 0) > 0) tags.push("evidence");
+  if ((report.moatEvidenceScore ?? 0) > 0) tags.push("подтверждённость moat");
+  if ((report.stageEvidenceScore ?? 0) > 0) tags.push("подтверждённость спроса");
   if ((report.funnelQualityScore ?? 0) > 0) tags.push("воронка");
   if ((report.marketStructurePressureScore ?? 0) > 0) tags.push("структура рынка");
   if (!tags.length) return null;
@@ -34,8 +35,8 @@ export function StrengthsPanel({
 
   return (
     <div className="ii-panel">
-      <div className="ii-panelTitle">Что уже хорошо (опора для следующей стадии)</div>
-      <div className="ii-panelSubtitle">Коротко: сильные сигналы, на которые можно опереться, чтобы ускорить путь к следующей вехе.</div>
+      <div className="ii-panelTitle">{reportCopy.strengths.title}</div>
+      <div className="ii-panelSubtitle">{reportCopy.strengths.subtitle}</div>
       <LayerBadges report={report} />
 
       <div className="ii-driverList" style={{ marginTop: 14 }}>

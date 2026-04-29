@@ -53,7 +53,7 @@ export function ScoreRing({
 
         <div className="ii-ringCenter">
           <div className="ii-ringValue">{Math.round(v)}%</div>
-          <div className="ii-ringCaption">success score</div>
+          <div className="ii-ringCaption">вероятность успеха</div>
         </div>
       </div>
 

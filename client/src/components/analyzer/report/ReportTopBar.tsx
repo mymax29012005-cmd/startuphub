@@ -3,14 +3,15 @@
 import React from "react";
 import { Button } from "@/components/ui/Button";
 import type { StartupAnalysisInput, StartupAnalysisResult } from "@/lib/analyzer/types";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function stageRu(stage: StartupAnalysisInput["stage"]) {
   if (stage === "idea") return "идея";
-  if (stage === "seed") return "seed (посев)";
-  if (stage === "series_a") return "Series A";
-  if (stage === "series_b") return "Series B";
+  if (stage === "seed") return "посев";
+  if (stage === "series_a") return "раунд A";
+  if (stage === "series_b") return "раунд B";
   if (stage === "growth") return "рост";
-  return "exit";
+  return "выход";
 }
 
 function modeRu(mode: StartupAnalysisInput["mode"]) {
@@ -40,15 +41,15 @@ export function ReportTopBar({
   saving: boolean;
   saved: boolean;
 }) {
-  const title = (input.title ?? "").trim() || "Investment Intelligence";
+  const title = (input.title ?? "").trim() || reportCopy.hero.title;
   return (
     <div className="ii-topbar">
       <div className="ii-brand">
         <div className="ii-brandTitle">{title}</div>
         <div className="ii-brandMeta">
-          <span className="ii-pill">stage: {stageRu(input.stage)}</span>
-          <span className="ii-pill">mode: {modeRu(input.mode)}</span>
-          <span className="ii-pill">analysis: {report.analysisVersion ?? "v1"}</span>
+          <span className="ii-pill">стадия: {stageRu(input.stage)}</span>
+          <span className="ii-pill">формат: {modeRu(input.mode)}</span>
+          <span className="ii-pill">версия: {report.analysisVersion ?? "v1"}</span>
           {saved ? <span className="ii-pill ii-pill-ok">сохранено в историю</span> : null}
         </div>
       </div>

@@ -95,7 +95,7 @@ export function interpretationEngine(result: StartupAnalysisResult, input: Start
   const weaknesses: string[] = [];
   if (churn > 0.15) weaknesses.push(`Высокий churn: ${fmtPct(churn)}`);
   if (ltvToCac < 2) weaknesses.push(`Слабый LTV/CAC: ${ltvToCac.toFixed(2)}`);
-  if (runway < 6) weaknesses.push(`Низкий runway: ${runway.toFixed(1)} мес`);
+  if (runway < 6) weaknesses.push(`Низкий запас денег: ${runway.toFixed(1)} мес`);
   if (burnMultiple > 3) weaknesses.push(`Высокий burn‑мультипликатор: ${burnMultiple.toFixed(2)}`);
 
   const weaknessesTop = weaknesses.slice(0, 3);
@@ -176,7 +176,7 @@ export function interpretationEngine(result: StartupAnalysisResult, input: Start
     .slice(0, 3)
     .map((x) => x.text);
 
-  const recommendations = improvements.length > 0 ? improvements : ["Заполните больше метрик — анализатор сформирует более точные рекомендации."]; // fallback
+  const recommendations = improvements.length > 0 ? improvements : ["Добавьте больше метрик — анализ станет точнее."];
 
   // 8) Break-even & profit text
   const profit = (Number(result.monthlyRevenue) || 0) * (Number((result as any).grossMargin ?? 0) || 0) - (Number(input.burnMonthly) || 0);
@@ -186,8 +186,8 @@ export function interpretationEngine(result: StartupAnalysisResult, input: Start
   const valuationLow = Number((result as any).valuationLow ?? 0) || 0;
   const valuationHigh = Number((result as any).valuationHigh ?? 0) || 0;
   const valuationComment =
-    `Оценка чувствительна к росту и удержанию: при росте ${growthMonthlyPct.toFixed(1)}%/мес и retention D30 ${fmtPct(retentionD30)} диапазон составляет ` +
-    `${fmtMoney(valuationLow)} — ${fmtMoney(valuationHigh)}. Улучшение retention и органического роста сужает риск и повышает верхнюю границу.`;
+    `Оценка чувствительна к росту и удержанию: при росте ${growthMonthlyPct.toFixed(1)}%/мес и удержании D30 ${fmtPct(retentionD30)} диапазон составляет ` +
+    `${fmtMoney(valuationLow)} — ${fmtMoney(valuationHigh)}. Улучшение удержания и органического роста сужает риск и повышает верхнюю границу.`;
 
   // 10) Investor comment
   const investorScore = Number((result as any).investorScore ?? 0) || 0;

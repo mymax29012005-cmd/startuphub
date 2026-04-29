@@ -3,6 +3,7 @@
 import React from "react";
 import type { StartupAnalysisResult } from "@/lib/analyzer/types";
 import { HelpTip } from "@/components/analyzer/HelpTip";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function fmt(n?: number) {
   if (typeof n !== "number" || !Number.isFinite(n)) return "—";
@@ -14,18 +15,14 @@ export function FunnelQualityPanel({ report, viewMode }: { report: StartupAnalys
   return (
     <div className="ii-panel">
       <div className="ii-panelTitle">
-        Воронка (Funnel quality)
-        <HelpTip text="Детерминированный слой (0–100) по конверсиям и time‑to‑value. Помогает понять, где начинается проблема retention." />
+        {reportCopy.funnel.title}
+        <HelpTip text={reportCopy.tooltips.funnel} />
       </div>
-      <div className="ii-panelSubtitle">
-        {viewMode === "investor"
-          ? "Сильная воронка при слабом D30 — красный флаг качества ценности после активации. Слабая воронка — риск «не доходит до ценности»."
-          : "Если retention слабый — часто быстрее всего помогает улучшить активацию и сократить time‑to‑value."}
-      </div>
+      <div className="ii-panelSubtitle">{reportCopy.funnel.subtitle}</div>
 
       <div className="ii-driverList" style={{ marginTop: 14 }}>
         <div className="ii-driverItem">
-          <b>Funnel quality:</b> {fmt(report.funnelQualityScore)}
+          <b>Качество воронки:</b> {fmt(report.funnelQualityScore)}
         </div>
         {(report.funnelQualityNotes ?? []).slice(0, viewMode === "investor" ? 6 : 3).map((x, idx) => (
           <div key={idx} className="ii-driverItem">

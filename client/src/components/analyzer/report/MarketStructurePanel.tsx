@@ -3,6 +3,7 @@
 import React from "react";
 import type { StartupAnalysisResult } from "@/lib/analyzer/types";
 import { HelpTip } from "@/components/analyzer/HelpTip";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function fmt(n?: number) {
   if (typeof n !== "number" || !Number.isFinite(n)) return "—";
@@ -14,18 +15,14 @@ export function MarketStructurePanel({ report, viewMode }: { report: StartupAnal
   return (
     <div className="ii-panel">
       <div className="ii-panelTitle">
-        Структура рынка (Porter‑lite)
-        <HelpTip text="Упрощённый слой давления структуры рынка: rivalry, buyer power, substitutes, entrants. Это помогает объяснять market/risk, а не заменяет метрики." />
+        {reportCopy.market.title}
+        <HelpTip text={reportCopy.tooltips.market} />
       </div>
-      <div className="ii-panelSubtitle">
-        {viewMode === "investor"
-          ? "Смотрим downside: давление структуры рынка повышает требования к moat, retention и каналу."
-          : "Если давление высокое — сфокусируйтесь на дифференциации, удержании и доказательствах преимущества."}
-      </div>
+      <div className="ii-panelSubtitle">{viewMode === "investor" ? reportCopy.market.subtitle : reportCopy.market.short}</div>
 
       <div className="ii-driverList" style={{ marginTop: 14 }}>
         <div className="ii-driverItem">
-          <b>Market structure pressure:</b> {fmt(report.marketStructurePressureScore)} (выше = хуже)
+          <b>Давление структуры рынка:</b> {fmt(report.marketStructurePressureScore)} (выше = хуже)
         </div>
         {(report.marketStructureNotes ?? []).slice(0, viewMode === "investor" ? 6 : 3).map((x, idx) => (
           <div key={idx} className="ii-driverItem">

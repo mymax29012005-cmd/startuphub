@@ -36,9 +36,9 @@ export function computeFunnelQuality(input: StartupAnalysisInput): FunnelQuality
   if (v2s > 0) notes.push(`Визит → регистрация: ${Math.round(v2s)}%.`);
   if (key > 0) notes.push(`Ключевое действие: ${Math.round(key)}%.`);
 
-  if (funnelQualityScore < 45) notes.push("Слабая воронка часто «маскируется» под проблему retention — сначала укрепите активацию и TTV.");
-  else if (funnelQualityScore < 65) notes.push("Воронка средняя: апсайд обычно в активации и снижении time‑to‑value.");
-  else notes.push("Воронка выглядит здоровой: если retention низкий — вероятно проблема в ценности после активации.");
+  if (funnelQualityScore < 45) notes.push("Слабая воронка часто «маскируется» под проблему удержания — сначала укрепите активацию и скорость получения ценности.");
+  else if (funnelQualityScore < 65) notes.push("Воронка средняя: потенциал обычно в активации и снижении времени до ценности.");
+  else notes.push("Воронка выглядит здоровой: если удержание низкое, вероятно проблема в ценности после активации.");
 
   return { funnelQualityScore, notes };
 }

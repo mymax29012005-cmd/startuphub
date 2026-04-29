@@ -36,8 +36,8 @@ export function ScoreBreakdownPanel({
 }) {
   return (
     <div className="ii-panel">
-      <div className="ii-panelTitle">Скоринги и инвестиционная кривая эффективности</div>
-      <div className="ii-panelSubtitle">Вместо “радара ради радара” — полосы, которые читаются в dark UI за секунду.</div>
+      <div className="ii-panelTitle">Разбор оценки</div>
+      <div className="ii-panelSubtitle">Как отдельные блоки оценки поддерживают или ограничивают итоговый сигнал.</div>
       <div className="ii-scoreList">
         <Row label="PMF (ценность/удержание)" value={pmf} />
         <Row label="Рост" value={growth} />

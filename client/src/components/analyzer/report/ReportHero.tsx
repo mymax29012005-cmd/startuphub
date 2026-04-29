@@ -4,6 +4,7 @@ import React from "react";
 import { HelpTip } from "@/components/analyzer/HelpTip";
 import { ScoreRing } from "@/components/analyzer/report/ScoreRing";
 import type { StartupAnalysisInput, StartupAnalysisResult } from "@/lib/analyzer/types";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function confidenceLabelRu(label: StartupAnalysisResult["estimateConfidenceLabel"]): string {
   if (label === "high") return "высокая";
@@ -36,13 +37,13 @@ export function ReportHero({
   heroSubtitle: string;
   viewMode: "founder" | "investor";
 }) {
-  const title = (input.title ?? "").trim() || "Глубокий анализ проекта";
+  const title = (input.title ?? "").trim() || reportCopy.hero.title;
   const summaryFounder =
     report.decisionReasoning?.because?.[0] ??
-    "Карта улучшения проекта: что сильное, что тормозит и какие шаги дадут наибольший эффект для инвестиционной привлекательности.";
+    "Что уже хорошо, что ограничивает результат и на чём лучше сфокусироваться в первую очередь.";
   const summaryInvestor =
     report.decisionReasoning?.because?.[0] ??
-    "Decision-ready review: почему вердикт именно такой, какие риски/ограничители доминируют и насколько можно доверять вводным.";
+    "Почему вердикт именно такой, какие ограничения доминируют и насколько надёжны входные данные.";
   const summary = viewMode === "investor" ? summaryInvestor : summaryFounder;
 
   return (
@@ -52,7 +53,7 @@ export function ReportHero({
         <div>
           <div className="ii-heroKicker">
             <span className="ii-dot" />
-            Детерминированный инвестиционный анализ
+            {reportCopy.hero.badge}
           </div>
 
           <h1 className="ii-heroTitle">
@@ -63,26 +64,24 @@ export function ReportHero({
 
           <div className="ii-heroSummary">
             <div className="ii-stat">
-              <div className="ii-statLabel">Вероятность успеха</div>
+              <div className="ii-statLabel">{reportCopy.hero.labels.success}</div>
               <div className="ii-statValue">{spRange.low}–{spRange.high}%</div>
-              <div className="ii-statHelp">Диапазон вместо ложной точности</div>
+              <div className="ii-statHelp">{reportCopy.hero.sub.range}</div>
             </div>
             <div className="ii-stat">
-              <div className="ii-statLabel">Уверенность в оценке</div>
+              <div className="ii-statLabel">{reportCopy.hero.labels.reliability}</div>
               <div className="ii-statValue">{confidenceLabelRu(report.estimateConfidenceLabel)}</div>
-              <div className="ii-statHelp">
-                {viewMode === "investor" ? "Полнота · согласованность · caveats" : "Точность ограничена качеством вводных"}
-              </div>
+              <div className="ii-statHelp">{reportCopy.hero.sub.reliability}</div>
             </div>
             <div className="ii-stat">
-              <div className="ii-statLabel">Главный ограничитель</div>
+              <div className="ii-statLabel">{reportCopy.hero.labels.bottleneck}</div>
               <div className="ii-statValue">{report.mainBottleneck ?? "—"}</div>
-              <div className="ii-statHelp">{viewMode === "investor" ? "Что ограничивает conviction" : "Что сейчас сильнее всего тормозит рост сигнала"}</div>
+              <div className="ii-statHelp">{reportCopy.hero.sub.bottleneck}</div>
             </div>
             <div className="ii-stat">
-              <div className="ii-statLabel">Сильная сторона</div>
+              <div className="ii-statLabel">{reportCopy.hero.labels.strongest}</div>
               <div className="ii-statValue">{report.strongestArea ?? "—"}</div>
-              <div className="ii-statHelp">{viewMode === "investor" ? "Что поддерживает интерес" : "На что можно опереться сейчас"}</div>
+              <div className="ii-statHelp">{reportCopy.hero.sub.strongest}</div>
             </div>
           </div>
 
@@ -92,7 +91,7 @@ export function ReportHero({
               <b className="ii-valuationValue">
                 {valuationHuman.low} · {valuationHuman.base} · {valuationHuman.high}
               </b>
-              <HelpTip text="Человекочитаемый диапазон оценки (низ/база/верх). Это ориентир, а не точная стоимость компании." />
+              <HelpTip text="Диапазон оценки в формате низ/база/верх. Используйте как ориентир для обсуждения сделки, а не как финальную стоимость компании." />
             </div>
           ) : null}
 
@@ -100,18 +99,18 @@ export function ReportHero({
         </div>
 
         <div className="ii-scoreSide">
-          <ScoreRing valuePct={Math.round((report.successProbability || 0) * 100)} label={`DECISION SIGNAL — ${verdictLabelRu(verdict)}`} sublabel="Оценка выглядит честной, а не «магической»." />
+          <ScoreRing valuePct={Math.round((report.successProbability || 0) * 100)} label={`${reportCopy.hero.labels.signal} — ${verdictLabelRu(verdict)}`} sublabel="Оценка выглядит честной, а не «магической»." />
           <div className="ii-scoreBadges">
             <div className="ii-miniBadge">
-              <div className="ii-miniBadgeLabel">Сила бизнеса</div>
+              <div className="ii-miniBadgeLabel">{reportCopy.hero.labels.business}</div>
               <div className="ii-miniBadgeValue">{Math.round(report.businessScore ?? report.investorScore ?? 0)}/100</div>
             </div>
             <div className="ii-miniBadge">
-              <div className="ii-miniBadgeLabel">Доверие к данным</div>
+              <div className="ii-miniBadgeLabel">{reportCopy.hero.labels.data}</div>
               <div className="ii-miniBadgeValue">{Math.round(report.dataConfidenceScore ?? report.confidenceScore ?? 0)}/100</div>
             </div>
             <div className="ii-miniBadge">
-              <div className="ii-miniBadgeLabel">Согласованность</div>
+              <div className="ii-miniBadgeLabel">{reportCopy.hero.labels.consistency}</div>
               <div className="ii-miniBadgeValue">{Math.round(report.consistencyScore ?? 0) || "—"}/100</div>
             </div>
           </div>

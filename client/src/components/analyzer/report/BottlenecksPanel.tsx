@@ -2,14 +2,15 @@
 
 import React from "react";
 import type { DecisionReasoning, StartupAnalysisResult } from "@/lib/analyzer/types";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function LayerBadges({ report }: { report: StartupAnalysisResult }) {
   const tags: string[] = [];
   if ((report.concentrationRiskScore ?? 0) >= 60) tags.push("концентрация");
-  if (report.moatGapFlag) tags.push("moat gap");
+  if (report.moatGapFlag) tags.push("разрыв moat");
   if ((report.funnelQualityScore ?? 0) > 0) tags.push("воронка");
   if ((report.marketStructurePressureScore ?? 0) >= 70) tags.push("структура рынка");
-  if ((report.dataConfidenceScore ?? 0) > 0) tags.push("data confidence");
+  if ((report.dataConfidenceScore ?? 0) > 0) tags.push("надёжность оценки");
   if (!tags.length) return null;
   return (
     <div className="ii-layerBadges">
@@ -34,8 +35,8 @@ export function BottlenecksPanel({
 
   return (
     <div className="ii-panel">
-      <div className="ii-panelTitle">Главные ограничения (что тормозит сигнал)</div>
-      <div className="ii-panelSubtitle">Понятным языком: что именно ограничивает инвестиционную привлекательность и почему.</div>
+      <div className="ii-panelTitle">{reportCopy.bottlenecks.title}</div>
+      <div className="ii-panelSubtitle">{reportCopy.bottlenecks.subtitle}</div>
       <LayerBadges report={report} />
 
       <div className="ii-driverList" style={{ marginTop: 14 }}>

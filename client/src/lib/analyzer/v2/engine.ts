@@ -18,6 +18,7 @@ import { computeCompleteness } from "./completeness";
 import { runConsistencyRules } from "./consistencyRules";
 import { formatValuationRangeHuman, makeSuccessRange } from "./formatters";
 import { getStageAnalysisConfig } from "./stageConfig";
+import { reportCopy } from "../reportCopy";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -89,36 +90,36 @@ function computeActionPriorities(input: StartupAnalysisInput, r: StartupAnalysis
     if (interviews < 15) {
       items.push({
         title: "Подтвердить проблему через интервью",
-        reason: "На стадии idea ключевой риск — неверная боль/ICP. Интервью дешевле и быстрее любых продуктовых итераций.",
-        expectedImpact: "Повысит качество валидации и снизит риск «строить не то».",
-        improves: ["Validation", "Stage fit", "Confidence"],
+        reason: reportCopy.templates.actions[0],
+        expectedImpact: "Улучшение здесь создаёт базу для следующего уровня оценки.",
+        improves: ["Подтверждённость спроса", "Соответствие стадии", "Надёжность оценки"],
         priority: "high",
       });
     }
     if (pilots < 3 && input.monthlyRevenue === 0) {
       items.push({
         title: "Запустить 1–3 пилота или LOI",
-        reason: "Пилоты/LOI переводят проект из «мнений» в измеримые сигналы спроса.",
-        expectedImpact: "Сильный рост доверия к оценке и вероятности успеха.",
-        improves: ["Confidence", "PMF"],
+        reason: reportCopy.templates.actions[1],
+        expectedImpact: "Это действие одновременно снижает риск и усиливает качество сигнала.",
+        improves: ["Надёжность оценки", "PMF"],
         priority: "high",
       });
     }
     if (waitlist < 100) {
       items.push({
         title: "Собрать список ожидания и метрику конверсии в активацию",
-        reason: "Лист ожидания без конверсии малоинформативен — важен переход в активацию.",
-        expectedImpact: "Появится базовая воронка и сигналы traction.",
-        improves: ["Traction", "PMF"],
+        reason: reportCopy.templates.actions[2],
+        expectedImpact: "Самый короткий путь усилить сигнал — улучшить этот показатель.",
+        improves: ["Рост", "PMF"],
         priority: "medium",
       });
     }
     if (!input.foundersFullTime) {
       items.push({
         title: "Усилить full‑time commitment фаундеров",
-        reason: "Без full-time исполнения шанс дойти до следующей вехи существенно ниже.",
-        expectedImpact: "Снижение execution‑риска и рост доверия инвестора.",
-        improves: ["Execution risk", "Confidence"],
+        reason: reportCopy.templates.actions[4],
+        expectedImpact: "Это действие одновременно снижает риск и усиливает качество сигнала.",
+        improves: ["Риск исполнения", "Надёжность оценки"],
         priority: "medium",
       });
     }
@@ -128,45 +129,45 @@ function computeActionPriorities(input: StartupAnalysisInput, r: StartupAnalysis
   if (input.retentionD30 > 0 && input.retentionD30 < 0.18) {
     items.push({
       title: "Поднять D30 удержание",
-      reason: "Без удержания рост не конвертируется в LTV и масштабируемость.",
-      expectedImpact: "Рост PMF и улучшение юнит‑экономики через увеличение LTV.",
+      reason: reportCopy.templates.actions[0],
+      expectedImpact: "Если начать с этого, эффект на общую оценку будет быстрее всего заметен.",
       improves: ["PMF", "LTV", "Сила бизнеса"],
       priority: "high",
     });
   }
   if (churn > 0.12) {
     items.push({
-      title: "Снизить churn и улучшить onboarding",
-      reason: "Churn — прямой удар по LTV и предсказуемости выручки.",
-      expectedImpact: "Увеличение LTV и снижение риска.",
-      improves: ["Risk", "Unit economics"],
+      title: "Снизить churn и улучшить онбординг",
+      reason: reportCopy.templates.actions[2],
+      expectedImpact: "Самый короткий путь усилить сигнал — улучшить этот показатель.",
+      improves: ["Риск", "Юнит-экономика"],
       priority: churn > 0.18 ? "high" : "medium",
     });
   }
   if (r.ltvToCac > 0 && r.ltvToCac < 2.0) {
     items.push({
       title: "Улучшить LTV/CAC",
-      reason: "При низком LTV/CAC масштабирование маркетинга делает модель убыточной.",
-      expectedImpact: "Повышение инвестиционного качества и предсказуемости роста.",
-      improves: ["Unit economics", "Investor score"],
+      reason: reportCopy.templates.actions[1],
+      expectedImpact: "Улучшение здесь создаёт базу для следующего уровня оценки.",
+      improves: ["Юнит-экономика", "Инвестиционный сигнал"],
       priority: "high",
     });
   }
   if (r.runwayMonths > 0 && r.runwayMonths < 9) {
     items.push({
-      title: "Продлить runway",
-      reason: "Короткий runway сокращает время на исправления и повышает риск «смерти от кассы».",
-      expectedImpact: "Снижение финансового риска и повышение доверия к плану.",
-      improves: ["Risk", "Confidence"],
+      title: "Продлить запас денег",
+      reason: reportCopy.templates.actions[3],
+      expectedImpact: "Это действие одновременно снижает риск и усиливает качество сигнала.",
+      improves: ["Риск", "Надёжность оценки"],
       priority: r.runwayMonths < 6 ? "high" : "medium",
     });
   }
   if (input.grossMarginPct < 55 && input.grossMarginPct > 0) {
     items.push({
       title: "Поднять валовую маржу",
-      reason: "Маржа определяет, сколько ресурса остаётся на рост и покрытие burn.",
-      expectedImpact: "Улучшение payback и экономической эффективности.",
-      improves: ["Unit economics", "Efficiency"],
+      reason: reportCopy.templates.actions[4],
+      expectedImpact: "Если начать с этого, эффект на общую оценку будет быстрее всего заметен.",
+      improves: ["Юнит-экономика", "Эффективность"],
       priority: "medium",
     });
   }
@@ -219,24 +220,24 @@ function computeDecisionReasoning(
   const risk = r.riskAvg;
 
   // Drivers (simple & explainable)
-  if (r.growthScore >= 65) topPositiveDrivers.push("темп роста выглядит сильным для текущих вводных");
-  if (r.unitEconomicsScore >= 65) topPositiveDrivers.push("юнит-экономика близка к устойчивой");
-  if (r.pmfScore >= 60) topPositiveDrivers.push("есть признаки PMF (удержание/органика/повтор)");
-  if (r.runwayMonths >= 12) topPositiveDrivers.push("runway даёт достаточно времени на улучшения");
-  if ((r.revenueQualityScore ?? 0) >= 65) topPositiveDrivers.push("профиль выручки выглядит устойчивым (повторяемость/концентрация)");
-  if ((r.moatEvidenceScore ?? 0) >= 60) topPositiveDrivers.push("есть признаки подтверждённой защитимости (moat evidence)");
+  if (r.growthScore >= 65) topPositiveDrivers.push(`Темп роста выглядит сильным для текущих вводных. ${reportCopy.templates.strengths[0]}`);
+  if (r.unitEconomicsScore >= 65) topPositiveDrivers.push(`Юнит-экономика близка к устойчивой. ${reportCopy.templates.strengths[2]}`);
+  if (r.pmfScore >= 60) topPositiveDrivers.push(`Есть признаки PMF (удержание/органика/повтор). ${reportCopy.templates.strengths[3]}`);
+  if (r.runwayMonths >= 12) topPositiveDrivers.push(`Запас денег даёт достаточно времени на улучшения. ${reportCopy.templates.strengths[1]}`);
+  if ((r.revenueQualityScore ?? 0) >= 65) topPositiveDrivers.push(`Профиль выручки выглядит устойчивым. ${reportCopy.templates.revenue[0]}`);
+  if ((r.moatEvidenceScore ?? 0) >= 60) topPositiveDrivers.push(`Есть признаки подтверждённой защитимости. ${reportCopy.templates.moat[0]}`);
   if ((r.stageEvidenceScore ?? 0) >= 60 && (stage === "idea" || stage === "seed" || input.mode === "idea"))
-    topPositiveDrivers.push("сильная доказательная база на ранней стадии (evidence)");
-  if ((r.funnelQualityScore ?? 0) >= 65) topPositiveDrivers.push("воронка выглядит здоровой (активация/time‑to‑value/оплата)");
+    topPositiveDrivers.push(`Сильная доказательная база на ранней стадии. ${reportCopy.templates.strengths[4]}`);
+  if ((r.funnelQualityScore ?? 0) >= 65) topPositiveDrivers.push(`Качество воронки выглядит здоровым. ${reportCopy.templates.strengths[1]}`);
 
-  if (input.retentionD30 > 0 && input.retentionD30 < 0.15) topNegativeDrivers.push("удержание D30 низкое — риск отсутствия устойчивой ценности");
-  if (r.ltvToCac > 0 && r.ltvToCac < 2) topNegativeDrivers.push("LTV/CAC ниже комфортного уровня для масштаба");
-  if (r.runwayMonths > 0 && r.runwayMonths < 9) topNegativeDrivers.push("короткий runway усиливает риск «не успеть исправить»");
-  if (dataConfidenceScore < 55) topNegativeDrivers.push("низкая уверенность в данных снижает доверие к выводам");
-  if ((r.concentrationRiskScore ?? 0) >= 70) topNegativeDrivers.push("высокая концентрация выручки — риск зависимости от 1–3 клиентов");
-  if ((r.moatGapFlag ?? false) === true) topNegativeDrivers.push("разрыв между заявленным moat и подтверждённостью (anti‑gaming риск)");
-  if ((r.funnelQualityScore ?? 0) > 0 && (r.funnelQualityScore ?? 0) < 45) topNegativeDrivers.push("воронка слабая: проблема может начинаться ещё до retention");
-  if ((r.marketStructurePressureScore ?? 0) >= 70) topNegativeDrivers.push("высокое давление структуры рынка повышает требования к moat и retention");
+  if (input.retentionD30 > 0 && input.retentionD30 < 0.15) topNegativeDrivers.push(`Удержание D30 низкое. ${reportCopy.templates.weaknesses[0]}`);
+  if (r.ltvToCac > 0 && r.ltvToCac < 2) topNegativeDrivers.push(`LTV/CAC ниже комфортного уровня для масштаба. ${reportCopy.templates.weaknesses[1]}`);
+  if (r.runwayMonths > 0 && r.runwayMonths < 9) topNegativeDrivers.push(`Короткий запас денег усиливает риск «не успеть исправить». ${reportCopy.templates.weaknesses[4]}`);
+  if (dataConfidenceScore < 55) topNegativeDrivers.push(`Надёжность оценки снижает доверие к выводам. ${reportCopy.templates.trust[1]}`);
+  if ((r.concentrationRiskScore ?? 0) >= 70) topNegativeDrivers.push(`Высокая концентрация выручки. ${reportCopy.templates.revenue[3]}`);
+  if ((r.moatGapFlag ?? false) === true) topNegativeDrivers.push(`Есть разрыв между заявленным moat и подтверждённостью. ${reportCopy.templates.moat[3]}`);
+  if ((r.funnelQualityScore ?? 0) > 0 && (r.funnelQualityScore ?? 0) < 45) topNegativeDrivers.push(`Качество воронки слабое: проблема может начинаться до удержания. ${reportCopy.templates.weaknesses[2]}`);
+  if ((r.marketStructurePressureScore ?? 0) >= 70) topNegativeDrivers.push(`Высокое давление структуры рынка. ${reportCopy.templates.risks[0]}`);
 
   // Verdict (stage-aware, deterministic)
   let verdict: DecisionReasoning["verdict"] = "WATCH";
@@ -257,21 +258,21 @@ function computeDecisionReasoning(
 
   if (verdict === "WATCH") blockers.push("недостаточно доказательств устойчивости (PMF/экономики/повторяемости)");
   if (dataConfidenceScore < 55) blockers.push("низкая полнота/согласованность метрик ограничивает точность выводов");
-  if (r.runwayMonths > 0 && r.runwayMonths < 6) blockers.push("runway слишком короткий — риск кассового разрыва доминирует");
+  if (r.runwayMonths > 0 && r.runwayMonths < 6) blockers.push("запас денег слишком короткий — риск кассового разрыва доминирует");
 
   if (verdict === "WATCH") {
-    whatChangesDecision.push("поднять D30 retention и/или снизить churn на когортах");
-    whatChangesDecision.push("улучшить LTV/CAC (через снижение CAC или рост LTV)");
-    whatChangesDecision.push("продлить runway до безопасного коридора (≥ 9–12 месяцев)");
-    if ((r.revenueQualityScore ?? 0) > 0 && (r.revenueQualityScore ?? 0) < 60) whatChangesDecision.push("улучшить качество выручки: повторяемость и диверсификацию (снизить концентрацию)");
-    if ((r.moatEvidenceScore ?? 0) > 0 && (r.moatEvidenceScore ?? 0) < 55) whatChangesDecision.push("собрать evidence moat: данные/switching costs/интеграции/канал");
-    if ((r.funnelQualityScore ?? 0) > 0 && (r.funnelQualityScore ?? 0) < 60) whatChangesDecision.push("сократить time‑to‑value и поднять активацию (до улучшения retention)");
+    whatChangesDecision.push("Поднять удержание D30 и/или снизить churn на когортах.");
+    whatChangesDecision.push("Улучшить LTV/CAC (через снижение CAC или рост LTV).");
+    whatChangesDecision.push("Продлить запас денег до безопасного коридора (>= 9-12 месяцев).");
+    if ((r.revenueQualityScore ?? 0) > 0 && (r.revenueQualityScore ?? 0) < 60) whatChangesDecision.push("Улучшить качество выручки: повысить повторяемость и снизить концентрацию.");
+    if ((r.moatEvidenceScore ?? 0) > 0 && (r.moatEvidenceScore ?? 0) < 55) whatChangesDecision.push("Собрать подтверждения moat: данные, switching costs, интеграции, канал.");
+    if ((r.funnelQualityScore ?? 0) > 0 && (r.funnelQualityScore ?? 0) < 60) whatChangesDecision.push("Сократить time-to-value и поднять активацию до улучшения удержания.");
   } else if (verdict === "HOLD") {
-    whatChangesDecision.push("доказать устойчивую экономику канала (payback, LTV/CAC) на масштабе");
-    whatChangesDecision.push("показать воспроизводимый рост без деградации retention");
+    whatChangesDecision.push("Доказать устойчивую экономику канала (payback, LTV/CAC) на масштабе.");
+    whatChangesDecision.push("Показать воспроизводимый рост без деградации удержания.");
   } else if (verdict === "AVOID") {
-    whatChangesDecision.push("исправить доминирующий риск: churn/runway/юнит-экономика");
-    whatChangesDecision.push("повысить полноту и проверяемость метрик, чтобы убрать неопределённость");
+    whatChangesDecision.push("Исправить доминирующий риск: churn, запас денег или юнит-экономику.");
+    whatChangesDecision.push("Повысить полноту и проверяемость метрик, чтобы убрать неопределённость.");
   }
 
   if (stage === "idea" || input.mode === "idea") {
@@ -279,11 +280,11 @@ function computeDecisionReasoning(
     nextMilestoneFocus.push("сформулировать ICP и ценностное предложение с измеримой конверсией");
     nextMilestoneFocus.push("зафиксировать следующий шаг (60–90 дней) и метрику успеха");
   } else if (stage === "seed") {
-    nextMilestoneFocus.push("закрыть петлю удержания и активации (D30, activation)");
+    nextMilestoneFocus.push("закрыть петлю удержания и активации (D30, активация)");
     nextMilestoneFocus.push("показать первые признаки воспроизводимого канала роста");
   } else {
     nextMilestoneFocus.push("подтвердить экономику масштаба: LTV/CAC, окупаемость, burn‑мультипликатор");
-    nextMilestoneFocus.push("показать устойчивость retention и качество роста (NRR/expansion, если применимо)");
+    nextMilestoneFocus.push("показать устойчивость удержания и качество роста (NRR/расширение, если применимо)");
   }
 
   return {
@@ -315,7 +316,7 @@ function computeSensitivityDrivers(input: StartupAnalysisInput, r: StartupAnalys
     label: "Запас денег",
     direction: runway >= 12 ? "positive" : "negative",
     impactLabel: runway >= 15 ? "сильное" : runway >= 9 ? "среднее" : "высокое",
-    description: runway >= 12 ? "Есть окно для улучшений без давления по кассе." : "Короткий runway усиливает риск и снижает качество решения.",
+    description: runway >= 12 ? "Есть окно для улучшений без давления по кассе." : "Короткий запас денег усиливает риск и снижает качество решения.",
   });
 
   const ltvCac = r.ltvToCac || 0;

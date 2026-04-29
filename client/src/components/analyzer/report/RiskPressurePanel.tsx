@@ -18,7 +18,7 @@ export function RiskPressurePanel({ items }: { items: PressureItem[] }) {
     <div className="ii-panel">
       <div className="ii-panelTitle">Профиль риска</div>
       <div className="ii-panelSubtitle">
-        Визуальная “тележка давления” по осям риска. Чем длиннее и ярче полоса, тем сильнее давление на итог.
+        Какие направления риска сейчас сильнее всего давят на итоговую оценку.
         <HelpTip text="Это не точная наука: цель — быстро увидеть доминирующие оси риска и приоритеты для плана." />
       </div>
 

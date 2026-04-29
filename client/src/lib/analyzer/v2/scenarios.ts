@@ -20,7 +20,7 @@ export function computeScenarioSummary(input: StartupAnalysisInput, r: StartupAn
 
   const assumptionsCommon = [
     "Диапазоны отражают неопределённость и качество данных, а не точное предсказание.",
-    "Сценарии завязаны на улучшение/ухудшение ключевых драйверов (удержание, экономика, runway, качество выручки).",
+    "Сценарии завязаны на улучшение или ухудшение ключевых факторов (удержание, экономика, запас денег, качество выручки).",
   ];
 
   const stage = input.stage;
@@ -29,22 +29,22 @@ export function computeScenarioSummary(input: StartupAnalysisInput, r: StartupAn
   return [
     {
       case: "base",
-      title: "Base case",
+      title: "Базовый сценарий",
       assumptions: [...assumptionsCommon, stageNote],
       successProbabilityRange: { low: baseLow, high: baseHigh },
       notes: ["Текущие вводные без «оптимизма» и без стресс‑шоков."],
     },
     {
       case: "upside",
-      title: "Upside case",
+      title: "Сильный сценарий",
       assumptions: [...assumptionsCommon, "Удержание/экономика/качество выручки улучшаются без роста риска кассы."],
       successProbabilityRange: { low: upsideLow, high: upsideHigh },
       notes: ["Срабатывает план улучшений и ключевые метрики сдвигаются в «приемлемо/уверенно»."],
     },
     {
       case: "stress",
-      title: "Stress case",
-      assumptions: [...assumptionsCommon, "Рост замедляется или ухудшается retention/runway."],
+      title: "Стресс-сценарий",
+      assumptions: [...assumptionsCommon, "Рост замедляется или ухудшаются удержание и запас денег."],
       successProbabilityRange: { low: stressLow, high: stressHigh },
       notes: ["Доминирующий риск реализуется, и диапазон сдвигается вниз."],
     },

@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { DecisionReasoning } from "@/lib/analyzer/types";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function List({ title, items, tone }: { title: string; items: string[]; tone: "pos" | "neg" }) {
   if (!items.length) return null;
@@ -27,15 +28,15 @@ export function DriversPanel({ decision }: { decision?: DecisionReasoning }) {
   return (
     <div className="ii-panel">
       <div className="ii-panelTitle">Почему именно такой вердикт</div>
-      <div className="ii-panelSubtitle">Причинность: что тянет вверх, что тянет вниз, блокеры и что изменит решение.</div>
+      <div className="ii-panelSubtitle">{reportCopy.whyVerdict.subtitle}</div>
 
       <div className="ii-driversGrid">
         <div className="ii-driverCol">
-          <List title="Что поддерживает интерес" items={decision.topPositiveDrivers ?? []} tone="pos" />
-          <List title="Потому что" items={decision.because ?? []} tone="pos" />
+          <List title={reportCopy.whyVerdict.sections.support} items={decision.topPositiveDrivers ?? []} tone="pos" />
+          <List title={reportCopy.whyVerdict.sections.because} items={decision.because ?? []} tone="pos" />
         </div>
         <div className="ii-driverCol">
-          <List title="Что мешает перейти на следующий уровень" items={decision.topNegativeDrivers ?? []} tone="neg" />
+          <List title={reportCopy.whyVerdict.sections.limits} items={decision.topNegativeDrivers ?? []} tone="neg" />
           <List title="Блокеры" items={decision.blockers ?? []} tone="neg" />
         </div>
       </div>
@@ -44,7 +45,7 @@ export function DriversPanel({ decision }: { decision?: DecisionReasoning }) {
         <div className="ii-driverFooter">
           <div className="ii-driverHeader">
             <span className="ii-driverDot ii-dot-pos" aria-hidden />
-            Что изменит решение
+            {reportCopy.whyVerdict.sections.changes}
           </div>
           <div className="ii-driverList">
             {decision.whatChangesDecision.slice(0, 6).map((x, idx) => (

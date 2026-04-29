@@ -3,11 +3,12 @@
 import React from "react";
 import type { ScenarioSummary } from "@/lib/analyzer/types";
 import { HelpTip } from "@/components/analyzer/HelpTip";
+import { reportCopy } from "@/lib/analyzer/reportCopy";
 
 function caseRu(c: ScenarioSummary["case"]) {
-  if (c === "base") return "База";
-  if (c === "upside") return "Апсайд";
-  return "Стресс";
+  if (c === "base") return reportCopy.scenarios.names.base;
+  if (c === "upside") return reportCopy.scenarios.names.upside;
+  return reportCopy.scenarios.names.stress;
 }
 
 export function ScenariosPanel({ scenarios, viewMode }: { scenarios?: ScenarioSummary[]; viewMode: "founder" | "investor" }) {
@@ -15,14 +16,10 @@ export function ScenariosPanel({ scenarios, viewMode }: { scenarios?: ScenarioSu
   return (
     <div className="ii-panel">
       <div className="ii-panelTitle">
-        Сценарии (base / upside / stress)
-        <HelpTip text="Сценарии — это не «новые расчёты», а детерминированная рамка вокруг диапазонов и ключевых драйверов. Без ложной точности." />
+        {reportCopy.scenarios.title}
+        <HelpTip text={reportCopy.tooltips.scenarios} />
       </div>
-      <div className="ii-panelSubtitle">
-        {viewMode === "investor"
-          ? "Показывает, как диапазон интерпретируется при улучшении/ухудшении ключевых драйверов."
-          : "Помогает выбрать, что улучшать: какие изменения дают наибольший сдвиг диапазона."}
-      </div>
+      <div className="ii-panelSubtitle">{reportCopy.scenarios.subtitle}</div>
 
       <div className="ii-driverList" style={{ marginTop: 14 }}>
         {scenarios.slice(0, 3).map((s) => (

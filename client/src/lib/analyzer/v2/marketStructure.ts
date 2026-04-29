@@ -46,9 +46,9 @@ export function computeMarketStructure(input: StartupAnalysisInput): MarketStruc
   const notes: string[] = [];
   notes.push("Porter‑lite слой: это рамка давления структуры рынка, а не академический анализ.");
   if (rivalry >= 70) notes.push("Сильная конкурентная борьба: требуется дифференциация/удержание/канал.");
-  if (buyerPower >= 70) notes.push("Сильная власть покупателя: давление на цену/маржу, важен ROI.");
-  if (threatNew >= 70) notes.push("Низкие барьеры входа: требуется moat evidence и скорость исполнения.");
-  if (substitutes >= 70) notes.push("Высокая угроза заменителей: важно показать закрепление ценности (retention).");
+  if (buyerPower >= 70) notes.push("Сильная власть покупателя: давление на цену и маржу, важна окупаемость для клиента.");
+  if (threatNew >= 70) notes.push("Низкие барьеры входа: требуется подтверждённость moat и скорость исполнения.");
+  if (substitutes >= 70) notes.push("Высокая угроза заменителей: важно показать закрепление ценности через удержание.");
   if (regulatory >= 70) notes.push("Регуляторные факторы могут повысить барьеры, но и риск.");
 
   return {
