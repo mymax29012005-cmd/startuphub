@@ -38,6 +38,11 @@ enum StartupFormat {
   hybrid
 }
 
+enum StartupListingType {
+  sale
+  investment
+}
+
 enum InvestorRequestStatus {
   active
   paused
@@ -180,6 +185,7 @@ model Startup {
   stage       StartupStage
   format      StartupFormat
   isOnline    Boolean   @default(true)
+  listingType StartupListingType @default(investment)
 
   ownerId     String
   owner       User      @relation("StartupOwner", fields: [ownerId], references: [id], onDelete: Cascade)

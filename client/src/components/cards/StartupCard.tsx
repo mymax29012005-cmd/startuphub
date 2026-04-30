@@ -20,6 +20,7 @@ export type StartupCardModel = {
   stage: string;
   format: string;
   isOnline: boolean;
+  listingType?: "sale" | "investment";
   owner: {
     id: string;
     name: string;
@@ -67,9 +68,11 @@ export function StartupCard({
   const stageLabel = stageLabelsByLang[lang]?.[startup.stage] ?? startup.stage;
   const industryLine = formatIndustryLine(startup.sector, startup.category);
   const tags = industryLine ? [industryLine] : [];
+  const listingType = startup.listingType ?? "investment";
+  const listingLabel = listingType === "sale" ? "Продажа" : "Инвестиции";
 
   return (
-    <div className="listing-card relative rounded-3xl border border-white/10 bg-[#12121A]">
+    <div className="listing-card cosmic-card relative rounded-3xl border border-white/10 bg-[#12121A]">
       {canDelete ? (
         <div className="absolute right-3 top-3 z-10">
           <DeleteResourceButton apiUrl={`/api/v1/startups/${startup.id}`} onDeleted={onDeleted!} />
@@ -83,6 +86,9 @@ export function StartupCard({
           <div className="text-4xl sm:text-5xl font-bold text-white/90">{initials(startup.title, startup.category)}</div>
           <div className="badge absolute right-3 top-3 sm:right-4 sm:top-4 rounded-full bg-emerald-500/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
             {stageLabel}
+          </div>
+          <div className="badge absolute left-3 bottom-3 sm:left-4 sm:bottom-4 rounded-full bg-black/45 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-md border border-white/10">
+            {listingLabel}
           </div>
           {startup.auction ? (
             <div className="absolute left-3 top-3 sm:left-4 sm:top-4 flex items-center gap-1.5 rounded-full bg-red-500/90 px-3 py-1.5 text-xs font-semibold text-white">
@@ -133,7 +139,7 @@ export function StartupCard({
 
           <div className="mt-5 sm:mt-6 flex items-end justify-between gap-3 border-t border-white/10 pt-5 sm:pt-6">
             <div>
-              <div className="text-xs text-gray-500">Нужно привлечь</div>
+              <div className="text-xs text-gray-500">{listingType === "sale" ? "Цена продажи" : "Нужно привлечь"}</div>
               <div className="text-base sm:text-lg font-semibold text-emerald-400">{startup.price.toLocaleString("ru-RU")} ₽</div>
             </div>
             <div className="text-right">

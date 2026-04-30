@@ -37,6 +37,7 @@ const profileExtraSchema = z
     tagline: z.string().max(280).optional(),
     valuationPreMoney: z.coerce.number().nonnegative().optional(),
     equityOfferedPct: z.coerce.number().min(0).max(100).optional(),
+    locationAddress: z.string().max(220).optional(),
     kpis: z
       .array(
         z.object({
@@ -81,6 +82,7 @@ const createStartupSchema = z
     stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]),
     format: z.enum(["online", "offline", "hybrid"]),
     isOnline: z.boolean().optional(),
+    listingType: z.enum(["sale", "investment"]).optional(),
 
     profileExtra: profileExtraSchema,
 
@@ -104,6 +106,7 @@ const updateStartupSchema = z
     stage: z.enum(["idea", "seed", "series_a", "series_b", "growth", "exit"]).optional(),
     format: z.enum(["online", "offline", "hybrid"]).optional(),
     isOnline: z.boolean().optional(),
+    listingType: z.enum(["sale", "investment"]).optional(),
     analysisId: z.string().uuid().nullable().optional(),
     attachmentIds: z.array(z.string().uuid()).optional(),
     profileExtra: profileExtraSchema.nullable().optional(),
@@ -160,7 +163,7 @@ startupsRouter.get("/", tryAuth, async (req, res) => {
     res.json(
       startups.map((s) => {
         const extra = (s as { profileExtra?: unknown }).profileExtra as
-          | { tagline?: string }
+          | { tagline?: string; locationAddress?: string }
           | null
           | undefined;
         return {
@@ -168,12 +171,17 @@ startupsRouter.get("/", tryAuth, async (req, res) => {
         title: s.title,
         description: s.description,
         tagline: extra && typeof extra === "object" && typeof extra.tagline === "string" ? extra.tagline : undefined,
+        locationAddress:
+          extra && typeof extra === "object" && typeof (extra as any).locationAddress === "string"
+            ? String((extra as any).locationAddress)
+            : undefined,
         sector: (s as { sector?: string }).sector ?? "software_it",
         category: s.category,
         price: Number(s.price),
         stage: s.stage,
         format: s.format,
         isOnline: s.isOnline,
+        listingType: (s as any).listingType ?? "investment",
         analysisId: (s as any).analysisId ?? null,
         owner: {
           id: s.ownerId,
@@ -241,6 +249,7 @@ startupsRouter.get("/:startupId", tryAuth, async (req, res) => {
       stage: startup.stage,
       format: startup.format,
       isOnline: startup.isOnline,
+      listingType: (startup as any).listingType ?? "investment",
       profileExtra: (startup as { profileExtra?: unknown }).profileExtra ?? null,
       analysisId: (startup as any).analysisId ?? null,
       analysis: startup.analysis
@@ -296,6 +305,7 @@ startupsRouter.post("/", requireAuth, requireNotDeleted, requireNotBanned, requi
         stage: data.stage,
         format: data.format,
         isOnline: isOnlineFromFormat(data.format, data.isOnline),
+        listingType: data.listingType ?? "investment",
         profileExtra: data.profileExtra ? (data.profileExtra as any) : undefined,
         ownerId: req.user!.userId,
         analysisId: data.analysisId ?? null,
@@ -395,6 +405,7 @@ startupsRouter.put("/:startupId", requireAuth, requireNotDeleted, requireNotBann
       ...(data.stage !== undefined ? { stage: data.stage } : {}),
       ...(data.format !== undefined ? { format: data.format } : {}),
       ...(data.isOnline !== undefined ? { isOnline: data.isOnline } : {}),
+      ...(data.listingType !== undefined ? { listingType: data.listingType } : {}),
       ...(data.format !== undefined && data.isOnline === undefined
         ? { isOnline: isOnlineFromFormat(data.format) }
         : {}),

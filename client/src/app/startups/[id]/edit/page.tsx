@@ -14,15 +14,18 @@ import { uploadFiles, type UploadedAttachment } from "@/lib/uploads";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
 const formats = ["online", "offline", "hybrid"] as const;
+const listingTypes = ["investment", "sale"] as const;
 const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
 const defaultCategory = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
 type Stage = (typeof stages)[number];
 type Format = (typeof formats)[number];
+type ListingType = (typeof listingTypes)[number];
 
 type StartupProfileExtra = {
   tagline?: string;
   valuationPreMoney?: number;
   equityOfferedPct?: number;
+  locationAddress?: string;
   kpis?: Array<{ value?: string; label?: string }>;
   milestones?: string;
   team?: Array<{ name: string; role: string }>;
@@ -40,6 +43,9 @@ function asStage(v: unknown, fallback: Stage): Stage {
 }
 function asFormat(v: unknown, fallback: Format): Format {
   return typeof v === "string" && (formats as readonly string[]).includes(v) ? (v as Format) : fallback;
+}
+function asListingType(v: unknown, fallback: ListingType): ListingType {
+  return typeof v === "string" && (listingTypes as readonly string[]).includes(v) ? (v as ListingType) : fallback;
 }
 type MaterialSlot = "pitch" | "excel" | "video" | "other";
 
@@ -62,6 +68,7 @@ type StartupDetail = {
   price: number;
   stage: Stage;
   format: Format;
+  listingType?: ListingType;
   isOnline: boolean;
   analysisId?: string | null;
   attachments?: UploadedAttachment[];
@@ -95,6 +102,8 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
   const [description, setDescription] = useState("");
   const [stage, setStage] = useState<Stage>("seed");
   const [format, setFormat] = useState<Format>("hybrid");
+  const [listingType, setListingType] = useState<ListingType>("investment");
+  const [locationAddress, setLocationAddress] = useState("");
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [kpiRows, setKpiRows] = useState([
     { value: "", label: "" },
@@ -163,9 +172,11 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
         setDescription(data.description ?? "");
         setStage(asStage(data.stage, "seed"));
         setFormat(asFormat(data.format, "hybrid"));
+        setListingType(asListingType((data as any).listingType, "investment"));
         setAnalysisId((data.analysisId as any) ?? null);
         setValuationPreMoney(pe?.valuationPreMoney != null ? String(pe.valuationPreMoney) : "");
         if (typeof pe?.equityOfferedPct === "number") setEquityOfferedPct(pe.equityOfferedPct);
+        setLocationAddress(typeof pe?.locationAddress === "string" ? pe.locationAddress : "");
         if (Array.isArray(pe?.kpis)) {
           const next = pe.kpis.map((r) => ({ value: String(r?.value ?? ""), label: String(r?.label ?? "") }));
           setKpiRows(next.length ? next : [{ value: "", label: "" }]);
@@ -237,6 +248,8 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
       if (typeof d?.equityOfferedPct === "number") setEquityOfferedPct(d.equityOfferedPct);
       if (d?.stage) setStage(d.stage);
       if (d?.format) setFormat(d.format);
+      if (d?.listingType) setListingType(d.listingType);
+      if (d?.locationAddress != null) setLocationAddress(String(d.locationAddress));
       if (Array.isArray(d?.kpiRows)) setKpiRows(d.kpiRows);
       if (d?.milestones != null) setMilestones(String(d.milestones));
       if (Array.isArray(d?.teamMembers)) setTeamMembers(d.teamMembers);
@@ -290,6 +303,8 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
           equityOfferedPct,
           stage,
           format,
+          listingType,
+          locationAddress,
           kpiRows,
           milestones,
           teamMembers,
@@ -352,8 +367,11 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
 
     const out: Record<string, unknown> = {};
     if (tagline.trim()) out.tagline = tagline.trim();
-    if (valuationNum !== undefined && Number.isFinite(valuationNum) && valuationNum >= 0) out.valuationPreMoney = valuationNum;
-    if (Number.isFinite(equityOfferedPct)) out.equityOfferedPct = equityOfferedPct;
+    if (listingType === "investment") {
+      if (valuationNum !== undefined && Number.isFinite(valuationNum) && valuationNum >= 0) out.valuationPreMoney = valuationNum;
+      if (Number.isFinite(equityOfferedPct)) out.equityOfferedPct = equityOfferedPct;
+    }
+    if (format !== "online" && locationAddress.trim()) out.locationAddress = locationAddress.trim();
     if (kpis.length) out.kpis = kpis;
     if (milestones.trim()) out.milestones = milestones.trim();
     if (team.length) out.team = team;
@@ -407,7 +425,7 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
             try {
               const priceNum = price === "" ? undefined : Number(stripNonDigits(price));
               if (priceNum === undefined || !Number.isFinite(priceNum) || priceNum <= 0) {
-                setErr("Укажите сумму привлечения (положительное число)");
+                setErr(listingType === "sale" ? "Укажите цену продажи (положительное число)" : "Укажите сумму привлечения (положительное число)");
                 return;
               }
 
@@ -424,6 +442,7 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                   price: priceNum,
                   stage,
                   format,
+                  listingType,
                   analysisId,
                   profileExtra,
                   attachmentIds: allAttachments.map((a) => a.id),
@@ -475,7 +494,9 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                 }}
               />
               <div>
-                <label className="mb-2 block text-sm text-gray-400">Сумма привлечения (₽)</label>
+                <label className="mb-2 block text-sm text-gray-400">
+                  {listingType === "sale" ? "Цена продажи (₽)" : "Сумма привлечения (₽)"}
+                </label>
                 <div className="flex">
                   <input
                     className={`${fieldClass} rounded-r-none border-r-0`}
@@ -520,47 +541,69 @@ export default function EditStartupPage({ params }: { params: Promise<{ id: stri
                     ))}
                   </select>
                 </label>
+                <label>
+                  <div className="mb-2 block text-sm text-gray-400">Тип карточки</div>
+                  <select className={fieldClass} value={listingType} onChange={(e) => setListingType(e.target.value as any)}>
+                    <option value="investment">Требуются инвестиции</option>
+                    <option value="sale">Продажа проекта</option>
+                  </select>
+                </label>
               </div>
+              {format !== "online" ? (
+                <div>
+                  <label className="mb-2 block text-sm text-gray-400">Адрес локации</label>
+                  <input
+                    className={fieldClass}
+                    value={locationAddress}
+                    onChange={(e) => setLocationAddress(e.target.value)}
+                    placeholder="Например: Москва, м. Белорусская / коворкинг / офис"
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
 
           <div>
             <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
-              <span className="text-rose-400">2</span> Инвестиционные условия
+              <span className="text-rose-400">2</span> {listingType === "sale" ? "Условия продажи" : "Инвестиционные условия"}
             </h2>
-            <div className="grid gap-8 md:grid-cols-2">
-              <div>
-                <div className="mb-2 block text-sm text-gray-400">Оценка компании до сделки (без новых инвестиций), ₽</div>
-                <div className="flex">
+            {listingType === "investment" ? (
+              <div className="grid gap-8 md:grid-cols-2">
+                <div>
+                  <div className="mb-2 block text-sm text-gray-400">Оценка компании до сделки (без новых инвестиций), ₽</div>
+                  <div className="flex">
+                    <input
+                      className={`${fieldClass} rounded-r-none border-r-0`}
+                      value={formatDigitsWithSpaces(valuationPreMoney)}
+                      onChange={(e) => setValuationPreMoney(stripNonDigits(e.target.value))}
+                      inputMode="numeric"
+                      placeholder="95 000 000"
+                    />
+                    <span className="flex items-center rounded-r-2xl border border-l-0 border-white/10 bg-[#1A1A24] px-5 text-gray-400">₽</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-2 block text-sm text-gray-400">Доля, которую готовы отдать</div>
                   <input
-                    className={`${fieldClass} rounded-r-none border-r-0`}
-                    value={formatDigitsWithSpaces(valuationPreMoney)}
-                    onChange={(e) => setValuationPreMoney(stripNonDigits(e.target.value))}
-                    inputMode="numeric"
-                    placeholder="95 000 000"
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={equityOfferedPct}
+                    onChange={(e) => setEquityOfferedPct(Number(e.target.value))}
+                    className="w-full accent-rose-500"
                   />
-                  <span className="flex items-center rounded-r-2xl border border-l-0 border-white/10 bg-[#1A1A24] px-5 text-gray-400">
-                    ₽
-                  </span>
+                  <div className="mt-2 flex justify-between text-sm font-medium">
+                    <span>0%</span>
+                    <span className="text-rose-300">{equityOfferedPct}%</span>
+                    <span>100%</span>
+                  </div>
                 </div>
               </div>
-              <div>
-                <div className="mb-2 block text-sm text-gray-400">Доля, которую готовы отдать</div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={equityOfferedPct}
-                  onChange={(e) => setEquityOfferedPct(Number(e.target.value))}
-                  className="w-full accent-rose-500"
-                />
-                <div className="mt-2 flex justify-between text-sm font-medium">
-                  <span>0%</span>
-                  <span className="text-rose-300">{equityOfferedPct}%</span>
-                  <span>100%</span>
-                </div>
+            ) : (
+              <div className="text-sm text-[rgba(234,240,255,0.72)]">
+                Для «Продажи проекта» инвестиционные поля скрыты — здесь важна цена продажи и материалы.
               </div>
-            </div>
+            )}
           </div>
 
           <div>

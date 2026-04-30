@@ -16,12 +16,14 @@ type StartupItem = {
   title: string;
   description: string;
   tagline?: string;
+  locationAddress?: string;
   sector: string;
   category: string;
   price: number;
   stage: string;
   format?: "online" | "offline" | "hybrid";
   isOnline: boolean;
+  listingType?: "sale" | "investment";
 };
 
 type IdeaItem = {
@@ -65,7 +67,9 @@ type StartupCardVM = {
   desc: string;
   pill?: { text: string; kind: "startup" | "idea" | "accent" };
   amount?: string;
+  amountLabel?: string;
   location?: string;
+  tags?: string[];
 };
 
 const PAGE_SIZE = 25;
@@ -167,6 +171,8 @@ function MarketplaceInner() {
   const [amountMax, setAmountMax] = useState("");
   /** Пустой набор = не фильтровать. Иначе — карточка должна совпадать по формату (как при создании). */
   const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set());
+  /** Пустой набор = не фильтровать. */
+  const [selectedListingTypes, setSelectedListingTypes] = useState<Set<string>>(new Set());
   const [selectedPartnerRoles, setSelectedPartnerRoles] = useState<Set<string>>(new Set());
   const [postModalOpen, setPostModalOpen] = useState(false);
 
@@ -387,11 +393,12 @@ function MarketplaceInner() {
       q: search.trim().toLowerCase(),
       inds: selectedIndustries,
       formats: selectedFormats,
+      listingTypes: selectedListingTypes,
       partnerRolesSel: selectedPartnerRoles,
       min: parseMoney(amountMin),
       max: parseMoney(amountMax),
     };
-  }, [search, selectedIndustries, selectedFormats, selectedPartnerRoles, amountMin, amountMax]);
+  }, [search, selectedIndustries, selectedFormats, selectedListingTypes, selectedPartnerRoles, amountMin, amountMax]);
 
   function matchesBase(q: string, texts: string[]) {
     if (!q) return true;
@@ -414,7 +421,7 @@ function MarketplaceInner() {
   }
 
   const startupCards: StartupCardVM[] = useMemo(() => {
-    const { q, inds, formats, min, max } = filterCtx;
+    const { q, inds, formats, listingTypes, min, max } = filterCtx;
     const list = startups ?? [];
     return list
       .filter((x) => {
@@ -422,6 +429,10 @@ function MarketplaceInner() {
         if (inds.size > 0 && !inds.has(x.sector)) return false;
         if (stage && x.stage !== stage) return false;
         if (!matchesAmount(min, max, x.price)) return false;
+        if (listingTypes.size > 0) {
+          const t = x.listingType ?? "investment";
+          if (!listingTypes.has(t)) return false;
+        }
         if (formats.size > 0) {
           const fmt = x.format ?? (x.isOnline ? "online" : "offline");
           if (!formats.has(fmt)) return false;
@@ -433,14 +444,23 @@ function MarketplaceInner() {
         href: `/startups/${x.id}`,
         title: x.title,
         desc: (x.tagline && x.tagline.trim()) || x.description,
-        pill: { text: stageLabelsByLang.ru?.[x.stage] ?? x.stage, kind: "startup" as const },
+        pill: {
+          text: `${x.listingType === "sale" ? "Продажа" : "Инвестиции"} · ${stageLabelsByLang.ru?.[x.stage] ?? x.stage}`,
+          kind: "startup" as const,
+        },
         amount: fmtMoney(x.price),
+        amountLabel: x.listingType === "sale" ? "Цена продажи" : "Нужно привлечь",
         location:
-          x.format != null
-            ? (formatLabelsByLang.ru?.[x.format] ?? x.format)
-            : x.isOnline
-              ? (formatLabelsByLang.ru?.online ?? "Онлайн")
-              : (formatLabelsByLang.ru?.offline ?? "Офлайн"),
+          x.format === "online"
+            ? (formatLabelsByLang.ru?.online ?? "Онлайн")
+            : x.locationAddress?.trim()
+              ? x.locationAddress.trim()
+              : x.format != null
+                ? (formatLabelsByLang.ru?.[x.format] ?? x.format)
+                : x.isOnline
+                  ? (formatLabelsByLang.ru?.online ?? "Онлайн")
+                  : (formatLabelsByLang.ru?.offline ?? "Офлайн"),
+        tags: [formatIndustryLine(x.sector, x.category)].filter(Boolean) as string[],
       }));
   }, [filterCtx, startups, stage]);
 
@@ -1016,6 +1036,42 @@ function MarketplaceInner() {
               />
             </div>
           </div>
+
+          {activeTab === "startups" ? (
+            <div className="mb-6">
+              <p className="mb-3 text-sm text-gray-400">Тип карточки</p>
+              <div className="flex flex-col gap-2 text-sm">
+                {(
+                  [
+                    { key: "investment", label: "Требуются инвестиции" },
+                    { key: "sale", label: "Продажа проекта" },
+                  ] as const
+                ).map((t) => {
+                  const on = selectedListingTypes.has(t.key);
+                  return (
+                    <label key={t.key} className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectedListingTypes((prev) => {
+                            const next = new Set(prev);
+                            if (checked) next.add(t.key);
+                            else next.delete(t.key);
+                            return next;
+                          });
+                        }}
+                        className="accent-violet-500"
+                      />
+                      {t.label}
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="mt-2 text-xs text-white/40">Ничего не отмечено — показываем оба типа.</div>
+            </div>
+          ) : null}
 
           {activeTab === "startups" || activeTab === "ideas" ? (
             <div>
@@ -1614,15 +1670,24 @@ function MarketplaceInner() {
                       <Link
                         key={it.id}
                         href={it.href}
-                        className="card-hover flex flex-col gap-4 rounded-3xl border border-white/10 bg-[#161618] p-6 transition hover:border-violet-500/25 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
+                        className="card-hover listing-card cosmic-card flex flex-col gap-4 rounded-3xl border border-white/10 bg-[#161618] p-6 transition hover:border-violet-500/25 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
                       >
                         <div className="min-w-0 flex-1">
                           <h3 className="text-xl font-semibold leading-snug text-white md:text-2xl">{it.title}</h3>
                           <p className="mt-2 text-base leading-relaxed text-gray-400">{it.desc}</p>
+                          {it.tags?.length ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {it.tags.map((t) => (
+                                <span key={t} className="rounded-2xl bg-white/10 px-3 py-1.5 text-xs text-white/80">
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
                           <div className="mt-4 text-sm">
                             {it.amount ? (
                               <span>
-                                <span className="text-gray-500">Нужно:</span>{" "}
+                                <span className="text-gray-500">{it.amountLabel ?? "Нужно"}:</span>{" "}
                                 <span className="font-semibold text-white">{it.amount}</span>
                               </span>
                             ) : null}

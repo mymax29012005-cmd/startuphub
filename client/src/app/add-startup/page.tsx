@@ -15,6 +15,7 @@ import { addListingFieldClass } from "@/components/forms/addListingFormShell";
 
 const stages = ["idea", "seed", "series_a", "series_b", "growth", "exit"] as const;
 const formats = ["online", "offline", "hybrid"] as const;
+const listingTypes = ["investment", "sale"] as const;
 
 const defaultSector = INDUSTRY_SECTORS[0]!.id as SectorId;
 const defaultCategory = INDUSTRY_CATEGORIES_BY_SECTOR[defaultSector][0]!.id;
@@ -76,6 +77,8 @@ function AddStartupInner() {
 
   const [stage, setStage] = useState<(typeof stages)[number]>("seed");
   const [format, setFormat] = useState<(typeof formats)[number]>("hybrid");
+  const [listingType, setListingType] = useState<(typeof listingTypes)[number]>("investment");
+  const [locationAddress, setLocationAddress] = useState("");
 
   const [kpiRows, setKpiRows] = useState([
     { value: "", label: "" },
@@ -132,6 +135,8 @@ function AddStartupInner() {
       if (typeof d?.equityOfferedPct === "number") setEquityOfferedPct(d.equityOfferedPct);
       if (d?.stage) setStage(d.stage);
       if (d?.format) setFormat(d.format);
+      if (d?.listingType) setListingType(d.listingType);
+      if (d?.locationAddress != null) setLocationAddress(String(d.locationAddress));
       if (Array.isArray(d?.kpiRows)) setKpiRows(d.kpiRows);
       if (d?.milestones != null) setMilestones(String(d.milestones));
       if (Array.isArray(d?.teamMembers)) setTeamMembers(d.teamMembers);
@@ -177,6 +182,8 @@ function AddStartupInner() {
       equityOfferedPct,
       stage,
       format,
+      listingType,
+      locationAddress,
       kpiRows,
       milestones,
       teamMembers,
@@ -194,6 +201,8 @@ function AddStartupInner() {
     equityOfferedPct,
     stage,
     format,
+    listingType,
+    locationAddress,
     kpiRows,
     milestones,
     teamMembers,
@@ -257,8 +266,11 @@ function AddStartupInner() {
         : Number(stripNonDigits(valuationPreMoney));
     const out: Record<string, unknown> = {};
     if (tagline.trim()) out.tagline = tagline.trim();
-    if (valuationNum !== undefined && Number.isFinite(valuationNum) && valuationNum >= 0) out.valuationPreMoney = valuationNum;
-    if (Number.isFinite(equityOfferedPct)) out.equityOfferedPct = equityOfferedPct;
+    if (listingType === "investment") {
+      if (valuationNum !== undefined && Number.isFinite(valuationNum) && valuationNum >= 0) out.valuationPreMoney = valuationNum;
+      if (Number.isFinite(equityOfferedPct)) out.equityOfferedPct = equityOfferedPct;
+    }
+    if (format !== "online" && locationAddress.trim()) out.locationAddress = locationAddress.trim();
     if (kpis.length) out.kpis = kpis;
     if (milestones.trim()) out.milestones = milestones.trim();
     if (team.length) out.team = team;
@@ -289,7 +301,9 @@ function AddStartupInner() {
     if (description.trim().length < 10) missing.push("Полное описание — минимум 10 символов");
     if (!sector || !category) missing.push("Отрасль и категория отрасли");
     const priceNum = price === "" ? undefined : Number(stripNonDigits(price));
-    if (priceNum === undefined || !Number.isFinite(priceNum) || priceNum <= 0) missing.push("Сумма привлечения");
+    if (priceNum === undefined || !Number.isFinite(priceNum) || priceNum <= 0) {
+      missing.push(listingType === "sale" ? "Цена продажи" : "Сумма привлечения");
+    }
 
     if (missing.length) {
       setFieldErrors(missing);
@@ -327,6 +341,7 @@ function AddStartupInner() {
           price: priceNum,
           stage,
           format,
+          listingType,
           profileExtra,
           analysisId: analysisId || undefined,
           attachmentIds: allAttachments.map((a) => a.id),
@@ -460,19 +475,39 @@ function AddStartupInner() {
                   ))}
                 </select>
               </label>
+              <label>
+                <div className="mb-2 block text-sm text-gray-400">
+                  Тип карточки <span className="text-red-500">*</span>
+                </div>
+                <select className={fieldClass} value={listingType} onChange={(e) => setListingType(e.target.value as any)}>
+                  <option value="investment">Требуются инвестиции</option>
+                  <option value="sale">Продажа проекта</option>
+                </select>
+              </label>
             </div>
+            {format !== "online" ? (
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">Адрес локации</label>
+                <input
+                  className={fieldClass}
+                  value={locationAddress}
+                  onChange={(e) => setLocationAddress(e.target.value)}
+                  placeholder="Например: Москва, м. Белорусская / коворкинг / офис"
+                />
+              </div>
+            ) : null}
           </div>
         </div>
 
         {/* 2 */}
         <div>
           <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold text-white">
-            <span className="text-rose-400">2</span> Инвестиционные условия
+            <span className="text-rose-400">2</span> {listingType === "sale" ? "Условия продажи" : "Инвестиционные условия"}
           </h2>
-          <div className="grid gap-8 md:grid-cols-2">
+          <div className={listingType === "investment" ? "grid gap-8 md:grid-cols-2" : ""}>
             <div>
               <label className="mb-2 block text-sm text-gray-400">
-                Сумма, которую хотите привлечь <span className="text-red-500">*</span>
+                {listingType === "sale" ? "Цена продажи" : "Сумма, которую хотите привлечь"} <span className="text-red-500">*</span>
               </label>
               <div className="flex">
                 <input
@@ -482,45 +517,43 @@ function AddStartupInner() {
                   inputMode="numeric"
                   placeholder="12 000 000"
                 />
-                <span className="flex items-center rounded-r-2xl border border-l-0 border-white/10 bg-[#1A1A24] px-5 text-gray-400">
-                  ₽
-                </span>
+                <span className="flex items-center rounded-r-2xl border border-l-0 border-white/10 bg-[#1A1A24] px-5 text-gray-400">₽</span>
               </div>
             </div>
-            <div>
-              <label className="mb-2 block text-sm text-gray-400">
-                Оценка компании до сделки (без учёта новых инвестиций), ₽
-              </label>
-              <div className="flex">
-                <input
-                  className={`${fieldClass} rounded-r-none border-r-0`}
-                  value={formatDigitsWithSpaces(valuationPreMoney)}
-                  onChange={(e) => setValuationPreMoney(stripNonDigits(e.target.value))}
-                  inputMode="numeric"
-                  placeholder="95 000 000"
-                />
-                <span className="flex items-center rounded-r-2xl border border-l-0 border-white/10 bg-[#1A1A24] px-5 text-gray-400">
-                  ₽
-                </span>
+            {listingType === "investment" ? (
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">Оценка компании до сделки (без учёта новых инвестиций), ₽</label>
+                <div className="flex">
+                  <input
+                    className={`${fieldClass} rounded-r-none border-r-0`}
+                    value={formatDigitsWithSpaces(valuationPreMoney)}
+                    onChange={(e) => setValuationPreMoney(stripNonDigits(e.target.value))}
+                    inputMode="numeric"
+                    placeholder="95 000 000"
+                  />
+                  <span className="flex items-center rounded-r-2xl border border-l-0 border-white/10 bg-[#1A1A24] px-5 text-gray-400">₽</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+          {listingType === "investment" ? (
+            <div className="mt-8">
+              <label className="mb-3 block text-sm text-gray-400">Какую долю компании готовы отдать?</label>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={equityOfferedPct}
+                onChange={(e) => setEquityOfferedPct(Number(e.target.value))}
+                className="w-full accent-rose-500"
+              />
+              <div className="mt-2 flex justify-between text-sm font-medium">
+                <span>0%</span>
+                <span className="text-rose-400">{equityOfferedPct}%</span>
+                <span>100%</span>
               </div>
             </div>
-          </div>
-          <div className="mt-8">
-            <label className="mb-3 block text-sm text-gray-400">Какую долю компании готовы отдать?</label>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={equityOfferedPct}
-              onChange={(e) => setEquityOfferedPct(Number(e.target.value))}
-              className="w-full accent-rose-500"
-            />
-            <div className="mt-2 flex justify-between text-sm font-medium">
-              <span>0%</span>
-              <span className="text-rose-400">{equityOfferedPct}%</span>
-              <span>100%</span>
-            </div>
-          </div>
+          ) : null}
         </div>
 
         {/* 3 */}

@@ -17,6 +17,7 @@ type StartupProfileExtra = {
   tagline?: string;
   valuationPreMoney?: number;
   equityOfferedPct?: number;
+  locationAddress?: string;
   kpis?: { value?: string; label?: string }[];
   milestones?: string;
   team?: { name: string; role: string }[];
@@ -33,6 +34,7 @@ type StartupDetail = {
   price: number;
   stage: string;
   format: string;
+  listingType?: "sale" | "investment";
   isOnline: boolean;
   analysisId?: string | null;
   analysis?: null | { id: string; createdAt: string; result: any };
@@ -431,7 +433,7 @@ export default function StartupDetailPage({
                 {startup.isOnline ? "Онлайн" : "Офлайн"} · {formatLabelsByLang[lang]?.[startup.format] ?? startup.format}
               </div>
               <div className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{startup.price.toLocaleString("ru-RU")} ₽</div>
-              <div className="text-xs text-gray-400">цель привлечения</div>
+              <div className="text-xs text-gray-400">{startup.listingType === "sale" ? "цена продажи" : "цель привлечения"}</div>
             </div>
           </div>
 
@@ -451,7 +453,7 @@ export default function StartupDetailPage({
                     {startup.profileExtra.valuationPreMoney != null ? (
                       <div className="rounded-xl border border-white/[0.08] bg-[#0d0d0f] p-5">
                         <div className="text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">
-                    Оценка до сделки (без новых инвестиций)
+                          Оценка компании до сделки
                   </div>
                         <div className="mt-2 text-xl font-semibold tabular-nums text-white sm:text-2xl">
                           {Math.round(Number(startup.profileExtra.valuationPreMoney)).toLocaleString("ru-RU")} ₽
@@ -460,7 +462,7 @@ export default function StartupDetailPage({
                     ) : null}
                     {startup.profileExtra.equityOfferedPct != null ? (
                       <div className="rounded-xl border border-white/[0.08] bg-[#0d0d0f] p-5">
-                        <div className="text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">Доля к инвестору</div>
+                        <div className="text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">Доля инвестору</div>
                         <div className="mt-2 text-xl font-semibold tabular-nums text-[#f472b6] sm:text-2xl">
                           {Math.round(Number(startup.profileExtra.equityOfferedPct))}%
                         </div>
@@ -729,15 +731,19 @@ export default function StartupDetailPage({
 
             <aside className="lg:col-span-4">
               <div className="sticky top-[calc(var(--site-header-height)+1.5rem)] rounded-2xl border border-white/[0.08] bg-[#161618] p-6 sm:p-8">
-                <h3 className="text-lg font-semibold tracking-tight text-white">Инвестиционные условия</h3>
-                <div className="mt-1 text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">Цель привлечения</div>
+                <h3 className="text-lg font-semibold tracking-tight text-white">
+                  {startup.listingType === "sale" ? "Условия продажи" : "Инвестиционные условия"}
+                </h3>
+                <div className="mt-1 text-xs font-medium uppercase tracking-wide text-[#a1a1a1]">
+                  {startup.listingType === "sale" ? "Цена продажи" : "Цель привлечения"}
+                </div>
                 <div className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-white sm:text-4xl">
                   {startup.price.toLocaleString("ru-RU")} ₽
                 </div>
                 {startup.profileExtra?.valuationPreMoney != null ? (
                   <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-sm">
                     <div className="flex justify-between gap-3">
-                      <span className="text-[#a1a1a1]">Pre-money</span>
+                      <span className="text-[#a1a1a1]">Оценка компании до сделки</span>
                       <span className="font-medium text-white">
                         {Math.round(Number(startup.profileExtra.valuationPreMoney)).toLocaleString("ru-RU")} ₽
                       </span>
@@ -753,13 +759,13 @@ export default function StartupDetailPage({
                 {startup.profileExtra?.equityOfferedPct != null && startup.profileExtra?.valuationPreMoney == null ? (
                   <div className="mt-4 border-t border-white/10 pt-4">
                     <div className="flex justify-between gap-3 text-sm">
-                      <span className="text-[#a1a1a1]">Доля к инвестору</span>
+                      <span className="text-[#a1a1a1]">Доля инвестору</span>
                       <span className="font-medium text-[#f472b6]">{Math.round(Number(startup.profileExtra.equityOfferedPct))}%</span>
                     </div>
                   </div>
                 ) : null}
                 <div className="mt-5">
-                  <div className="mb-1.5 text-xs text-[#a1a1a1]">Интерес к раунду</div>
+                  <div className="mb-1.5 text-xs text-[#a1a1a1]">Интерес к предложению</div>
                   <div className="h-2.5 overflow-hidden rounded-full bg-white/5">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-[#8E54E9] to-[#E73C7E]"
@@ -781,7 +787,13 @@ export default function StartupDetailPage({
                   <div className="flex justify-between gap-3">
                     <span className="text-[#a1a1a1]">Локация</span>
                     <span className="font-medium text-white">
-                      {startup.isOnline ? formatLabelsByLang[lang]?.online : formatLabelsByLang[lang]?.offline}
+                      {startup.format === "online"
+                        ? formatLabelsByLang[lang]?.online
+                        : (startup.profileExtra as any)?.locationAddress?.trim()
+                          ? String((startup.profileExtra as any).locationAddress).trim()
+                          : startup.format === "hybrid"
+                            ? formatLabelsByLang[lang]?.hybrid ?? "Гибрид"
+                            : formatLabelsByLang[lang]?.offline}
                     </span>
                   </div>
                 </div>
